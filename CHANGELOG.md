@@ -5,3 +5,5 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 ## [Unreleased]
 ### Added
 - Initial project scaffold
+- Core memory model (`Kind`, `Scope`, `Status`, `Provenance`, `Anchor`) with deterministic blake3 uids
+- SQLite store: migrations, dedup with provenance merge, supersede/archive/restore, FTS5 BM25 search with safe query escaping

@@ -49,3 +49,13 @@ flowchart LR
 - **Logging:** `tracing` to stderr and `~/.local/state/recalla/log`. Never log memory content at info level.
 - **Config:** `~/.config/recalla/config.toml`, validated at startup. Env `RECALLA_HOME` overrides the data dir.
 - **Auth:** none (local, single user). File permissions are 0600/0700.
+
+## Store schema (v1)
+- `memories`: one row per atomic memory.
+  - `uid`: blake3 of kind|scope|normalized text (deterministic, idempotent).
+  - Scope columns, confidence, importance, status, `superseded_by`, `seen_count`, valid-time interval.
+- `provenance`: 1..n per memory. Unique on (memory, harness, session, message, line).
+- `anchors`: code locations (path, symbol, lang, content_hash, commit). Unique on (memory, path, symbol).
+- `relations`: (src, dst, kind). Currently only `supersedes` (new → old).
+- `memories_fts`: FTS5 external-content table over `text` only, synced by triggers. Kind is filtered via SQL, not FTS.
+- Migrations: an append-only list + `PRAGMA user_version`, applied in one IMMEDIATE transaction.
