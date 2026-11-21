@@ -1,0 +1,22 @@
+name: docs-drift
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  check:
+    if: ${{ github.actor != 'dependabot[bot]' && !contains(github.event.pull_request.labels.*.name, 'skip-docs-check') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Code changes must update project state
+        run: |
+          files=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          code=$(echo "$files" | grep -vE '\.md$|^\.agent/|^\.github/|^docs/' || true)
+          docs=$(echo "$files" | grep -E '^TODO\.md$|^\.agent/state\.yaml$|^CHANGELOG\.md$' || true)
+          if [ -n "$code" ] && [ -z "$docs" ]; then
+            echo "::error::Code changed but TODO.md, .agent/state.yaml or CHANGELOG.md wasn't updated. Add the 'skip-docs-check' label if that's intended."
+            exit 1
+          fi

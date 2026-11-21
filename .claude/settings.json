@@ -1,0 +1,5 @@
+{
+  "permissions": {
+    "allow": ["Bash(make setup)", "Bash(make dev)", "Bash(make fmt)", "Bash(make check)", "Bash(make build)"]
+  }
+}

@@ -1,0 +1,33 @@
+[package]
+name = "recalla"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Local-first memory engine for coding agents: backfilled, provenance-linked, code-anchored memories."
+license = "Apache-2.0"
+repository = "https://github.com/damndeepesh/recalla"
+readme = "README.md"
+keywords = ["ai", "agents", "memory", "mcp", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "recalla"
+path = "src/main.rs"
+
+[dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

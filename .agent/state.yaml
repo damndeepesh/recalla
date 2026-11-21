@@ -1,0 +1,14 @@
+updated: 2026-11-21
+milestone: MVP
+branch: main
+task: "Core model + store: `Memory`/`Provenance`/`Anchor` types, SQLite schema + migrations, FTS5, dedup, supersede/archive"
+status: planned
+plan: null
+done:
+  - project scaffold
+next:
+  - run /plan for the core model + store
+blockers: []
+notes:
+  - Rust via Homebrew rustup (keg-only); PATH needs /opt/homebrew/opt/rustup/bin
+  - Competitor research is in validate output (2026-11-21); gaps summarized in SPEC.md Problem
