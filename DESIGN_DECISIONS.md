@@ -36,3 +36,10 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Decision: Apache-2.0.
 - Why: permissive for adoption, adds a patent grant, compatible with open core later.
 - Rejected: MIT (no patent grant); AGPL (deters adoption and integrations).
+
+## D-006 Core store dependencies: rusqlite, thiserror, blake3 (2026-11-22)
+
+- Context: The core model + store needs an embedded DB with FTS5, typed errors, and deterministic ids; hooks, CLI and MCP run as concurrent processes.
+- Decision: `rusqlite` (feature `bundled`, so FTS5 is always present), `thiserror` 2 (typed `StoreError`), `blake3` (deterministic content `uid`: idempotent re-imports); dev-only `tempfile` (file-backed DB tests). Migrations are a hand-rolled `PRAGMA user_version` list.
+- Why: SQLite WAL handles multi-process access; BM25 comes from FTS5 with no extra index; blake3 is fast, tiny, and needs no id coordination across machines.
+- Rejected: redb (single-process lock); Tantivy (single writer, heavier; maybe later as an optional search booster); rusqlite_migration (hand-rolled user_version is enough); uuid/ulid crates (random ids break idempotent re-imports).

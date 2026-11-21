@@ -18,6 +18,9 @@ name = "recalla"
 path = "src/main.rs"
 
 [dependencies]
+blake3 = "1.8"
+rusqlite = { version = "0.43", features = ["bundled"] }
+thiserror = "2"
 
 [lints.rust]
 unsafe_code = "forbid"
@@ -31,3 +34,6 @@ unwrap_used = "warn"
 lto = "thin"
 codegen-units = 1
 strip = true
+
+[dev-dependencies]
+tempfile = "3"

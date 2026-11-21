@@ -1,14 +1,18 @@
-updated: 2026-11-21
+updated: 2026-11-22
 milestone: MVP
-branch: main
+branch: feature/core-model-store
 task: "Core model + store: `Memory`/`Provenance`/`Anchor` types, SQLite schema + migrations, FTS5, dedup, supersede/archive"
-status: planned
-plan: null
+status: review
+plan: .agent/plans/core-model-store.md
 done:
-  - project scaffold
+  - model types + deterministic uid
+  - store schema v1, migrations, dedup, supersede/archive/restore
+  - FTS5 BM25 search (text only, escaped queries); 32 tests
 next:
-  - run /plan for the core model + store
+  - squash wip commits, open PR (ask first: no remote yet)
+  - next TODO item: Redaction (rules + entropy, secret fixture corpus)
 blockers: []
 notes:
   - Rust via Homebrew rustup (keg-only); PATH needs /opt/homebrew/opt/rustup/bin
-  - Competitor research is in validate output (2026-11-21); gaps summarized in SPEC.md Problem
+  - search scope filter is exact; pack must union Global + Project memories itself
+  - schema v1 not shipped yet: still safe to edit migration 0 until first release

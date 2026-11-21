@@ -2,6 +2,11 @@
 //!
 //! Modules land one MVP item at a time (see `TODO.md`).
 
+#![cfg_attr(test, allow(clippy::unwrap_used))]
+
+pub mod model;
+pub mod store;
+
 /// Crate version, as reported by `recalla --version`.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
