@@ -1,13 +1,12 @@
 updated: 2026-11-22
 milestone: MVP
-branch: feature/mirror
-task: "v0.1.0 release readiness"
-status: review
+branch: main
+task: "v0.1.0 release: waiting on user (repo public, then cargo publish + tag)"
+status: blocked
 plan: null
 done:
   - all 12 MVP items built; make check 457 tests; make e2e 64/64 on the release binary
   - final Opus security review: NO-GO on rebuild corrupting a live DB; fixed (VACUUM INTO + in-place txn, dirty-set mirror, redact-on-load, sanitized why/stats); repro verified
 next:
-  - merge mirror PR after CI
-  - release prep: CHANGELOG [Unreleased] -> [0.1.0] on publish day; cargo publish --dry-run
-  - tell user checklist is done; user decides: repo public, then cargo publish + tag v0.1.0
+  - on go: re-enable secret scanning + push protection once public; CHANGELOG [Unreleased] -> [0.1.0] dated; cargo publish; tag v0.1.0; GitHub release
+  - post-release: issue #27 recalla forget, extractor #13-#17, redaction #4-#8, GitHub Pages landing page
