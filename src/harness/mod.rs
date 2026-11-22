@@ -5,10 +5,12 @@
 //! Privacy: parsers report counts in [`ParseStats`] and never log content.
 
 use std::collections::BTreeMap;
+use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
 pub mod claude;
+pub mod codex;
 
 /// Largest text a stored event may carry. Ingest applies [`truncate_middle`]
 /// AFTER redaction; the harness emits full text so a cut can't split a secret.
@@ -224,6 +226,135 @@ fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
     let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + d - 1;
     let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
     era * 146_097 + doe - 719_468
+}
+
+/// Collects the events of one record, applying cleaning and stats. `clean`
+/// is the adapter's injected-text stripper for a given event kind.
+pub(crate) struct Sink<'a> {
+    pub template: Event,
+    pub events: &'a mut Vec<Event>,
+    pub stats: &'a mut ParseStats,
+    pub clean: fn(&EventKind, &str) -> String,
+}
+
+impl Sink<'_> {
+    pub fn push(&mut self, kind: EventKind, text: &str) {
+        let cleaned = (self.clean)(&kind, text);
+        let text = cleaned.trim();
+        // An empty tool result is still a success signal (`go vet` prints
+        // nothing), so it is kept; empty prose carries nothing.
+        if text.is_empty() && !matches!(kind, EventKind::ToolResult { .. }) {
+            return;
+        }
+        // Not truncated here: ingest redacts first, then truncates, so a cut
+        // can never split a secret into fragments the redactor misses.
+        self.stats.events += 1;
+        self.events.push(Event {
+            kind,
+            text: text.to_owned(),
+            ..self.template.clone()
+        });
+    }
+}
+
+pub(crate) fn bump(map: &mut BTreeMap<String, u64>, key: &str) {
+    *map.entry(key.to_owned()).or_default() += 1;
+}
+
+/// Strip every `<tag>…</tag>` span for each of `tags`, repeating until nothing
+/// changes, then drop any stray closer left over, so stored text never carries
+/// a live harness tag. Each pass is linear and only removes text, so the loop
+/// ends within a few passes.
+#[must_use]
+pub fn strip_spans(text: &str, tags: &[&str]) -> String {
+    let mut out = text.to_owned();
+    loop {
+        let before = out.len();
+        for tag in tags {
+            if out.contains(tag) {
+                out = remove_spans(&out, tag);
+                out = out.replace(&format!("</{tag}>"), "");
+            }
+        }
+        if out.len() == before {
+            return out;
+        }
+    }
+}
+
+/// Drop every `<tag>…</tag>` span, depth-counted for nesting. Linear: the next
+/// opener and closer positions are cached and only re-searched once passed.
+/// An unterminated opener drops the rest of the text (fail closed).
+fn remove_spans(text: &str, tag: &str) -> String {
+    let (open, close) = (format!("<{tag}>"), format!("</{tag}>"));
+    let next = |from: usize, pat: &str| text[from..].find(pat).map(|i| from + i);
+    let mut out = String::with_capacity(text.len());
+    let mut pos = 0;
+    let (mut o, mut c) = (next(0, &open), next(0, &close));
+    while let Some(start) = o {
+        out.push_str(&text[pos..start]);
+        pos = start + open.len();
+        let mut depth = 1usize;
+        o = next(pos, &open);
+        while depth > 0 {
+            while c.is_some_and(|ci| ci < pos) {
+                c = next(pos, &close);
+            }
+            let Some(ci) = c else {
+                return out;
+            };
+            match o {
+                Some(oi) if oi < ci => {
+                    depth += 1;
+                    pos = oi + open.len();
+                    o = next(pos, &open);
+                }
+                _ => {
+                    depth -= 1;
+                    pos = ci + close.len();
+                    c = next(pos, &close);
+                }
+            }
+        }
+        while o.is_some_and(|oi| oi < pos) {
+            o = next(pos, &open);
+        }
+    }
+    out.push_str(&text[pos..]);
+    out
+}
+
+/// Entries of `dir` that are not symlinks, with whether each is a directory.
+/// A missing directory is empty, not an error.
+pub(crate) fn real_entries(dir: &Path) -> io::Result<Vec<(PathBuf, bool)>> {
+    // `read_dir` follows symlinks, so refuse a directory that is itself one
+    // (e.g. a symlinked `subagents`); entries are checked below.
+    match fs::symlink_metadata(dir) {
+        Ok(m) if m.file_type().is_dir() => {}
+        Ok(_) => return Ok(Vec::new()),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(e) => return Err(e),
+    }
+    let rd = match fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(e) => return Err(e),
+    };
+    let mut out = Vec::new();
+    for entry in rd {
+        let entry = entry?;
+        // DirEntry::file_type does not follow symlinks.
+        let ft = entry.file_type()?;
+        if ft.is_symlink() {
+            continue;
+        }
+        out.push((entry.path(), ft.is_dir()));
+    }
+    Ok(out)
+}
+
+pub(crate) fn is_jsonl(path: &Path) -> bool {
+    path.extension().is_some_and(|e| e == "jsonl")
 }
 
 #[cfg(test)]

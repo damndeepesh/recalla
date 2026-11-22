@@ -92,8 +92,27 @@ fn label_count(sessions: &[Value], kind: &str) -> usize {
 fn eval_precision_and_recall() {
     let env = Env::new();
     let sessions = env.write_all();
+    // The same session again as a Codex rollout: its memories merge with the
+    // Claude ones (same labels, no extra memories) and gain Codex provenance.
+    env.write_codex_session(rust_cli(&sessions));
     env.backfill();
     let by_kind = score(&sessions, &env.active());
+    let harnesses = |m: &Memory| -> Vec<String> {
+        m.provenance
+            .iter()
+            .filter_map(|p| p.harness.clone())
+            .collect()
+    };
+    let unwrap = env
+        .active()
+        .into_iter()
+        .find(|m| m.text.contains("Never use unwrap in library code"))
+        .unwrap();
+    let seen = harnesses(&unwrap);
+    assert!(
+        seen.iter().any(|h| h == "codex") && seen.iter().any(|h| h == "claude-code"),
+        "{seen:?}"
+    );
 
     println!(
         "{:<12}{:>4}{:>4}{:>4}{:>8}{:>8}",
@@ -133,6 +152,59 @@ fn eval_precision_and_recall() {
         if label_count(&sessions, kind) >= 5 {
             assert!(t.precision() >= 0.80, "{kind} precision {}", t.precision());
         }
+    }
+}
+
+fn rust_cli(sessions: &[Value]) -> &Value {
+    sessions.iter().find(|s| s["id"] == "rust-cli").unwrap()
+}
+
+#[test]
+fn codex_format_session_scores_like_the_claude_one() {
+    let sessions: Value =
+        serde_json::from_str(&fs::read_to_string(common::SESSIONS).unwrap()).unwrap();
+    let cli = rust_cli(sessions["sessions"].as_array().unwrap()).clone();
+    let tallies = |by_kind: &BTreeMap<String, Tally>| -> Vec<(String, u32, u32, u32)> {
+        by_kind
+            .iter()
+            .map(|(k, t)| (k.clone(), t.tp, t.fp, t.fn_))
+            .collect()
+    };
+    let claude = Env::new();
+    claude.write_session(&cli);
+    claude.backfill();
+    let want = tallies(&score(std::slice::from_ref(&cli), &claude.active()));
+
+    let only = Env::new();
+    only.write_codex_session(&cli);
+    let (ing, _) = only.backfill();
+    assert_eq!(ing.files_by_harness.get("codex"), Some(&1));
+    let memories = only.active();
+    // Same labels, same per-kind outcome as the Claude-format run, no FP.
+    let got = tallies(&score(&[cli], &memories));
+    assert_eq!(got, want);
+    assert!(
+        got.iter().all(|(_, tp, fp, _)| *fp == 0 && *tp > 0),
+        "{got:?}"
+    );
+    assert!(!memories.is_empty());
+    for m in &memories {
+        assert!(
+            m.provenance
+                .iter()
+                .all(|p| p.harness.as_deref() == Some("codex")),
+            "{:?}",
+            m.provenance
+        );
+        let p = &m.provenance[0];
+        assert_eq!(p.session_id.as_deref(), Some("eval-rust-cli-codex"));
+        let path = p.source_path.as_deref().unwrap();
+        let text = fs::read_to_string(path).unwrap();
+        assert!(
+            text.lines()
+                .nth(usize::try_from(p.line.unwrap()).unwrap() - 1)
+                .is_some()
+        );
     }
 }
 

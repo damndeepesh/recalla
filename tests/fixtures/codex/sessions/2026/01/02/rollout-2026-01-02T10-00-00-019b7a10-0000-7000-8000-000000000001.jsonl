@@ -1,0 +1,19 @@
+{"timestamp": "2026-01-02T10:00:01.000Z", "type": "session_meta", "ordinal": 1, "payload": {"id": "019b7a10-0000-7000-8000-000000000001", "cwd": "/tmp/demo", "cli_version": "0.0.0"}}
+{"timestamp": "2026-01-02T10:00:02.000Z", "type": "turn_context", "ordinal": 2, "payload": {"cwd": "/tmp/demo", "model": "demo-model"}}
+{"timestamp": "2026-01-02T10:00:03.000Z", "type": "response_item", "ordinal": 3, "payload": {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": "Sandbox rules go here."}]}}
+{"timestamp": "2026-01-02T10:00:04.000Z", "type": "response_item", "ordinal": 4, "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "<environment_context>\n<cwd>/tmp/demo</cwd>\n</environment_context>"}, {"type": "input_text", "text": "Please run the tests."}], "id": "msg_user_1"}}
+{"timestamp": "2026-01-02T10:00:05.000Z", "type": "event_msg", "ordinal": 5, "payload": {"type": "item_completed", "item": {"id": "item_u1", "type": "UserMessage", "content": [{"type": "text", "text": "Please run the tests."}]}}}
+{"timestamp": "2026-01-02T10:00:06.000Z", "type": "response_item", "ordinal": 6, "payload": {"type": "reasoning", "summary": []}}
+{"timestamp": "2026-01-02T10:00:07.000Z", "type": "response_item", "ordinal": 7, "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "I will run them now. 日本語 ✓"}], "id": "msg_asst_1"}}
+{"timestamp": "2026-01-02T10:00:08.000Z", "type": "event_msg", "ordinal": 8, "payload": {"type": "item_completed", "item": {"id": "item_cmd1", "type": "CommandExecution", "command": ["bash", "-lc", "cargo test"], "cwd": "/tmp/demo", "exit_code": 1, "status": "failed", "aggregated_output": "1 test failed"}}}
+{"timestamp": "2026-01-02T10:00:09.000Z", "type": "event_msg", "ordinal": 9, "payload": {"type": "item_completed", "item": {"id": "item_cmd2", "type": "CommandExecution", "command": ["git", "diff", "--quiet"], "cwd": "/tmp/demo", "exit_code": 0, "status": "completed", "aggregated_output": ""}}}
+{"timestamp": "2026-01-02T10:00:10.000Z", "type": "event_msg", "ordinal": 10, "payload": {"type": "item_completed", "item": {"id": "item_fc1", "type": "FileChange", "changes": {"src/b.rs": {"type": "update"}, "src/a.rs": {"type": "add"}}}}}
+{"timestamp": "2026-01-02T10:00:11.000Z", "type": "event_msg", "ordinal": 11, "payload": {"type": "token_count", "info": null}}
+{"timestamp": "2026-01-02T10:00:99.000Z", "type": "respon
+{"timestamp": "2026-01-02T10:00:12.000Z", "type": "turn_context", "ordinal": 12, "payload": {"cwd": "/tmp/demo/sub"}}
+{"timestamp": "2026-01-02T10:00:13.000Z", "type": "response_item", "ordinal": 13, "payload": {"type": "message", "role": "user", "content": [{"type": "input_text", "text": "Commit with message ‘fix’ please."}], "id": "msg_user_2"}}
+{"timestamp": "2026-01-02T10:00:14.000Z", "type": "compacted", "ordinal": 14, "payload": {"message": "The user asked for tests and a commit."}}
+{"timestamp": "2026-01-02T10:00:15.000Z", "type": "world_state", "ordinal": 15}
+{"timestamp": "2026-01-02T10:00:16.000Z", "type": "response_item", "ordinal": 16, "payload": {"type": "custom_tool_call", "name": "apply_patch", "call_id": "c1"}}
+{"timestamp": "2026-01-02T10:00:17.000Z", "type": "event_msg", "ordinal": 17, "payload": {"type": "item_completed", "item": {"id": "item_a1", "type": "AgentMessage", "text": "Done."}}}
+{"timestamp": "2026-01-02T10:00:18.000Z", "type": "response_item", "ordinal": 18, "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "All done."}], "id": "msg_asst_2"}}

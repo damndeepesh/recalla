@@ -175,3 +175,14 @@ flowchart LR
 - **Pack:** the "Needs re-verify ⚠" lines show the reason, e.g. `(symbol changed: Store::insert)`.
 - **Redaction:** `cwd` and `git_branch` use `redact_path` (layers 1–2, no entropy), so random path components don't break project keys (D-020).
 - **Binary size:** 4.8 MB → 10.1 MB with all grammars, 4.8 MB with `--no-default-features` (D-019).
+
+## Harness: Codex (`harness::codex`)
+- Root: `$CODEX_HOME` or `~/.codex`. Discovery walks `sessions/**/rollout-*.jsonl`, skipping symlinks at every level.
+- Mapping (same `Event` contract as Claude):
+  - user/assistant `response_item` messages: injected `<environment_context>`/`<user_instructions>` stripped; developer role skipped
+  - `CommandExecution` → Bash ToolCall + ToolResult (`is_error` from `exit_code`)
+  - `FileChange` → one Edit ToolCall per path (feeds anchor windows)
+  - `compacted` → Summary
+- A resume replays only the `session_meta`/`turn_context` lines of the prefix, to recover the session id and cwd.
+- `backfill --harness claude|codex|all` (default all). Each source row records its harness; extraction and packs are harness-agnostic, so one memory carries provenance from both agents.
+- Measured: 11.4 MB in 0.12 s, 451 events.

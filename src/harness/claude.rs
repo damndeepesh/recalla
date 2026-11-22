@@ -4,15 +4,17 @@
 //! are counted in [`ParseStats`], never fatal. Only user/assistant/summary
 //! records carry conversation; everything else is telemetry and is dropped.
 
-use std::collections::BTreeMap;
 use std::ffi::OsString;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-use super::{Event, EventKind, Harness, ParseStats, SessionFile, count_newlines, parse_rfc3339_ms};
+use super::{
+    Event, EventKind, Harness, ParseStats, SessionFile, Sink, bump, count_newlines, is_jsonl,
+    parse_rfc3339_ms, real_entries, strip_spans,
+};
 
 const HARNESS_NAME: &str = "claude-code";
 
@@ -58,39 +60,6 @@ pub fn default_root() -> Option<PathBuf> {
 pub fn root_from_env(config_dir: Option<OsString>, home: Option<OsString>) -> Option<PathBuf> {
     let non_empty = |v: Option<OsString>| v.filter(|s| !s.is_empty()).map(PathBuf::from);
     non_empty(config_dir).or_else(|| non_empty(home).map(|h| h.join(".claude")))
-}
-
-/// Entries of `dir` that are not symlinks, with whether each is a directory.
-/// A missing directory is empty, not an error.
-fn real_entries(dir: &Path) -> io::Result<Vec<(PathBuf, bool)>> {
-    // `read_dir` follows symlinks, so refuse a directory that is itself one
-    // (e.g. a symlinked `subagents`); entries are checked below.
-    match fs::symlink_metadata(dir) {
-        Ok(m) if m.file_type().is_dir() => {}
-        Ok(_) => return Ok(Vec::new()),
-        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
-        Err(e) => return Err(e),
-    }
-    let rd = match fs::read_dir(dir) {
-        Ok(rd) => rd,
-        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
-        Err(e) => return Err(e),
-    };
-    let mut out = Vec::new();
-    for entry in rd {
-        let entry = entry?;
-        // DirEntry::file_type does not follow symlinks.
-        let ft = entry.file_type()?;
-        if ft.is_symlink() {
-            continue;
-        }
-        out.push((entry.path(), ft.is_dir()));
-    }
-    Ok(out)
-}
-
-fn is_jsonl(path: &Path) -> bool {
-    path.extension().is_some_and(|e| e == "jsonl")
 }
 
 /// Find `projects/*/*.jsonl` and `projects/*/*/subagents/*.jsonl` under
@@ -232,43 +201,6 @@ fn str_of<'a>(v: &'a Value, key: &str) -> Option<&'a str> {
     v.get(key)?.as_str()
 }
 
-fn bump(map: &mut BTreeMap<String, u64>, key: &str) {
-    *map.entry(key.to_owned()).or_default() += 1;
-}
-
-/// Collects the events of one record, applying cleaning, caps and stats.
-struct Sink<'a> {
-    template: Event,
-    events: &'a mut Vec<Event>,
-    stats: &'a mut ParseStats,
-}
-
-impl Sink<'_> {
-    fn push(&mut self, kind: EventKind, text: &str) {
-        let cleaned;
-        let text = if matches!(kind, EventKind::UserText | EventKind::ToolResult { .. }) {
-            cleaned = clean_injected(text);
-            cleaned.as_str()
-        } else {
-            text
-        };
-        let text = text.trim();
-        // An empty tool result is still a success signal (`go vet` prints
-        // nothing), so it is kept; empty prose carries nothing.
-        if text.is_empty() && !matches!(kind, EventKind::ToolResult { .. }) {
-            return;
-        }
-        // Not truncated here: ingest redacts first, then truncates, so a cut
-        // can never split a secret into fragments the redactor misses.
-        self.stats.events += 1;
-        self.events.push(Event {
-            kind,
-            text: text.to_owned(),
-            ..self.template.clone()
-        });
-    }
-}
-
 fn handle_record(rec: &Value, at: &Position<'_>, events: &mut Vec<Event>, stats: &mut ParseStats) {
     let rtype = str_of(rec, "type").unwrap_or("(none)");
     let is_summary = rtype == "summary" || rec.get("isCompactSummary") == Some(&Value::Bool(true));
@@ -301,6 +233,7 @@ fn handle_record(rec: &Value, at: &Position<'_>, events: &mut Vec<Event>, stats:
         template,
         events,
         stats,
+        clean: clean_for_kind,
     };
     let content = rec.get("message").and_then(|m| m.get("content"));
     if is_summary {
@@ -379,6 +312,15 @@ fn joined_text(content: &Value, stats: &mut ParseStats) -> String {
     }
 }
 
+/// Claude cleans user text and tool results; assistant text is kept as is.
+fn clean_for_kind(kind: &EventKind, text: &str) -> String {
+    if matches!(kind, EventKind::UserText | EventKind::ToolResult { .. }) {
+        clean_injected(text)
+    } else {
+        text.to_owned()
+    }
+}
+
 /// Remove harness-injected spans from user-side text: `<system-reminder>` and
 /// `<local-command-stdout>` spans (with content), the duplicate
 /// `<command-message>` span, and the `<command-name>`/`<command-args>` tags
@@ -392,67 +334,11 @@ fn clean_injected(text: &str) -> String {
             out = out.replace(&t, "");
         }
     }
-    // Strip spans until nothing changes, then drop any stray tag left over, so
-    // stored text never carries a live harness tag. Each pass is linear and
-    // only removes text, so the loop ends within a few passes.
-    loop {
-        let before = out.len();
-        for tag in SPAN_TAGS {
-            if out.contains(tag) {
-                out = remove_spans(&out, tag);
-                out = out.replace(&format!("</{tag}>"), "");
-            }
-        }
-        if out.len() == before {
-            return out;
-        }
-    }
+    strip_spans(&out, &SPAN_TAGS)
 }
 
 /// Harness-injected spans whose content is not the user's words.
 const SPAN_TAGS: [&str; 3] = ["system-reminder", "local-command-stdout", "command-message"];
-
-/// Drop every `<tag>…</tag>` span, depth-counted for nesting. Linear: the next
-/// opener and closer positions are cached and only re-searched once passed.
-/// An unterminated opener drops the rest of the text (fail closed).
-fn remove_spans(text: &str, tag: &str) -> String {
-    let (open, close) = (format!("<{tag}>"), format!("</{tag}>"));
-    let next = |from: usize, pat: &str| text[from..].find(pat).map(|i| from + i);
-    let mut out = String::with_capacity(text.len());
-    let mut pos = 0;
-    let (mut o, mut c) = (next(0, &open), next(0, &close));
-    while let Some(start) = o {
-        out.push_str(&text[pos..start]);
-        pos = start + open.len();
-        let mut depth = 1usize;
-        o = next(pos, &open);
-        while depth > 0 {
-            while c.is_some_and(|ci| ci < pos) {
-                c = next(pos, &close);
-            }
-            let Some(ci) = c else {
-                return out;
-            };
-            match o {
-                Some(oi) if oi < ci => {
-                    depth += 1;
-                    pos = oi + open.len();
-                    o = next(pos, &open);
-                }
-                _ => {
-                    depth -= 1;
-                    pos = ci + close.len();
-                    c = next(pos, &close);
-                }
-            }
-        }
-        while o.is_some_and(|oi| oi < pos) {
-            o = next(pos, &open);
-        }
-    }
-    out.push_str(&text[pos..]);
-    out
-}
 
 #[cfg(test)]
 mod tests {

@@ -1,14 +1,14 @@
 updated: 2026-11-22
 milestone: MVP
-branch: feature/anchors
-task: "Codex harness"
+branch: feature/codex-harness
+task: "Perf pass: 300 MB backfill <5 min, hook p95 <100 ms"
 status: review
-plan: .agent/plans/anchors.md
+plan: .agent/plans/codex-harness.md
 done:
-  - anchors: symbol anchoring (text + session-window files), staleness check, confirm, pack reasons; 279 lib tests
+  - codex harness: real ~/.codex 11.4 MB in 0.12 s, real procedures/gotchas/preferences
 next:
-  - security review + PR for anchors
-  - then Codex harness, perf pass, markdown mirror; launch prep (drafts in scratchpad launch-drafts.md)
+  - security review + PR for codex harness
+  - then perf pass (synthetic 300 MB corpus), markdown mirror; then launch prep
 blockers:
   - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
 notes:

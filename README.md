@@ -15,7 +15,7 @@ It turns your existing session history into compact, source-linked memories, fla
 </div>
 
 > [!WARNING]
-> **Pre-alpha.** Works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Expect rough edges; the extractor is rule-based and still being tuned. Follow [ROADMAP.md](ROADMAP.md) for progress. Star or watch the repo to hear about the first release.
+> **Pre-alpha.** Imports Claude Code and Codex history; works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Expect rough edges; the extractor is rule-based and still being tuned. Follow [ROADMAP.md](ROADMAP.md) for progress. Star or watch the repo to hear about the first release.
 
 ---
 
@@ -80,7 +80,7 @@ Requires stable Rust (installed automatically via `rust-toolchain.toml` when usi
 **Usage:**
 
 ```bash
-recalla backfill              # import Claude Code history and extract memories
+recalla backfill              # import Claude Code + Codex history and extract memories
 recalla hooks install         # inject memory at session start, capture new turns (backs up settings.json)
 claude mcp add --scope user recalla -- "$(command -v recalla)" mcp   # optional: recall/remember/review/why tools
 

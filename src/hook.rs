@@ -236,7 +236,8 @@ fn capture(payload: &Value, ctx: &Ctx) -> Result<(), HookError> {
     let file = trusted_transcript(root, raw)?;
     let mut store = ops::open_or_create_with(&ctx.data_dir, BUSY)?;
     let opts = Options {
-        root: root.to_owned(),
+        claude_root: Some(root.to_owned()),
+        codex_root: None,
         data_dir: ctx.data_dir.clone(),
         archive: true,
         dry_run: false,
