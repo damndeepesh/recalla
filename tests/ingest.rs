@@ -47,7 +47,8 @@ impl Env {
 
     fn opts(&self) -> Options {
         Options {
-            root: self.root.clone(),
+            claude_root: Some(self.root.clone()),
+            codex_root: None,
             data_dir: self.data.clone(),
             archive: true,
             dry_run: false,
@@ -203,7 +204,8 @@ fn root_spellings_share_one_source_per_file() {
     }
     for root in spellings {
         let r = run(&Options {
-            root: root.clone(),
+            claude_root: Some(root.clone()),
+            codex_root: None,
             ..env.opts()
         })
         .unwrap();
@@ -253,7 +255,16 @@ fn malformed_lines_are_reported() {
 
     let (root, data) = (env.root.to_str().unwrap(), env.data.to_str().unwrap());
     env.append("still not json\n");
-    let args = ["recalla", "backfill", "--root", root, "--data-dir", data];
+    let args = [
+        "recalla",
+        "backfill",
+        "--root",
+        root,
+        "--harness",
+        "claude",
+        "--data-dir",
+        data,
+    ];
     let (_, out, _) = cli(&args);
     assert!(out.contains("1 malformed lines skipped"), "{out}");
     env.append("nope again\n");
@@ -495,7 +506,16 @@ fn cli(args: &[&str]) -> (u8, String, String) {
 fn cli_backfill_json_and_exit_codes() {
     let env = Env::new();
     let (root, data) = (env.root.to_str().unwrap(), env.data.to_str().unwrap());
-    let base = ["recalla", "backfill", "--root", root, "--data-dir", data];
+    let base = [
+        "recalla",
+        "backfill",
+        "--root",
+        root,
+        "--harness",
+        "claude",
+        "--data-dir",
+        data,
+    ];
 
     let (code, out, err) = cli(&[&base[..], &["--json"]].concat());
     assert_eq!((code, err.as_str()), (0, ""));
@@ -516,6 +536,8 @@ fn cli_backfill_json_and_exit_codes() {
         "backfill",
         "--root",
         root,
+        "--harness",
+        "claude",
         "--data-dir",
         file.to_str().unwrap(),
     ];
@@ -539,6 +561,8 @@ fn cli_exits_1_when_a_file_fails() {
         "backfill",
         "--root",
         root,
+        "--harness",
+        "claude",
         "--data-dir",
         data,
         "--json",
@@ -560,7 +584,16 @@ fn cli_warns_about_a_loose_existing_data_dir_without_chmod() {
     fs::create_dir_all(&env.data).unwrap();
     fs::set_permissions(&env.data, fs::Permissions::from_mode(0o755)).unwrap();
     let (root, data) = (env.root.to_str().unwrap(), env.data.to_str().unwrap());
-    let args = ["recalla", "backfill", "--root", root, "--data-dir", data];
+    let args = [
+        "recalla",
+        "backfill",
+        "--root",
+        root,
+        "--harness",
+        "claude",
+        "--data-dir",
+        data,
+    ];
     let (code, _, err) = cli(&args);
     assert_eq!(code, 0);
     assert_eq!(err.lines().count(), 1, "{err}");
@@ -592,7 +625,8 @@ fn long_last_line_resumes_without_restart() {
     fs::write(&file, format!("{}\n", rec("a"))).unwrap();
     let data = dir.path().join("data");
     let opts = recalla::ingest::Options {
-        root: root.clone(),
+        claude_root: Some(root.clone()),
+        codex_root: None,
         data_dir: data.clone(),
         archive: true,
         dry_run: false,

@@ -15,7 +15,7 @@ use serde_json::{Value, json};
 use crate::anchor;
 use crate::extract;
 use crate::extract::scope::project_key;
-use crate::harness::claude;
+use crate::harness::{claude, codex};
 use crate::hook::{self, Ctx};
 use crate::hooks_cfg;
 use crate::ingest::{self, Options, Report};
@@ -32,9 +32,27 @@ struct Cli {
     command: Command,
 }
 
+/// Which agents `backfill` reads.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum HarnessSel {
+    Claude,
+    Codex,
+    All,
+}
+
+impl HarnessSel {
+    fn claude(self) -> bool {
+        self != Self::Codex
+    }
+
+    fn codex(self) -> bool {
+        self != Self::Claude
+    }
+}
+
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Import Claude Code session history into the store (resumable).
+    /// Import Claude Code and Codex session history into the store (resumable).
     Backfill {
         #[arg(
             long,
@@ -42,6 +60,15 @@ enum Command {
             help = "Claude config dir [default: $CLAUDE_CONFIG_DIR or ~/.claude]"
         )]
         root: Option<PathBuf>,
+        #[arg(
+            long,
+            value_name = "PATH",
+            help = "Codex home [default: $CODEX_HOME or ~/.codex]"
+        )]
+        codex_root: Option<PathBuf>,
+        /// Which agent's sessions to import.
+        #[arg(long, value_enum, default_value_t = HarnessSel::All)]
+        harness: HarnessSel,
         #[arg(
             long,
             value_name = "PATH",
@@ -233,21 +260,29 @@ where
     match cli.command {
         Command::Backfill {
             root,
+            codex_root,
+            harness,
             data_dir,
             no_archive,
             dry_run,
             no_extract,
             json,
         } => {
-            let Some(root) = root.or_else(claude::default_root) else {
-                return emit(err, "error: no --root given and HOME is unset\n", USAGE);
-            };
+            let claude_root = harness.claude().then(|| root.or_else(claude::default_root));
+            let codex_root = harness
+                .codex()
+                .then(|| codex_root.or_else(codex::default_root));
+            let (claude_root, codex_root) = (claude_root.flatten(), codex_root.flatten());
+            if claude_root.is_none() && codex_root.is_none() {
+                return emit(err, "error: no root given and HOME is unset\n", USAGE);
+            }
             let data_dir = match resolve_data_dir(data_dir) {
                 Ok(d) => d,
                 Err(msg) => return emit(err, &msg, USAGE),
             };
             let opts = Options {
-                root,
+                claude_root,
+                codex_root,
                 data_dir,
                 archive: !no_archive,
                 dry_run,
@@ -864,8 +899,18 @@ fn human(r: &Report, dry_run: bool) -> String {
         .iter()
         .map(|(rule, n)| format!("{rule} {n}"))
         .collect();
+    let by_harness = if r.files_by_harness.is_empty() {
+        "none".to_owned()
+    } else {
+        r.files_by_harness
+            .iter()
+            .map(|(h, n)| format!("{h} {n}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
     let mut s = format!(
         "files      {} seen: {} new, {} resumed, {} restarted, {} unchanged, {} failed\n\
+         harnesses  {}\n\
          events     {} added, {} malformed lines skipped\n\
          redacted   {}{}\n\
          archive    {} -> {}\n\
@@ -876,6 +921,7 @@ fn human(r: &Report, dry_run: bool) -> String {
         r.files_restarted,
         r.files_unchanged,
         r.failed.len(),
+        by_harness,
         r.events_added,
         r.malformed_lines,
         r.redactions(),

@@ -18,6 +18,7 @@ use thiserror::Error;
 
 use crate::archive;
 use crate::harness::claude::ClaudeCode;
+use crate::harness::codex::Codex;
 use crate::harness::{Event, EventKind, Harness, MAX_EVENT_BYTES, count_newlines, truncate_middle};
 use crate::ops::{self, OpenError};
 use crate::paths;
@@ -30,8 +31,10 @@ pub const IDENTITY_PREFIX: u64 = 4096;
 /// What to ingest and where to put it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Options {
-    /// Harness config root (e.g. `~/.claude`).
-    pub root: PathBuf,
+    /// Claude Code config root (e.g. `~/.claude`); `None` skips Claude.
+    pub claude_root: Option<PathBuf>,
+    /// Codex home (e.g. `~/.codex`); `None` skips Codex.
+    pub codex_root: Option<PathBuf>,
     pub data_dir: PathBuf,
     /// Keep a raw zstd copy of ingested bytes.
     pub archive: bool,
@@ -55,6 +58,8 @@ pub struct Report {
     pub files_resumed: u64,
     pub files_restarted: u64,
     pub files_unchanged: u64,
+    /// Files seen, by harness name.
+    pub files_by_harness: BTreeMap<String, u64>,
     pub failed: Vec<Failure>,
     pub events_added: u64,
     /// Complete lines that were not valid JSON records (skipped).
@@ -81,6 +86,7 @@ impl Report {
                 "resumed": self.files_resumed,
                 "restarted": self.files_restarted,
                 "unchanged": self.files_unchanged,
+                "by_harness": self.files_by_harness,
                 "failed": failed,
             },
             "events_added": self.events_added,
@@ -139,51 +145,79 @@ enum Plan {
     Unchanged,
 }
 
-/// Imports every session under `opts.root`.
+/// The agents recalla can import, each with its [`Harness`] adapter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Agent {
+    Claude,
+    Codex,
+}
+
+impl Agent {
+    fn harness(self) -> &'static dyn Harness {
+        match self {
+            Self::Claude => &ClaudeCode,
+            Self::Codex => &Codex,
+        }
+    }
+}
+
+/// Imports every session under `opts.claude_root` and `opts.codex_root`.
 ///
 /// # Errors
 /// Setup failures only (listing sessions, creating the data dir, opening the
 /// store). Per-file failures are reported in [`Report::failed`].
 pub fn run(opts: &Options) -> Result<Report, IngestError> {
     let started = Instant::now();
-    let harness = ClaudeCode;
-    let discover_err = |source| IngestError::Discover {
-        path: opts.root.clone(),
-        source,
-    };
-    // Sources are keyed by path, so every spelling of the root (`./`, `..`,
-    // symlinks) must resolve to one canonical path. A missing root stays as
-    // given and discovers nothing.
-    let root = match fs::canonicalize(&opts.root) {
-        Ok(p) => p,
-        Err(e) if e.kind() == io::ErrorKind::NotFound => opts.root.clone(),
-        Err(e) => return Err(discover_err(e)),
-    };
-    let files: Vec<PathBuf> = harness
-        .discover(&root)
-        .map_err(discover_err)?
-        .into_iter()
-        .map(|f| f.path)
-        .collect();
+    let mut files: Vec<(Agent, PathBuf)> = Vec::new();
+    for (agent, root) in [
+        (Agent::Claude, &opts.claude_root),
+        (Agent::Codex, &opts.codex_root),
+    ] {
+        let Some(root) = root else { continue };
+        let discover_err = |source| IngestError::Discover {
+            path: root.clone(),
+            source,
+        };
+        // Sources are keyed by path, so every spelling of the root (`./`, `..`,
+        // symlinks) must resolve to one canonical path. A missing root stays as
+        // given and discovers nothing.
+        let canonical = match fs::canonicalize(root) {
+            Ok(p) => p,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => root.clone(),
+            Err(e) => return Err(discover_err(e)),
+        };
+        let found = agent.harness().discover(&canonical).map_err(discover_err)?;
+        files.extend(found.into_iter().map(|f| (agent, f.path)));
+    }
     let mut store = open_store(opts)?;
     Ok(ingest_paths(&mut store, opts, &files, started))
 }
 
-/// Imports just `files` into an already-open `store`, through the same
-/// per-file pipeline as [`run`]. The caller must pass canonical paths under
-/// the canonicalized `<root>/projects` (so the source key equals what a full
-/// [`run`] produces) and decides whether they are trusted.
+/// Imports just the Claude Code `files` into an already-open `store`, through
+/// the same per-file pipeline as [`run`]. The caller must pass canonical paths
+/// under the canonicalized `<root>/projects` (so the source key equals what a
+/// full [`run`] produces) and decides whether they are trusted.
 pub fn run_files(store: &mut Store, opts: &Options, files: &[PathBuf]) -> Report {
-    ingest_paths(store, opts, files, Instant::now())
+    let files: Vec<_> = files.iter().map(|f| (Agent::Claude, f.clone())).collect();
+    ingest_paths(store, opts, &files, Instant::now())
 }
 
-fn ingest_paths(store: &mut Store, opts: &Options, files: &[PathBuf], started: Instant) -> Report {
-    let harness = ClaudeCode;
+fn ingest_paths(
+    store: &mut Store,
+    opts: &Options,
+    files: &[(Agent, PathBuf)],
+    started: Instant,
+) -> Report {
     let mut report = Report::default();
     let archive_dir = paths::archive_dir(&opts.data_dir);
-    for path in files {
+    for (agent, path) in files {
+        let harness = agent.harness();
         report.files_seen += 1;
-        if let Err(e) = ingest_file(&harness, store, opts, &archive_dir, path, &mut report) {
+        *report
+            .files_by_harness
+            .entry(harness.name().to_owned())
+            .or_default() += 1;
+        if let Err(e) = ingest_file(harness, store, opts, &archive_dir, path, &mut report) {
             report.failed.push(Failure {
                 path: path.to_string_lossy().into_owned(),
                 error: e.kind(),
@@ -258,7 +292,7 @@ fn read_range(file: &mut File, start: u64, end: u64) -> io::Result<Vec<u8>> {
 }
 
 fn ingest_file(
-    harness: &impl Harness,
+    harness: &dyn Harness,
     store: &mut Store,
     opts: &Options,
     archive_dir: &Path,
