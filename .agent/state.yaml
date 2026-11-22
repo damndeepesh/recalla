@@ -1,14 +1,14 @@
 updated: 2026-11-22
 milestone: MVP
-branch: feature/extractor
-task: "Codex harness"
+branch: feature/pack
+task: "MCP server: `recall`, `remember`, `review`, `why` (≤1k tokens)"
 status: review
-plan: .agent/plans/extractor.md
+plan: .agent/plans/pack.md
 done:
-  - extractor: 6 rules, pipeline, extract/search CLI; eval P 1.00 R 0.92 (53 labels, 0 FP gate); real data 25 memories, ~21 useful
+  - packs + ledger + why/stats; real packs from real history work (make check 15x tops recalla pack)
 next:
-  - security review + PR for extractor; file remaining FP/FN as issues
-  - then next TODO by value: Pack + ledger (makes memory usable) before Codex harness
+  - security review + PR for packs
+  - then MCP + hooks from scratchpad mcp-hooks-plan.md (combined: both wrap pack)
 blockers:
   - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
 notes:

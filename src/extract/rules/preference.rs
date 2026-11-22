@@ -246,7 +246,10 @@ mod tests {
 
     #[test]
     fn scope_and_anchors() {
-        let g = &user("Always write small commits for every change.")[0];
+        // Project-scoped by default; explicit cues make it global.
+        let d = &user("Always write small commits for every change.")[0];
+        assert_eq!(d.scope, Scope::Project("/work/app".into()));
+        let g = &user("Always write small commits in all projects.")[0];
         assert_eq!(g.scope, Scope::Global);
         assert!(g.anchors.is_empty());
         let p = &user("Never edit src/store/mod.rs and main.rs by hand.")[0];

@@ -2,6 +2,7 @@
 
 mod extract;
 mod ingest;
+mod pack;
 mod schema;
 mod search;
 
@@ -18,6 +19,7 @@ use crate::model::{self, Anchor, Memory, NewMemory, Origin, Provenance, Scope, S
 
 pub use extract::EventRow;
 pub use ingest::{Checkpoint, SegmentRow, SourceRow, StoredEvent, StoredKind};
+pub use pack::{InjectionStats, ProjectInjections, Via};
 pub use schema::version as schema_version;
 pub use search::{Filter, Hit};
 

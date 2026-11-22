@@ -106,3 +106,10 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Decision: Ingest parses ToolCall JSON, redacts every string leaf, re-serializes, then runs the whole-string redact again for key context. Oversized inputs shrink leaves first, so the JSON stays valid. The extractor also re-redacts every JSON-decoded string as a backstop.
 - Why: It completes D-009 (decode before redact) for structured data, and memories are the agent-facing layer, so they get two independent guards.
 - Rejected: Whole-string redaction only (escaped forms leak); redacting object keys (they are tool schema names, not secrets).
+
+## D-016 Token budget enforced on a conservative byte estimate (2026-11-22)
+
+- Context: Packs must never exceed a token budget, and hooks run them on every session start, so the count must be fast, offline and dependency-free. The target model's tokenizer isn't public or stable.
+- Decision: `est_tokens(s) = ceil(utf8_bytes / 3) + 2 per line` (lines = `\n` count + 1). The budget is enforced on this estimate over the whole rendered text, header included, so the real count is lower.
+- Why: Claude averages about 3.5-4 bytes per token on English and code, so bytes/3 overestimates by 15-30%. CJK is roughly 1 token per 3-byte char, so it is close to exact, and emoji (4 bytes, 1-3 tokens) are over-counted. The per-line term covers newline and markdown-marker tokens. A wrong estimate wastes some budget but can't overflow it.
+- Rejected: A tokenizer crate (heavy dependency, wrong vocabulary for Claude, slower startup); chars/4 (underestimates CJK and dense code, so it can overflow); a feature-flagged exact tokenizer (possible later, not needed for the MVP).

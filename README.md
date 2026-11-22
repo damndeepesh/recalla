@@ -15,7 +15,7 @@ It turns your existing session history into compact, source-linked memories, fla
 </div>
 
 > [!WARNING]
-> **Pre-alpha.** `recalla backfill` imports Claude Code history and extracts memories you can inspect with `recalla search`. Context packs, hooks and MCP are next, so agents can't use the memory yet. Follow [ROADMAP.md](ROADMAP.md) for progress. Star or watch the repo to hear about the first release.
+> **Pre-alpha.** `recalla backfill` imports Claude Code history and extracts memories; `recalla pack` prints a token-budgeted context pack. Hooks and MCP (automatic injection) are next. Follow [ROADMAP.md](ROADMAP.md) for progress. Star or watch the repo to hear about the first release.
 
 ---
 
@@ -77,14 +77,17 @@ make build   # target/release/recalla
 
 Requires stable Rust (installed automatically via `rust-toolchain.toml` when using rustup).
 
-**Planned usage** (first release):
+**Usage today:**
 
 ```bash
-recalla backfill          # import existing Claude Code / Codex history
-recalla hooks install     # inject relevant memory at session start
-recalla pack --budget 2k  # print a context pack for the current project
-recalla why <id>          # show where a memory came from
+recalla backfill              # import Claude Code history and extract memories
+recalla pack --budget 1500    # context pack for the current project
+recalla search "rate limit"   # inspect memories
+recalla why <id>              # where a memory came from
+recalla stats                 # what was injected, and its token cost
 ```
+
+Coming next: `recalla hooks install` (automatic injection at session start) and `recalla mcp`.
 
 ## Privacy and security
 

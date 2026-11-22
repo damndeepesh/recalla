@@ -15,7 +15,7 @@ use crate::model::{Anchor, Kind, Scope};
 use crate::store::EventRow;
 
 /// Bump when rules change so `extract --rebuild` can re-derive memories.
-pub const EXTRACTOR_VERSION: u32 = 1;
+pub const EXTRACTOR_VERSION: u32 = 2;
 
 /// A memory proposed by a rule. Provenance comes from the source event.
 #[derive(Debug, Clone, PartialEq)]

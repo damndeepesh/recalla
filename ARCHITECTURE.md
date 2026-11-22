@@ -122,3 +122,12 @@ flowchart LR
 - `EXTRACTOR_VERSION` bump or `--rebuild`: archive backfill-only memories, then re-extract.
 - Eval gate: `tests/extract_eval.rs` over 11 synthetic sessions / 53 labels requires zero false positives. Real-data review is a standing step, because an eval written alongside the rules overfits.
 - Measured: 2,751 real events extracted in 26 ms.
+
+## Context packs (`pack`, `recalla pack|stats|why`)
+- Candidates: active + needs_reverify memories in Global ∪ Project(key) ∪ Module(key), where key = `project_key(cwd)` (git toplevel).
+- Score = kind weight × confidence × (1 + ln seen_count) × recency (90-day half-life floor 0.5). `--query` multiplies BM25 hits by 1.5 + normalized rank. Ties break on uid.
+- Greedy fill in rank order with per-section caps (procedures ≤6 …); fixed section order: Preferences, Gotchas, Decisions, Procedures, Tasks, Facts, Needs re-verify ⚠.
+- Budget enforced on `est_tokens = ceil(bytes/3) + 2/line`, which overestimates real tokens (D-016). A property test covers 500 random sets.
+- Ledger: `injections` table (schema v4), one row per non-empty pack with via cli|hook|mcp. `stats` reports totals, per project and most-injected memories.
+- `why <uid-prefix>`: memory, provenance and the stored (redacted) source event text.
+- Preferences are project-scoped unless explicitly global ("in all projects", "everywhere"), so one repo's rules never leak into another's pack.
