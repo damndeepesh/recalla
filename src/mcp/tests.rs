@@ -315,7 +315,8 @@ fn review_reports_missing_and_ambiguous_ids() {
         let new = NewMemory {
             kind: Kind::Fact,
             text: format!("memory number {i}"),
-            scope: Scope::Global,
+            // Project-scoped: Global memories are read-only over MCP.
+            scope: Scope::Project("/work/demo".into()),
             confidence: 0.5,
             importance: 1,
         };
@@ -397,4 +398,35 @@ fn review_and_why_cannot_reach_other_projects() {
     // Global memories stay reachable from any project.
     let (_, err) = tool(&demo, "why", &json!({"id": shared}));
     assert!(!err);
+}
+
+#[test]
+fn global_memories_are_read_only_and_hide_sources_over_mcp() {
+    let dir = tempfile::tempdir().unwrap();
+    let c = ctx(&dir);
+    tool(&c, "remember", &json!({"text": "seed so the db exists"}));
+    let shared = {
+        let mut st = crate::ops::open_existing(&c.data_dir).unwrap();
+        let new = crate::model::NewMemory {
+            kind: crate::model::Kind::Preference,
+            text: "global rule from elsewhere".into(),
+            scope: crate::model::Scope::Global,
+            confidence: 0.8,
+            importance: 2,
+        };
+        let prov = crate::model::Provenance {
+            source_path: Some("/other/project/session.jsonl".into()),
+            line: Some(7),
+            ..crate::model::Provenance::new(crate::model::Origin::Backfill)
+        };
+        st.insert(&new, &prov).unwrap().uid().to_owned()
+    };
+    let (msg, err) = tool(&c, "review", &json!({"id": shared, "action": "forget"}));
+    assert!(err && msg.contains("No memory matches"), "{msg}");
+    let (msg, err) = tool(&c, "why", &json!({"id": shared}));
+    assert!(!err && msg.contains("global rule from elsewhere"), "{msg}");
+    assert!(
+        !msg.contains("session.jsonl"),
+        "source file must be hidden: {msg}"
+    );
 }

@@ -141,7 +141,7 @@ flowchart LR
     - `review`: confirm, or a reversible forget
     - `why`
   - The store is opened lazily per call.
-  - `review` and `why` only reach this project's memories plus Global ones.
+  - `review` and `why` only reach this project's memories plus Global ones. Global memories are read-only over MCP (CLI only), and their `why` hides source files and excerpts.
 - **Hooks** (Claude Code) never block, never write to stdout except the pack, and always exit 0. Errors go to `<data>/log/hook.log` (0600, rotated at 1 MB) (D-018).
   - `hook session-start`: pack for `project_key(cwd)` emitted as `hookSpecificOutput.additionalContext`.
   - `hook capture` (Stop, PreCompact): ingests ONLY `transcript_path`, and only if it sits under `<claude root>/projects`, then extracts. The source key matches backfill's, so there are no duplicates.

@@ -350,7 +350,9 @@ where
         Command::Stats { data_dir, json } => {
             read_only(data_dir, out, err, |s| stats_text(s, json).map(Why::Found))
         }
-        Command::Why { id, data_dir, json } => read_only(data_dir, out, err, |s| why(s, &id, json)),
+        Command::Why { id, data_dir, json } => {
+            read_only(data_dir, out, err, |s| why(s, &id, json, true))
+        }
     }
 }
 

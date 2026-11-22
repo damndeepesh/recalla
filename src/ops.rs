@@ -96,7 +96,9 @@ const EVENT_CHARS: usize = 300;
 ///
 /// # Errors
 /// A message naming the failure (missing DB, SQLite error, bad id).
-pub fn why(store: &Store, id: &str, json: bool) -> Result<Why, String> {
+/// `sources`: include source file names and transcript excerpts. MCP passes
+/// false for Global memories, whose sources may be another project's sessions.
+pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, String> {
     let mut found = store
         .memories_by_uid_prefix(id)
         .map_err(|e| e.to_string())?;
@@ -121,12 +123,12 @@ pub fn why(store: &Store, id: &str, json: bool) -> Result<Why, String> {
     let mut prov = Vec::new();
     for p in &m.provenance {
         let events = match (&p.source_path, p.line) {
-            (Some(path), Some(line)) => {
+            (Some(path), Some(line)) if sources => {
                 store.event_text_at(path, line).map_err(|e| e.to_string())?
             }
             _ => Vec::new(),
         };
-        let file = p.source_path.as_deref().map(|s| {
+        let file = p.source_path.as_deref().filter(|_| sources).map(|s| {
             Path::new(s)
                 .file_name()
                 .map_or_else(|| s.to_owned(), |n| n.to_string_lossy().into_owned())

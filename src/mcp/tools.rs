@@ -222,7 +222,12 @@ fn review(args: &Value, ctx: &McpCtx) -> Result<String, String> {
         return Err("`action` must be `confirm` or `forget`".to_owned());
     }
     let mut store = ops::open_existing(&ctx.data_dir)?;
-    let mut found = resolve(&store, id, ctx)?;
+    // Global memories are read-only over MCP: they reach every project, so
+    // only the human (CLI) may confirm or forget them.
+    let mut found: Vec<Memory> = resolve(&store, id, ctx)?
+        .into_iter()
+        .filter(|m| !matches!(m.scope, Scope::Global))
+        .collect();
     let m: Memory = match found.len() {
         0 => return Err(format!("No memory matches {id}")),
         1 => found.remove(0),
@@ -272,7 +277,8 @@ fn why(args: &Value, ctx: &McpCtx) -> Result<String, String> {
             format!("{id} matches {} memories; use a longer id", found.len())
         });
     };
-    match ops::why(&store, &m.uid, false)? {
+    let sources = !matches!(m.scope, Scope::Global);
+    match ops::why(&store, &m.uid, false, sources)? {
         Why::Found(text) => Ok(text),
         Why::Ambiguous(text) => Err(text.trim_end().to_owned()),
         Why::Missing(_) => Err(format!("No memory matches {id}")),
