@@ -43,3 +43,31 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Decision: `rusqlite` (feature `bundled`, so FTS5 is always present), `thiserror` 2 (typed `StoreError`), `blake3` (deterministic content `uid`: idempotent re-imports); dev-only `tempfile` (file-backed DB tests). Migrations are a hand-rolled `PRAGMA user_version` list.
 - Why: SQLite WAL handles multi-process access; BM25 comes from FTS5 with no extra index; blake3 is fast, tiny, and needs no id coordination across machines.
 - Rejected: redb (single-process lock); Tantivy (single writer, heavier; maybe later as an optional search booster); rusqlite_migration (hand-rolled user_version is enough); uuid/ulid crates (random ids break idempotent re-imports).
+
+## D-007 Secret redaction with the `regex` crate and curated rules (2026-11-22)
+
+- Context: Every transcript passes `redact` before persist. Transcripts are untrusted input, so matching must be offline, deterministic, and immune to pathological inputs.
+- Decision: `regex` 1 (patterns compiled once via `std::sync::LazyLock`), with three layers: curated known-format rules, keyword-assignment values, and a Shannon-entropy catch-all with hex/UUID/path/identifier exclusions. Rules are original regexes, not copied from GPL sources; any pattern adapted from gitleaks (MIT) carries a credit comment.
+- Why: `regex` guarantees linear-time matching, so no ReDoS from untrusted transcripts; it is maintained by the rust-lang project; its only deps are its own `regex-syntax`/`regex-automata` (plus `aho-corasick`, `memchr`).
+- Rejected: fancy-regex / pcre2 (backtracking engines, ReDoS risk); shelling out to gitleaks/trufflehog (external process, Go and heavy, not embeddable in a single binary); vendoring the full gitleaks ruleset (too broad and noisy for transcripts; a curated set plus entropy fits better).
+
+## D-008 Redaction errs toward over-redaction (2026-11-22)
+
+- Context: Security review found 8 bypasses, all caused by exemptions that were too generous: a code heuristic, a substring placeholder match, ID prefixes, stop chars that split values, header schemes, and URL `@` handling.
+- Decision: Exemptions must match the WHOLE value or an exact shape. Unquoted values run to whitespace. Any key whose word ends in a secret word counts. Any Authorization/Cookie value is redacted regardless of scheme. URL passwords run to the last `@`.
+- Why: A leaked secret is irreversible; an over-redacted word is cheap. The raw archive keeps the original if the user ever needs it.
+- Rejected: Precise-but-permissive heuristics (each one was a bypass); an LLM classifier (offline/no-LLM invariant).
+
+## D-009 Redaction structure: no hand-offs, residual pass, decode before redact (2026-11-22)
+
+- Context: Two more review rounds found bypasses where one layer skipped text assuming another would catch it, where caps failed open, or where JSON escapes split tokens.
+- Decision: Layers never defer; all emit and `merge` unions. A residual pass redacts any recognised secret key/header value that no finding covers. Size limits fail closed (layer-2 values redact the whole run). Harness parsers JSON-decode strings before `redact`; escape tolerance in `redact` is defense in depth only.
+- Why: Makes "key recognised but value exempted" impossible by construction, and puts decoding at the one layer that knows the format.
+- Rejected: Per-case patches (each produced new bypasses); a JSON unescaper inside `redact` (wrong layer, duplicates harness parsing).
+
+## D-010 Realistic corpus as the redaction gate; fixpoint rescan (2026-11-22)
+
+- Context: Rule-probing reviews kept finding edge cases, but the final gate found 4 HIGH leaks in plain real-world lines (`*_KEY=<hex>`, `curl -u`, `.netrc`, `*_PAT`). Also, rare crafted inputs broke idempotence.
+- Decision: `tests/realistic_corpus.rs` (108 real-world credential templates × 20 runtime secrets) is the merge gate for any redaction change. `redact()` reruns detection on its own output (≤4 extra passes) and maps new findings back, which makes idempotence hold by construction.
+- Why: Testing what developers actually write catches whole missing formats. The fixpoint costs ~45% throughput (82 to 46 MB/s, still ~7 s per 300 MB) for a guarantee instead of a heuristic.
+- Rejected: More rule-probing rounds as the only gate (diminishing returns); targeted idempotence patches only (fuzz still found failures).

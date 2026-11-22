@@ -59,3 +59,22 @@ flowchart LR
 - `relations`: (src, dst, kind). Currently only `supersedes` (new → old).
 - `memories_fts`: FTS5 external-content table over `text` only, synced by triggers. Kind is filtered via SQL, not FTS.
 - Migrations: an append-only list + `PRAGMA user_version`, applied in one IMMEDIATE transaction.
+
+## Redaction (`redact`)
+- `redact(&str) -> Redacted { text: Cow, findings }`. Clean text is borrowed. Each secret becomes `[REDACTED:<rule>]`. Idempotent.
+- Layer 1, known formats: one regex per rule plus a per-rule validator; boundaries are checked in code (CJK- and JSON-escape-safe).
+- Layer 2, keyword assignments: redacts only the value.
+  - Any key word ending in a secret word counts (`PGPASSWORD`, `apitoken`).
+  - Unquoted values run to whitespace; JSON values stop at structure.
+  - Code is exempt only when the whole value is a call, path or reference.
+  - Placeholders are exempt only as whole values.
+  - Values scan at most 4 KB ahead and the scan always moves forward (linear-time).
+- Headers: any `Authorization` scheme and `Cookie`/`Set-Cookie` values are redacted; URL passwords run to the last `@`.
+- Layer 3, entropy: tokens of 24+ chars with 3+ char classes and entropy ≥ `min(4.0, log2(len)-0.85)`.
+  - Excludes hex/UUID/identifiers/camelCase, base64 prose, and exact-shape agent ids (`toolu_…`, `msg_…`).
+  - A token containing `/` is skipped only if it is a clear path; otherwise it is judged whole.
+- Layers never defer to each other; a residual pass redacts any recognised secret key/header value left uncovered (D-009). Input is expected JSON-decoded by the harness.
+- `redact()` reruns detection on its output (≤4 passes) and maps findings back, so idempotence holds by construction (D-010).
+- Merge gate: `tests/realistic_corpus.rs`, 108 real-world credential templates.
+- Spans merge (earliest start, then longest, then lowest layer). Offsets are byte offsets on char boundaries in the original text.
+- Measured on real sessions: 46 MB/s release. Most layer-3 hits are structural blobs (`signature`, `encrypted_content`, base64 images), which harness parsers should drop before redaction.
