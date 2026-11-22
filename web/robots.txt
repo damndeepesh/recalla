@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://deepeshgupta.dev/recalla/sitemap.xml
