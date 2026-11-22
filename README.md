@@ -10,12 +10,12 @@ It turns your existing session history into compact, source-linked memories, fla
 [![CI](https://github.com/damndeepesh/recalla/actions/workflows/ci.yml/badge.svg)](https://github.com/damndeepesh/recalla/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 ![Rust](https://img.shields.io/badge/rust-stable-orange.svg)
-![Status](https://img.shields.io/badge/status-pre--alpha-lightgrey.svg)
+![Status](https://img.shields.io/badge/status-alpha-yellow.svg)
 
 </div>
 
 > [!WARNING]
-> **Pre-alpha.** Imports Claude Code and Codex history; works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Expect rough edges; the extractor is rule-based and still being tuned. Follow [ROADMAP.md](ROADMAP.md) for progress. Star or watch the repo to hear about the first release.
+> **Alpha (v0.1.0).** Imports Claude Code and Codex history and works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Extraction is rule-based, precise but not exhaustive, and still being tuned on real histories. See [ROADMAP.md](ROADMAP.md) for what's next, and please [open an issue](https://github.com/damndeepesh/recalla/issues) if it misses or invents something on your logs.
 
 ---
 
@@ -91,7 +91,18 @@ recalla stats                 # what was injected, and its token cost
 recalla check                 # flag memories whose anchored code changed
 recalla confirm <id>          # re-verify a flagged memory
 recalla hooks uninstall       # remove only Recalla's hook entries
+
+recalla mirror [--full]       # sync the markdown mirror now (it also updates after backfill, hooks and edits)
+recalla rebuild --from-mirror # restore memories from the mirror; dry run first, --yes to apply (a backup is made)
 ```
+
+### The markdown mirror
+
+Every memory is also written as a plain markdown file under `<data dir>/mirror/` (default `~/.local/share/recalla/mirror/`), in `global/` and `projects/<project>/<kind>/<id>.md`. Each file has a small frontmatter (kind, scope, status, confidence, provenance, anchors) and the memory text. You or any agent can read it with `cat` and `grep`, no Recalla needed. Files are private (0600) and never deleted: archived and superseded memories keep theirs.
+
+If the database is lost or damaged, `recalla rebuild --from-mirror` restores the memory layer from these files. Events and sources are kept. It is safe to run while Claude Code or `recalla mcp` are running: it takes a `VACUUM INTO` backup (`recalla.db.bak-<time>`) and then replaces the memory layer in one transaction, never swapping the database file.
+
+It checks before touching anything and refuses the whole rebuild if any file is malformed, was edited (its id no longer matches its text), contains unredacted secrets, control or invisible characters, or has out-of-range values. The dry run shows how many memories are global, how many belong to each project, and which memories in the database are missing from the mirror; removing those needs `--yes --allow-drop`. Format: [ARCHITECTURE.md](ARCHITECTURE.md#mirror-mirror-recalla-mirrorrebuild).
 
 ## Privacy and security
 

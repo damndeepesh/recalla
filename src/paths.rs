@@ -11,6 +11,8 @@ use std::path::{Path, PathBuf};
 pub const DB_FILE: &str = "recalla.db";
 /// Archive directory name inside the data dir.
 pub const ARCHIVE_DIR: &str = "archive";
+/// Markdown mirror directory name inside the data dir.
+pub const MIRROR_DIR: &str = "mirror";
 
 /// Pure form of [`data_dir`]. Empty strings count as unset.
 #[must_use]
@@ -46,6 +48,12 @@ pub fn db_path(data_dir: &Path) -> PathBuf {
 #[must_use]
 pub fn archive_dir(data_dir: &Path) -> PathBuf {
     data_dir.join(ARCHIVE_DIR)
+}
+
+/// `<data>/mirror`.
+#[must_use]
+pub fn mirror_dir(data_dir: &Path) -> PathBuf {
+    data_dir.join(MIRROR_DIR)
 }
 
 /// Creates `path` and missing parents. Dirs created here are 0700 on unix;
@@ -134,6 +142,7 @@ mod tests {
         let d = Path::new("/d");
         assert_eq!(db_path(d), PathBuf::from("/d/recalla.db"));
         assert_eq!(archive_dir(d), PathBuf::from("/d/archive"));
+        assert_eq!(mirror_dir(d), PathBuf::from("/d/mirror"));
     }
 
     #[cfg(unix)]

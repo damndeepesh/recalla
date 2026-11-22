@@ -11,6 +11,6 @@
 - [x] MCP server: `recall`, `remember`, `review`, `why` (≤1k tokens)
 - [x] Hooks: idempotent install/uninstall for Claude Code (Codex via MCP registration; native Codex capture lands with the Codex harness)
 - [x] Anchors: tree-sitter symbols (Rust, TS/JS, Python, Go) + `needs_reverify` + `confirm`
-- [ ] Markdown mirror + `recalla rebuild`
+- [x] Markdown mirror + `recalla rebuild`
 - [x] Codex harness
 - [x] Perf pass: 300 MB backfill <5 min, hook p95 <100 ms

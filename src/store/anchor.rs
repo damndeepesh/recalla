@@ -2,7 +2,7 @@
 
 use rusqlite::{TransactionBehavior, params};
 
-use super::{Store, StoreError, require};
+use super::{Store, StoreError, require, touch};
 use crate::model::Anchor;
 
 /// One anchor with the memory it belongs to and why it is stale, if it is.
@@ -45,10 +45,12 @@ impl Store {
     /// # Errors
     /// `NotFound` if the memory doesn't exist.
     pub fn replace_anchors(&mut self, uid: &str, anchors: &[Anchor]) -> Result<(), StoreError> {
+        let now = (self.clock)();
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let id = require(&tx, uid)?;
+        touch(&tx, id, now)?;
         tx.execute("DELETE FROM anchors WHERE memory_id = ?1", [id])?;
         {
             let mut insert = tx.prepare_cached(
@@ -76,13 +78,23 @@ impl Store {
     /// # Errors
     /// `NotFound` if the anchor id doesn't exist.
     pub fn mark_stale(&mut self, anchor_id: i64, reason: &str) -> Result<(), StoreError> {
-        let n = self.conn.execute(
+        let now = (self.clock)();
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let n = tx.execute(
             "UPDATE anchors SET stale_reason = ?2 WHERE id = ?1",
             params![anchor_id, reason],
         )?;
         if n == 0 {
             return Err(StoreError::NotFound(format!("anchor {anchor_id}")));
         }
+        tx.execute(
+            "UPDATE memories SET updated_at = ?2
+             WHERE id = (SELECT memory_id FROM anchors WHERE id = ?1)",
+            params![anchor_id, now],
+        )?;
+        tx.commit()?;
         Ok(())
     }
 
@@ -91,11 +103,17 @@ impl Store {
     /// # Errors
     /// `NotFound` if the memory doesn't exist.
     pub fn clear_stale(&mut self, uid: &str) -> Result<(), StoreError> {
-        let id = require(&self.conn, uid)?;
-        self.conn.execute(
+        let now = (self.clock)();
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let id = require(&tx, uid)?;
+        touch(&tx, id, now)?;
+        tx.execute(
             "UPDATE anchors SET stale_reason = NULL WHERE memory_id = ?1",
             [id],
         )?;
+        tx.commit()?;
         Ok(())
     }
 }

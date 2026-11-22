@@ -253,3 +253,16 @@ fn locked_database_gives_up_within_bounds() {
     drop(lock);
     let _ = Store::open(paths::db_path(&env.data)).unwrap();
 }
+
+#[test]
+fn capture_updates_the_mirror_and_still_prints_nothing() {
+    let env = Env::new();
+    let path = transcript(&env);
+    let out = hook(&env, "capture", &capture_payload(&path));
+    assert_silent_ok(&out);
+    let mirror = paths::mirror_dir(&env.data);
+    let files = recalla::mirror::md_files(&mirror).unwrap();
+    let n = env.store().memory_uids().unwrap().len();
+    assert!(n > 0, "extraction found nothing");
+    assert_eq!(files.len(), n);
+}

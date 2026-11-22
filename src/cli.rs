@@ -20,6 +20,7 @@ use crate::hook::{self, Ctx};
 use crate::hooks_cfg;
 use crate::ingest::{self, Options, Report};
 use crate::mcp::{self, McpCtx};
+use crate::mirror;
 use crate::model::{Kind, Memory, Scope};
 use crate::ops::{self, PackArgs, Why, open_existing, pack_for, prefix, truncate_chars, why};
 use crate::paths;
@@ -84,6 +85,9 @@ enum Command {
         /// Skip the memory extraction that normally follows the import.
         #[arg(long)]
         no_extract: bool,
+        /// Don't update the markdown mirror afterwards.
+        #[arg(long)]
+        no_mirror: bool,
         /// Print the report as JSON.
         #[arg(long)]
         json: bool,
@@ -95,9 +99,45 @@ enum Command {
         /// Archive backfill-only memories and re-derive everything.
         #[arg(long)]
         rebuild: bool,
+        /// Don't update the markdown mirror afterwards.
+        #[arg(long)]
+        no_mirror: bool,
         /// Print the report as JSON.
         #[arg(long)]
         json: bool,
+    },
+    /// Sync the markdown mirror (one `.md` file per memory) with the database.
+    Mirror {
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+        /// Re-check every memory and report stray files, not just recent changes.
+        #[arg(long)]
+        full: bool,
+        /// Print the report as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Restore the memory layer from the markdown mirror (dry run unless --yes).
+    Rebuild {
+        #[arg(
+            long,
+            value_name = "DIR",
+            num_args = 0..=1,
+            required = true,
+            help = "Rebuild from mirror files [default DIR: <data dir>/mirror]"
+        )]
+        #[allow(clippy::option_option)] // absent / flag only / flag with DIR
+        from_mirror: Option<Option<PathBuf>>,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+        /// Apply the rebuild. Safe while Claude Code or `recalla mcp` run: a
+        /// backup copy is kept and the live database is never swapped.
+        #[arg(long)]
+        yes: bool,
+        /// Allow `--yes` to remove memories that are in the database but not
+        /// in the mirror.
+        #[arg(long)]
+        allow_drop: bool,
     },
     /// Full-text search over memories (inspection aid).
     Search {
@@ -266,6 +306,7 @@ where
             no_archive,
             dry_run,
             no_extract,
+            no_mirror,
             json,
         } => {
             let claude_root = harness.claude().then(|| root.or_else(claude::default_root));
@@ -297,11 +338,19 @@ where
                     return SOME_FAILED;
                 }
             }
-            backfill(&opts, !(dry_run || no_extract), json, out, err)
+            backfill(
+                &opts,
+                !(dry_run || no_extract),
+                !(dry_run || no_mirror),
+                json,
+                out,
+                err,
+            )
         }
         Command::Extract {
             data_dir,
             rebuild,
+            no_mirror,
             json,
         } => {
             let data_dir = match resolve_data_dir(data_dir) {
@@ -309,10 +358,26 @@ where
                 Err(msg) => return emit(err, &msg, USAGE),
             };
             match extract_into(&data_dir, rebuild) {
-                Ok(r) => emit(out, &extract_text(&r, json), OK),
+                Ok(r) => {
+                    if !no_mirror {
+                        sync_mirror(&data_dir, err);
+                    }
+                    emit(out, &extract_text(&r, json), OK)
+                }
                 Err(e) => emit(err, &format!("error: {e}\n"), USAGE),
             }
         }
+        Command::Rebuild {
+            from_mirror,
+            data_dir,
+            yes,
+            allow_drop,
+        } => run_rebuild(from_mirror.flatten(), data_dir, (yes, allow_drop), out, err),
+        Command::Mirror {
+            data_dir,
+            full,
+            json,
+        } => run_mirror(data_dir, full, json, out, err),
         Command::Search {
             query,
             data_dir,
@@ -490,6 +555,7 @@ fn hooks_status(
         );
     }
     let _ = writeln!(text, "data dir: {}", data_dir.display());
+    let _ = writeln!(text, "mirror: {}", paths::mirror_dir(&data_dir).display());
     match open_existing(&data_dir).and_then(|s| s.memory_counts().map_err(|e| e.to_string())) {
         Ok(counts) => {
             let mut by_status = std::collections::BTreeMap::<String, u64>::new();
@@ -562,8 +628,11 @@ fn run_check(
         let msg = format!("error: {project} is not an existing absolute directory\n");
         return emit(err, &msg, USAGE);
     }
-    let report = open_existing(&data_dir)
-        .and_then(|mut s| anchor::check(&mut s, &project, None).map_err(|e| e.to_string()));
+    let report = open_existing(&data_dir).and_then(|mut s| {
+        let r = anchor::check(&mut s, &project, None).map_err(|e| e.to_string())?;
+        warn_mirror(&mut s, &data_dir, err);
+        Ok(r)
+    });
     match report {
         Ok(r) if json => emit(out, &format!("{}\n", r.to_json()), OK),
         Ok(r) => emit(
@@ -595,7 +664,10 @@ fn run_confirm(
             .map_err(|e| e.to_string())?;
         match found.as_slice() {
             [] => Err(format!("no memory matches {id}")),
-            [m] => ops::confirm(&mut store, &m.uid).map(|n| (m.uid.clone(), n)),
+            [m] => ops::confirm(&mut store, &m.uid).map(|n| {
+                warn_mirror(&mut store, &data_dir, err);
+                (m.uid.clone(), n)
+            }),
             _ => Err(format!(
                 "{id} matches {} memories; use a longer prefix",
                 found.len()
@@ -671,10 +743,10 @@ fn stats_text(store: &Store, json: bool) -> Result<String, String> {
                 "est_tokens": st.est_tokens,
                 "avg_est_tokens": avg,
                 "per_project": st.per_project.iter().map(|p| json!({
-                    "project": p.project, "injections": p.injections, "est_tokens": p.est_tokens,
+                    "project": p.project.as_deref().map(ops::clean), "injections": p.injections, "est_tokens": p.est_tokens,
                 })).collect::<Vec<_>>(),
                 "top_memories": top.iter().map(|(m, uid, n)| json!({
-                    "uid": uid, "count": n,
+                    "uid": ops::clean(uid), "count": n,
                     "kind": m.as_ref().map(|m| m.kind.to_string()),
                     "text": m.as_ref().map(|m| truncate_chars(&m.text, 120)),
                 })).collect::<Vec<_>>(),
@@ -691,7 +763,7 @@ fn stats_text(store: &Store, json: bool) -> Result<String, String> {
     for p in &st.per_project {
         lines.push(format!(
             "  {}  {} injections, {} tok",
-            p.project.as_deref().unwrap_or("(none)"),
+            ops::clean(p.project.as_deref().unwrap_or("(none)")),
             p.injections,
             p.est_tokens
         ));
@@ -725,6 +797,7 @@ fn stats_text(store: &Store, json: bool) -> Result<String, String> {
 fn backfill(
     opts: &Options,
     extract: bool,
+    mirror: bool,
     json: bool,
     out: &mut impl Write,
     err: &mut impl Write,
@@ -746,17 +819,152 @@ fn backfill(
     } else {
         None
     };
+    let mirrored = mirror.then(|| sync_mirror(&opts.data_dir, err)).flatten();
     let text = match (json, extracted) {
         (true, Some(x)) => format!(
             "{}\n",
-            json!({"ingest": report.to_json(), "extract": x.to_json()})
+            json!({"ingest": report.to_json(), "extract": x.to_json(),
+                   "mirror": mirrored.as_ref().map(|p| p.display().to_string())})
         ),
         (true, None) => format!("{}\n", report.to_json()),
         (false, x) => {
-            human(&report, opts.dry_run) + &x.map(|x| human_extract(&x)).unwrap_or_default()
+            let mut text = human(&report, opts.dry_run);
+            text += &x.map(|x| human_extract(&x)).unwrap_or_default();
+            if let Some(p) = &mirrored {
+                let _ = writeln!(text, "mirror     {}", p.display());
+            }
+            text
         }
     };
     emit(out, &text, code)
+}
+
+/// Incremental mirror sync that only warns on stderr; returns the mirror dir
+/// when it worked.
+fn sync_mirror(data_dir: &std::path::Path, err: &mut impl Write) -> Option<PathBuf> {
+    match open_existing(data_dir) {
+        Ok(mut store) => warn_mirror(&mut store, data_dir, err),
+        Err(e) => {
+            let _ = writeln!(err, "warning: mirror not updated: {e}");
+            None
+        }
+    }
+}
+
+/// As [`sync_mirror`] for an already-open store.
+fn warn_mirror(
+    store: &mut Store,
+    data_dir: &std::path::Path,
+    err: &mut impl Write,
+) -> Option<PathBuf> {
+    match mirror::sync_best_effort(store, data_dir) {
+        None => Some(paths::mirror_dir(data_dir)),
+        Some(w) => {
+            let _ = writeln!(err, "warning: {w}");
+            None
+        }
+    }
+}
+
+/// `recalla rebuild --from-mirror [DIR]`.
+fn run_rebuild(
+    from: Option<PathBuf>,
+    data_dir: Option<PathBuf>,
+    (yes, allow_drop): (bool, bool),
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let dir = from.unwrap_or_else(|| paths::mirror_dir(&data_dir));
+    let r = match mirror::rebuild(&data_dir, &dir, yes, allow_drop) {
+        Ok(r) => r,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    let mut text = if r.applied {
+        format!("rebuilt {} memories from {}\n", r.memories, dir.display())
+    } else {
+        format!(
+            "plan: replace the memory layer in {} with {} memories from {}\n",
+            paths::db_path(&data_dir).display(),
+            r.memories,
+            dir.display()
+        )
+    };
+    let _ = writeln!(text, "  {} global", r.global);
+    for (project, n) in &r.per_project {
+        let _ = writeln!(text, "  {n:>5}  {project}");
+    }
+    if r.dropped_total > 0 {
+        let _ = writeln!(
+            text,
+            "{} memories exist in the DB but not in the mirror (they will be removed from the memory layer; a backup is kept)",
+            r.dropped_total
+        );
+        for d in &r.dropped {
+            let _ = writeln!(text, "  {}  {}  {}", d.uid8, d.kind, d.text);
+        }
+    }
+    if let Some(b) = &r.backup {
+        let _ = writeln!(text, "previous database copied to {}", b.display());
+    }
+    if !r.applied {
+        text.push_str(
+            "events, sources and the injection ledger are kept; safe while Claude Code or recalla mcp are running\n\
+             nothing changed; re-run with --yes to apply (add --allow-drop to remove the memories above)\n",
+        );
+    }
+    emit(out, &text, OK)
+}
+
+/// `recalla mirror [--full]`.
+fn run_mirror(
+    data_dir: Option<PathBuf>,
+    full: bool,
+    json: bool,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let dir = paths::mirror_dir(&data_dir);
+    let report = open_existing(&data_dir)
+        .and_then(|mut s| mirror::sync(&mut s, &dir, full).map_err(|e| e.to_string()));
+    let r = match report {
+        Ok(r) => r,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    let strays: Vec<String> = r.strays.iter().map(|p| p.display().to_string()).collect();
+    let text = if json {
+        format!(
+            "{}\n",
+            json!({"dir": dir.display().to_string(), "written": r.written,
+                   "unchanged": r.unchanged, "strays": strays})
+        )
+    } else {
+        let mut t = format!(
+            "mirror     {}\nwritten    {}\nunchanged  {}\n",
+            dir.display(),
+            r.written,
+            r.unchanged
+        );
+        if !strays.is_empty() {
+            let _ = writeln!(
+                t,
+                "strays     {} files not in the database (left in place):",
+                strays.len()
+            );
+            for p in &strays {
+                let _ = writeln!(t, "  {p}");
+            }
+        }
+        t
+    };
+    emit(out, &text, OK)
 }
 
 fn extract_text(r: &extract::Report, json: bool) -> String {

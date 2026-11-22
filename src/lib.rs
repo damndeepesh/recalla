@@ -13,6 +13,7 @@ pub mod hook;
 pub mod hooks_cfg;
 pub mod ingest;
 pub mod mcp;
+pub mod mirror;
 pub mod model;
 pub mod ops;
 pub mod pack;

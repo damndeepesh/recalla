@@ -101,9 +101,14 @@ pub fn candidate_identifiers(memory_text: &str) -> Vec<String> {
 #[must_use]
 pub fn project_dir(key: &str) -> Option<&Path> {
     let p = Path::new(key);
-    // `/` or the home dir would make every readable file "in the project".
+    // `/`, `/Users`, `/etc` or the home dir (or any ancestor of it) would make
+    // every readable file "in the project".
+    let normal = p
+        .components()
+        .filter(|c| matches!(c, std::path::Component::Normal(_)))
+        .count();
     let too_broad =
-        p.parent().is_none() || std::env::var_os("HOME").is_some_and(|h| Path::new(&h) == p);
+        normal < 2 || std::env::var_os("HOME").is_some_and(|h| Path::new(&h).starts_with(p));
     (p.is_absolute() && p.is_dir() && !too_broad).then_some(p)
 }
 
@@ -285,6 +290,20 @@ fn git_commit(root: &Path) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn project_dir_rejects_shallow_and_home_ancestor_paths() {
+        for k in ["/", "/etc", "/Users", "/opt", "/tmp"] {
+            assert!(project_dir(k).is_none(), "{k}");
+        }
+        let d = tempfile::tempdir().unwrap();
+        assert!(project_dir(d.path().to_str().unwrap()).is_some());
+        if let Some(home) = std::env::var_os("HOME")
+            && let Some(parent) = Path::new(&home).parent()
+        {
+            assert!(project_dir(&parent.to_string_lossy()).is_none());
+        }
+    }
 
     const HASH_A: &str = "0123456789abcdef0123456789abcdef01234567";
     const HASH_B: &str = "fedcba9876543210fedcba9876543210fedcba98";

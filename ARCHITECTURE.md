@@ -171,6 +171,7 @@ flowchart LR
     - with a 50 ms budget inside every pack (CLI, SessionStart hook, MCP `recall`)
     - with 200 ms after hook capture
     - in full via `recalla check`
+- **MCP `remember`** anchors a new memory exactly as extraction does (paths named in the text, project-scoped, root must be a real project dir), so agent-saved memories go stale too.
 - **Confirm** (`recalla confirm`, MCP `review confirm`): re-resolve the anchors, clear the reasons, set the memory Active. Symbol anchors stay symbol-only.
 - **Pack:** the "Needs re-verify ⚠" lines show the reason, e.g. `(symbol changed: Store::insert)`.
 - **Redaction:** `cwd` and `git_branch` use `redact_path` (layers 1–2, no entropy), so random path components don't break project keys (D-020).
@@ -186,6 +187,49 @@ flowchart LR
 - A resume replays only the `session_meta`/`turn_context` lines of the prefix, to recover the session id and cwd.
 - `backfill --harness claude|codex|all` (default all). Each source row records its harness; extraction and packs are harness-agnostic, so one memory carries provenance from both agents.
 - Measured: 11.4 MB in 0.12 s, 451 events.
+
+## Mirror (`mirror`, `recalla mirror|rebuild`)
+
+- Location: `<data>/mirror/global/<kind>/<uid>.md` and `<data>/mirror/projects/<slug>/<kind>/<uid>.md`. `<slug>` = sanitized project basename (`[a-z0-9-]`, max 40) + `-` + first 6 hex of blake3(project key). Names come only from kind, hex uid and slug, never from content. Dirs 0700, files 0600.
+- One file per memory, in every status: archived and superseded memories keep theirs (status is in the frontmatter). Files are never deleted; files whose uid is not in the DB are reported as strays on `recalla mirror --full`.
+- Format (`format: 1`, own YAML subset, ADR D-021). Scalars are bare when they match `[A-Za-z0-9_./:@+-]+` and can't read as another type, else JSON-quoted. The frontmatter ends at the first `---` line; the text follows verbatim with one trailing newline.
+
+```
+---
+format: 1
+uid: 5f0c1d2e3a4b5c6d7e8f9a0b1c2d3e4f
+kind: decision
+scope: module                 # global | project | module
+project: /work/recalla        # project and module scope
+module: src/store             # module scope only
+status: needs_reverify        # active | needs_reverify | superseded | archived
+confidence: 0.85
+importance: 2
+seen_count: 3
+created_at: 2025-01-02T03:04:05.678Z
+updated_at: 2025-01-02T03:04:06.000Z
+valid_from: 2025-01-02T03:04:05.678Z
+valid_to: ...                 # optional
+superseded_by: <uid>          # optional
+provenance:                   # `provenance: []` when empty
+  - origin: backfill
+    recorded_at: 2025-01-02T03:04:05.678Z
+    harness: claude-code
+    session_id: "s 1"
+    line: 42
+anchors:                      # `anchors: []` when empty
+  - path: src/store/mod.rs
+    symbol: Store::open
+    lang: rust
+    stale_reason: "symbol changed: Store::open"
+---
+Use WAL.
+```
+
+- Sync (`mirror::sync(store, dir, full)`): renders the memories in the `mirror_dirty` set (all when `full`), compares bytes with the file on disk, writes only the differing ones (tmp + rename; fsync only for small batches), then clears exactly the marks it read. No clock is involved, so clock skew cannot freeze it, and a change made mid-sync gets a newer mark and is picked up next time. Runs best effort after `backfill`/`extract` (skip with `--no-mirror`), `hook capture`, MCP `remember`/`review`, and CLI `confirm`/`check`; a failure is a warning (stderr, or the hook log), never fatal.
+- Rebuild (`mirror::rebuild(data_dir, mirror, apply, allow_drop)`): parse and verify all files first (uid matches `model::uid`, no duplicates, `superseded_by` resolves, value ranges, and every string must be stable under `redact`/`redact_path` and free of control and invisible characters). Any problem refuses the whole rebuild and lists up to 20 files (messages never echo file content). The dry run reports totals, global count, top projects and memories that would be dropped; `--yes` is refused when the mirror has fewer memories than the DB unless `--allow-drop`. Applying: `VACUUM INTO recalla.db.bak-<unix-secs>[-n]` (pre-created 0600, never overwritten), then `Store::replace_memory_layer` on the LIVE database in one `BEGIN IMMEDIATE` transaction. The DB file is never copied over or renamed, so rebuild is safe while Claude Code hooks or `recalla mcp` have it open. Events, sources, segments, extract state and the injection ledger are untouched.
+- Store: schema v7 adds `mirror_dirty(seq, memory_id UNIQUE)`, maintained by triggers on memories, anchors and provenance (seeded with every memory on migration). `Store::mirror_batch`, `clear_mirror_marks`, `memory_uids`, `memories_not_in`, `backup_into`, `replace_memory_layer` (store/mirror.rs).
+- Output hygiene: `why`, `stats`, packs and MCP print log-derived fields through `pack::one_line`, which drops control and invisible format characters (bidi, zero-width, tag block, variation selectors).
 
 ## Performance
 - Run: `make perf` (`tests/perf.rs`, ignored tests, release build). Seeded synthetic data, regenerated each run in a tempdir.

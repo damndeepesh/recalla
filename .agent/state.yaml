@@ -1,25 +1,13 @@
 updated: 2026-11-22
 milestone: MVP
-branch: chore/perf-pass
-task: "Markdown mirror + `recalla rebuild`"
+branch: feature/mirror
+task: "v0.1.0 release readiness"
 status: review
 plan: null
 done:
-  - perf: 319.5 MB backfill 21.6 s; hook p95 12.6 ms @100k memories (v6 index fixed 28.7 ms scan)
+  - all 12 MVP items built; make check 457 tests; make e2e 64/64 on the release binary
+  - final Opus security review: NO-GO on rebuild corrupting a live DB; fixed (VACUUM INTO + in-place txn, dirty-set mirror, redact-on-load, sanitized why/stats); repro verified
 next:
-  - PR for perf, then markdown mirror (last MVP item), then v0.1.0 release prep + launch
-blockers:
-  - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
-notes:
-  - local real history too small to show anchors (0 on 8 sessions); mechanism proven in tests; re-check on larger history
-  - tool-input file paths still go through entropy redaction: window files with random path components are ignored
-  - real-data lesson: eval written alongside rules overfits; always check real logs before trusting eval numbers
-  - no compaction summaries in real logs yet; Summary path only fixture-tested
-  - extractor reads redacted events from `events`; never re-read raw logs/archive for memory text
-  - dry-run opens an empty in-memory store, so it reports every file as new
-  - search scope filter is exact; pack must union Global + Project memories itself
-  - schema v1 not shipped yet: still safe to edit migration 0 until first release
-  - anchors item must validate anchor.path/source_path stay under project root before reading files
-  - never commit secret-shaped literals; build at runtime or use {S} placeholders; run make secrets
-  - harness must JSON-decode strings and drop signature/encrypted_content/base64 image fields before redact (D-009)
-  - repo is public: GitHub push protection + gitleaks CI both active
+  - merge mirror PR after CI
+  - release prep: CHANGELOG [Unreleased] -> [0.1.0] on publish day; cargo publish --dry-run
+  - tell user checklist is done; user decides: repo public, then cargo publish + tag v0.1.0
