@@ -10,9 +10,11 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use recalla::archive::read_source;
+use recalla::extract::{self, Options as ExtractOptions};
 use recalla::harness::MAX_EVENT_BYTES;
 use recalla::harness::claude::{discover, parse_bytes, parse_session};
 use recalla::ingest::{Options, Report, run};
+use recalla::model::{Kind, Status};
 use recalla::paths;
 use recalla::store::Store;
 use serde_json::json;
@@ -257,7 +259,7 @@ fn malformed_lines_are_reported() {
     env.append("nope again\n");
     let (_, out, _) = cli(&[&args[..], &["--json"]].concat());
     let json: serde_json::Value = serde_json::from_str(&out).unwrap();
-    assert_eq!(json["malformed_lines"], 1);
+    assert_eq!(json["ingest"]["malformed_lines"], 1);
 }
 
 #[test]
@@ -498,6 +500,7 @@ fn cli_backfill_json_and_exit_codes() {
     let (code, out, err) = cli(&[&base[..], &["--json"]].concat());
     assert_eq!((code, err.as_str()), (0, ""));
     let report: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let report = &report["ingest"];
     assert_eq!(report["events_added"], fixture_events(&env.root));
     assert_eq!(report["files"]["new"], 3);
 
@@ -542,6 +545,7 @@ fn cli_exits_1_when_a_file_fails() {
     ]);
     assert_eq!(code, 1);
     let report: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let report = &report["ingest"];
     let failed = &report["files"]["failed"];
     assert_eq!(failed.as_array().unwrap().len(), 1);
     assert_eq!(failed[0]["error"], "PermissionDenied");
@@ -600,5 +604,107 @@ fn long_last_line_resumes_without_restart() {
     assert_eq!(
         (r.files_resumed, r.files_restarted, r.events_added),
         (1, 0, 1)
+    );
+}
+
+fn tool_line(uuid: &str, id: &str, name: &str, input: &serde_json::Value) -> String {
+    json!({
+        "type": "assistant", "uuid": uuid, "sessionId": SESSION,
+        "timestamp": "2025-01-02T03:07:00Z", "cwd": "/tmp/demo", "gitBranch": "main",
+        "message": {"role": "assistant", "content": [{
+            "type": "tool_use", "id": id, "name": name, "input": input
+        }]}
+    })
+    .to_string()
+        + "\n"
+}
+
+fn ok_result(uuid: &str, id: &str) -> String {
+    json!({
+        "type": "user", "uuid": uuid, "sessionId": SESSION,
+        "timestamp": "2025-01-02T03:08:00Z", "cwd": "/tmp/demo", "gitBranch": "main",
+        "message": {"role": "user", "content": [{
+            "type": "tool_result", "tool_use_id": id, "content": "ok", "is_error": false
+        }]}
+    })
+    .to_string()
+        + "\n"
+}
+
+#[test]
+fn tool_input_secrets_with_escapes_never_reach_events_or_memories() {
+    let env = Env::new();
+    let pw = alnum(16);
+    let assignment = format!("{}{}\t{pw}", "pass", "word=");
+    env.append(&tool_line(
+        "h0000001",
+        "toolu_esc01",
+        "Bash",
+        &json!({"command": format!("cargo test --features x {assignment}")}),
+    ));
+    env.append(&ok_result("h0000002", "toolu_esc01"));
+    let adr = format!("## D-001 Storage\n- Decision: db {assignment}\n- Why: speed\n");
+    env.append(&tool_line(
+        "h0000003",
+        "toolu_esc02",
+        "Write",
+        &json!({"file_path": "/tmp/demo/DESIGN_DECISIONS.md", "content": adr}),
+    ));
+    let r = env.run();
+    assert_eq!(r.failed, []);
+
+    let mut store = env.store();
+    let values = store.all_text_values().unwrap();
+    assert!(
+        values.iter().all(|v| !v.contains(&pw)),
+        "leaked into events"
+    );
+    assert!(values.iter().any(|v| v.contains("[REDACTED:")));
+
+    extract::run(&mut store, &ExtractOptions { rebuild: false }).unwrap();
+    let mems = store.all_memories(&[Status::Active]).unwrap();
+    assert!(
+        mems.iter().all(|m| !m.text.contains(&pw)),
+        "leaked into memories"
+    );
+    assert!(
+        mems.iter()
+            .any(|m| m.kind == Kind::Decision && m.text.contains("Storage")),
+        "ADR decision should survive, redacted"
+    );
+}
+
+#[test]
+fn huge_adr_write_is_truncated_but_still_extracted() {
+    let env = Env::new();
+    let content = format!(
+        "## D-001 Title\n- Decision: keep it\n\n{}",
+        "filler line\n".repeat(9_000)
+    );
+    assert!(content.len() > 100_000);
+    env.append(&tool_line(
+        "i0000001",
+        "toolu_big01",
+        "Write",
+        &json!({"file_path": "/tmp/demo/DESIGN_DECISIONS.md", "content": content}),
+    ));
+    assert_eq!(env.run().failed, []);
+
+    let mut store = env.store();
+    let values = store.all_text_values().unwrap();
+    let stored = values
+        .iter()
+        .find(|v| v.contains("DESIGN_DECISIONS.md") && v.contains("keep it"))
+        .unwrap();
+    assert!(stored.len() <= MAX_EVENT_BYTES + 64, "{}", stored.len());
+    assert!(serde_json::from_str::<serde_json::Value>(stored).is_ok());
+
+    extract::run(&mut store, &ExtractOptions { rebuild: false }).unwrap();
+    let mems = store.all_memories(&[Status::Active]).unwrap();
+    assert!(
+        mems.iter()
+            .any(|m| m.kind == Kind::Decision && m.text.contains("keep it")),
+        "{:?}",
+        mems.iter().map(|m| &m.text).collect::<Vec<_>>()
     );
 }

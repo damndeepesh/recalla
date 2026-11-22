@@ -99,3 +99,10 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Decision: `zstd = "0.13"` (libzstd bindings), level 3, one content-addressed `<blake3>.zst` per ingested segment.
 - Why: Logs compress about 10x; zstd is fast at both ends and the C library is the reference implementation.
 - Rejected: ruzstd (pure-Rust encoder is slow and immature); gzip/flate2 (worse ratio and speed); no compression (about 10x more disk).
+
+## D-015 Tool-input JSON is redacted per string leaf (2026-11-22)
+
+- Context: Tool inputs are stored as compact JSON. Redacting the escaped string missed some secrets (e.g. `password=\t<value>`), and the extractor later decoded them into memories. Truncating the serialized JSON also broke it, so large ADR writes were silently skipped.
+- Decision: Ingest parses ToolCall JSON, redacts every string leaf, re-serializes, then runs the whole-string redact again for key context. Oversized inputs shrink leaves first, so the JSON stays valid. The extractor also re-redacts every JSON-decoded string as a backstop.
+- Why: It completes D-009 (decode before redact) for structured data, and memories are the agent-facing layer, so they get two independent guards.
+- Rejected: Whole-string redaction only (escaped forms leak); redacting object keys (they are tool schema names, not secrets).

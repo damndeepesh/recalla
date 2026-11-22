@@ -1,17 +1,18 @@
 updated: 2026-11-22
 milestone: MVP
-branch: feature/ingest
-task: "Rule-based extractor: typed memories with confidence + provenance, labeled eval set"
-status: in_progress
-plan: .agent/plans/ingest.md
+branch: feature/extractor
+task: "Codex harness"
+status: review
+plan: .agent/plans/extractor.md
 done:
-  - ingest + recalla backfill: 30 MB real logs in 0.65 s, idempotent rerun, 0 real leaks (gitleaks over stored text)
+  - extractor: 6 rules, pipeline, extract/search CLI; eval P 1.00 R 0.92 (53 labels, 0 FP gate); real data 25 memories, ~21 useful
 next:
-  - merge ingest PR after CI
-  - start feature/extractor from drafted plan (Sonnet builders; Opus only for security review)
+  - security review + PR for extractor; file remaining FP/FN as issues
+  - then next TODO by value: Pack + ledger (makes memory usable) before Codex harness
 blockers:
   - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
 notes:
+  - real-data lesson: eval written alongside rules overfits; always check real logs before trusting eval numbers
   - no compaction summaries in real logs yet; Summary path only fixture-tested
   - extractor reads redacted events from `events`; never re-read raw logs/archive for memory text
   - dry-run opens an empty in-memory store, so it reports every file as new

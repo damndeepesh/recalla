@@ -15,7 +15,7 @@ It turns your existing session history into compact, source-linked memories, fla
 </div>
 
 > [!WARNING]
-> **Pre-alpha.** `recalla backfill` imports Claude Code history today; memory extraction and context packs are next, so it doesn't give agents memory yet. Follow [ROADMAP.md](ROADMAP.md) for progress. Star or watch the repo to hear about the first release.
+> **Pre-alpha.** `recalla backfill` imports Claude Code history and extracts memories you can inspect with `recalla search`. Context packs, hooks and MCP are next, so agents can't use the memory yet. Follow [ROADMAP.md](ROADMAP.md) for progress. Star or watch the repo to hear about the first release.
 
 ---
 

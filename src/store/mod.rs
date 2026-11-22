@@ -1,5 +1,6 @@
 //! SQLite store: the only module that runs SQL.
 
+mod extract;
 mod ingest;
 mod schema;
 mod search;
@@ -15,6 +16,7 @@ use thiserror::Error;
 
 use crate::model::{self, Anchor, Memory, NewMemory, Origin, Provenance, Scope, Status};
 
+pub use extract::EventRow;
 pub use ingest::{Checkpoint, SegmentRow, SourceRow, StoredEvent, StoredKind};
 pub use schema::version as schema_version;
 pub use search::{Filter, Hit};

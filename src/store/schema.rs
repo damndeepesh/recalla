@@ -154,6 +154,14 @@ const MIGRATIONS: &[&str] = &[
         COALESCE(line, -1)
     );
     ",
+    // v3: extractor checkpoint (single row).
+    "
+    CREATE TABLE extract_state (
+        id                INTEGER PRIMARY KEY CHECK (id = 1),
+        last_event_id     INTEGER NOT NULL DEFAULT 0,
+        extractor_version INTEGER NOT NULL DEFAULT 0
+    );
+    ",
 ];
 
 /// Schema version this build produces.
@@ -249,7 +257,7 @@ mod tests {
         )
         .unwrap();
 
-        migrate(&mut conn).unwrap();
+        migrate_to(&mut conn, 2).unwrap();
         assert_eq!(user_version(&conn), 2);
         let text: String = conn
             .query_row("SELECT text FROM memories WHERE uid = 'u1'", [], |r| {
@@ -304,5 +312,33 @@ mod tests {
         assert_eq!(count(&conn), 1);
         conn.execute("DELETE FROM events", []).unwrap();
         assert_eq!(count(&conn), 0);
+    }
+
+    #[test]
+    fn v2_data_survives_v3_migration() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate_to(&mut conn, 2).unwrap();
+        conn.execute_batch(
+            "INSERT INTO sources (harness, path, identity, size, next_offset, updated_at)
+             VALUES ('h', '/p', 'i', 1, 1, 0);
+             INSERT INTO events (source_id, harness, session_id, line, seq, byte_offset,
+                 sidechain, kind, text)
+             VALUES (1, 'h', 's', 1, 0, 0, 0, 'user_text', 'kept across v3');",
+        )
+        .unwrap();
+        migrate(&mut conn).unwrap();
+        assert_eq!(user_version(&conn), 3);
+        let text: String = conn
+            .query_row("SELECT text FROM events", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(text, "kept across v3");
+        let n: i64 = conn
+            .query_row("SELECT count(*) FROM extract_state", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n, 0);
+        assert!(
+            conn.execute("INSERT INTO extract_state (id) VALUES (2)", [])
+                .is_err()
+        );
     }
 }

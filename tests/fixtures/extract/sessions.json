@@ -1,0 +1,847 @@
+{
+ "_doc": "Labeled synthetic sessions for the extractor eval. Each turn: user/assistant text, or a tool call with result. `expected` lists memories that MUST be extracted (kind + substring of text). Anything else extracted counts as a false positive. All content is synthetic. Procedure = a successful (non-error) shell command whose verb is build/test/lint/check/vet/clippy/fmt/plan/typecheck; install, run, apply, import, ls are not procedures. Optional per-session `\"sidechain\": true` writes the session as a subagent file (`<session>/subagents/agent-eval.jsonl`) with `isSidechain: true` on every record; its user turns are orchestrator instructions, so no preference, fact or user-speaker decision may be extracted from them (procedures, gotchas and assistant decisions still count). Procedure labels use the normalized core command (leading `cd x &&`, `export V=x;`, `V=x` stripped; cut at the first pipe/`;`/`&&`/redirect). Questions without a question mark yield nothing.",
+ "sessions": [
+  {
+   "id": "web-api",
+   "cwd": "/tmp/eval/web-api",
+   "turns": [
+    {
+     "user": "Let's add rate limiting to the public API. Always use the token bucket in src/limits/bucket.rs instead of writing a new limiter."
+    },
+    {
+     "assistant": "I'll look at the existing limiter first."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "cargo test -p api"
+     },
+     "result": "test result: ok. 42 passed",
+     "error": false
+    },
+    {
+     "tool": "Read",
+     "input": {
+      "file_path": "/tmp/eval/web-api/src/limits/bucket.rs"
+     },
+     "result": "pub struct Bucket { capacity: u32 }",
+     "error": false
+    },
+    {
+     "assistant": "We decided to apply limits per API key rather than per IP, because mobile clients share carrier NAT addresses."
+    },
+    {
+     "user": "Don't log request bodies anywhere, they can contain customer data."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "cargo build --release"
+     },
+     "result": "error[E0432]: unresolved import `crate::limits::Window`",
+     "error": true
+    },
+    {
+     "assistant": "The build failed. The root cause is that Window was renamed to SlidingWindow in the limits module last week, so the import is stale."
+    },
+    {
+     "tool": "Edit",
+     "input": {
+      "file_path": "/tmp/eval/web-api/src/api/mod.rs",
+      "old_string": "use crate::limits::Window;",
+      "new_string": "use crate::limits::SlidingWindow;"
+     },
+     "result": "ok",
+     "error": false
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "cargo build --release"
+     },
+     "result": "Finished release",
+     "error": false
+    },
+    {
+     "user": "Nice. From now on run cargo clippy before every commit."
+    },
+    {
+     "assistant": "Will do. Is there anything else you want covered in this change?"
+    },
+    {
+     "user": "Can you also check the docs?"
+    },
+    {
+     "assistant": "I updated the README section on rate limits and added an example request."
+    },
+    {
+     "tool": "Write",
+     "input": {
+      "file_path": "/tmp/eval/web-api/DESIGN_DECISIONS.md",
+      "content": "# Design Decisions\n\n## D-001 Rate limit key (2026-11-01)\n- Context: Mobile clients share NAT IPs.\n- Decision: Limit per API key, not per IP.\n- Why: Fairness for mobile users.\n- Rejected: Per-IP limits.\n\n## D-002 Limiter algorithm (2026-11-01)\n- Context: Need bursts.\n- Decision: Token bucket with 100 rps refill.\n- Why: Allows short bursts.\n- Rejected: Fixed window.\n"
+     },
+     "result": "ok",
+     "error": false
+    }
+   ],
+   "expected": [
+    {
+     "kind": "preference",
+     "contains": "token bucket in src/limits/bucket.rs"
+    },
+    {
+     "kind": "decision",
+     "contains": "per API key rather than per IP"
+    },
+    {
+     "kind": "preference",
+     "contains": "Don't log request bodies"
+    },
+    {
+     "kind": "gotcha",
+     "contains": "Window was renamed to SlidingWindow"
+    },
+    {
+     "kind": "preference",
+     "contains": "run cargo clippy before every commit"
+    },
+    {
+     "kind": "decision",
+     "contains": "Rate limit key"
+    },
+    {
+     "kind": "decision",
+     "contains": "Limiter algorithm"
+    },
+    {
+     "kind": "procedure",
+     "contains": "cargo build --release"
+    },
+    {
+     "kind": "procedure",
+     "contains": "cargo test -p api"
+    }
+   ]
+  },
+  {
+   "id": "frontend",
+   "cwd": "/tmp/eval/frontend",
+   "turns": [
+    {
+     "user": "We're going with pnpm for this repo, not npm."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "pnpm install"
+     },
+     "result": "Done in 4.2s",
+     "error": false
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "pnpm test"
+     },
+     "result": "Tests: 3 failed, 51 passed",
+     "error": true
+    },
+    {
+     "assistant": "Three snapshot tests fail. Turns out the date formatter uses the local timezone, so snapshots differ between machines; the fix is to pin TZ=UTC in the test script."
+    },
+    {
+     "tool": "Edit",
+     "input": {
+      "file_path": "/tmp/eval/frontend/package.json",
+      "old_string": "\"test\": \"vitest\"",
+      "new_string": "\"test\": \"TZ=UTC vitest\""
+     },
+     "result": "ok",
+     "error": false
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "pnpm test"
+     },
+     "result": "Tests: 54 passed",
+     "error": false
+    },
+    {
+     "user": "Please keep components under 200 lines; split them otherwise."
+    },
+    {
+     "user": "I always wondered why the old build was so slow."
+    },
+    {
+     "assistant": "The old build ran type checking twice, which explains part of it."
+    },
+    {
+     "user": "Avoid default exports in new modules."
+    },
+    {
+     "assistant": "Understood. I switched the button and modal components to named exports."
+    },
+    {
+     "user": "Thanks, that looks good."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "pnpm lint"
+     },
+     "result": "0 problems",
+     "error": false
+    },
+    {
+     "assistant": "Lint is clean and all tests pass."
+    }
+   ],
+   "expected": [
+    {
+     "kind": "decision",
+     "contains": "going with pnpm"
+    },
+    {
+     "kind": "gotcha",
+     "contains": "date formatter uses the local timezone"
+    },
+    {
+     "kind": "preference",
+     "contains": "keep components under 200 lines"
+    },
+    {
+     "kind": "preference",
+     "contains": "Avoid default exports"
+    },
+    {
+     "kind": "procedure",
+     "contains": "pnpm test"
+    },
+    {
+     "kind": "procedure",
+     "contains": "pnpm lint"
+    }
+   ]
+  },
+  {
+   "id": "data-pipeline",
+   "cwd": "/tmp/eval/pipeline",
+   "turns": [
+    {
+     "user": "Make sure every job is idempotent; we rerun failed batches automatically."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "pytest -q tests/jobs"
+     },
+     "result": "12 passed",
+     "error": false
+    },
+    {
+     "assistant": "We'll use Parquet for intermediate files instead of CSV, since the schema has nested fields."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "python -m pipeline.run --date 2026-11-01"
+     },
+     "result": "KeyError: 'region'",
+     "error": true
+    },
+    {
+     "assistant": "The KeyError happens because the upstream export dropped the region column for archived accounts, so the job must default it to unknown."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "python -m pipeline.run --date 2026-11-01"
+     },
+     "result": "wrote 18234 rows",
+     "error": false
+    },
+    {
+     "user": "Never write to the production bucket from a laptop."
+    },
+    {
+     "user": "What does the retry policy look like right now?"
+    },
+    {
+     "assistant": "Jobs retry three times with exponential backoff, starting at 30 seconds."
+    },
+    {
+     "user": "If you don't know the schema, ask me first."
+    },
+    {
+     "user": "Remember that the warehouse is on Postgres 16, not 15."
+    },
+    {
+     "assistant": "Noted. I settled on a daily partition by event date because queries always filter by day."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "pytest -q tests/jobs"
+     },
+     "result": "13 passed",
+     "error": false
+    }
+   ],
+   "expected": [
+    {
+     "kind": "preference",
+     "contains": "every job is idempotent"
+    },
+    {
+     "kind": "decision",
+     "contains": "Parquet for intermediate files"
+    },
+    {
+     "kind": "gotcha",
+     "contains": "dropped the region column"
+    },
+    {
+     "kind": "preference",
+     "contains": "Never write to the production bucket"
+    },
+    {
+     "kind": "preference",
+     "contains": "warehouse is on Postgres 16"
+    },
+    {
+     "kind": "decision",
+     "contains": "daily partition by event date"
+    },
+    {
+     "kind": "procedure",
+     "contains": "pytest -q tests/jobs"
+    }
+   ]
+  },
+  {
+   "id": "infra",
+   "cwd": "/tmp/eval/infra",
+   "turns": [
+    {
+     "user": "Use terraform plan before any apply, no exceptions."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "terraform plan -out tfplan"
+     },
+     "result": "Plan: 2 to add, 0 to change",
+     "error": false
+    },
+    {
+     "assistant": "We decided to keep the state in the existing S3 backend with DynamoDB locking."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "terraform apply tfplan"
+     },
+     "result": "Error: creating IAM role: EntityAlreadyExists",
+     "error": true
+    },
+    {
+     "assistant": "The apply failed because a role with the same name was created manually in the console, so it has to be imported into state first."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "terraform import aws_iam_role.app app-role"
+     },
+     "result": "Import successful",
+     "error": false
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "terraform plan -out tfplan"
+     },
+     "result": "Plan: 1 to add",
+     "error": false
+    },
+    {
+     "user": "Stop tagging resources with the old cost-center key."
+    },
+    {
+     "assistant": "I can do that. Should I also clean up existing resources?"
+    },
+    {
+     "user": "Not now."
+    },
+    {
+     "assistant": "Switched the default tags to the new cost-center key in providers.tf."
+    }
+   ],
+   "expected": [
+    {
+     "kind": "preference",
+     "contains": "terraform plan before any apply"
+    },
+    {
+     "kind": "decision",
+     "contains": "S3 backend with DynamoDB locking"
+    },
+    {
+     "kind": "gotcha",
+     "contains": "created manually in the console"
+    },
+    {
+     "kind": "preference",
+     "contains": "Stop tagging resources with the old cost-center"
+    },
+    {
+     "kind": "procedure",
+     "contains": "terraform plan -out tfplan"
+    },
+    {
+     "kind": "decision",
+     "contains": "Switched the default tags"
+    }
+   ]
+  },
+  {
+   "id": "mobile",
+   "cwd": "/tmp/eval/mobile",
+   "turns": [
+    {
+     "user": "Prefer SwiftUI for all new screens."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "xcodebuild -scheme App test"
+     },
+     "result": "** TEST SUCCEEDED **",
+     "error": false
+    },
+    {
+     "assistant": "I chose async/await over Combine for the networking layer because the rest of the app already uses structured concurrency."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "xcodebuild -scheme App build"
+     },
+     "result": "error: no such module 'Analytics'",
+     "error": true
+    },
+    {
+     "assistant": "That error is because the Analytics package is only linked to the release configuration, so debug builds need it added to the target."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "xcodebuild -scheme App build"
+     },
+     "result": "** BUILD SUCCEEDED **",
+     "error": false
+    },
+    {
+     "user": "Do not add third-party UI libraries without asking."
+    },
+    {
+     "user": "How long does the test suite take on CI?"
+    },
+    {
+     "assistant": "About six minutes on the current runners."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "xcodebuild -scheme App test"
+     },
+     "result": "** TEST SUCCEEDED **",
+     "error": false
+    },
+    {
+     "user": "Great, ship it."
+    }
+   ],
+   "expected": [
+    {
+     "kind": "preference",
+     "contains": "SwiftUI for all new screens"
+    },
+    {
+     "kind": "decision",
+     "contains": "async/await over Combine"
+    },
+    {
+     "kind": "gotcha",
+     "contains": "Analytics package is only linked to the release configuration"
+    },
+    {
+     "kind": "preference",
+     "contains": "Do not add third-party UI libraries"
+    },
+    {
+     "kind": "procedure",
+     "contains": "xcodebuild -scheme App test"
+    },
+    {
+     "kind": "procedure",
+     "contains": "xcodebuild -scheme App build"
+    }
+   ]
+  },
+  {
+   "id": "backend-go",
+   "cwd": "/tmp/eval/svc",
+   "turns": [
+    {
+     "user": "Always return wrapped errors with fmt.Errorf and %w so callers can match them."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "go test ./..."
+     },
+     "result": "ok  svc/internal/store 0.41s",
+     "error": false
+    },
+    {
+     "assistant": "We'll use sqlc to generate the query layer instead of hand-written database/sql code."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "go test -race ./..."
+     },
+     "result": "WARNING: DATA RACE",
+     "error": true
+    },
+    {
+     "assistant": "The race is because the cache map is written from the refresh goroutine without holding the mutex; wrapping writes in mu.Lock fixes it."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "go test -race ./..."
+     },
+     "result": "ok",
+     "error": false
+    },
+    {
+     "user": "Don't add new global variables."
+    },
+    {
+     "user": "Could you summarize what changed?"
+    },
+    {
+     "assistant": "I moved the cache refresh into its own type and added a race test."
+    },
+    {
+     "user": "Use context deadlines on every outbound HTTP call."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "go vet ./..."
+     },
+     "result": "",
+     "error": false
+    }
+   ],
+   "expected": [
+    {
+     "kind": "preference",
+     "contains": "wrapped errors with fmt.Errorf"
+    },
+    {
+     "kind": "decision",
+     "contains": "sqlc to generate the query layer"
+    },
+    {
+     "kind": "gotcha",
+     "contains": "cache map is written from the refresh goroutine"
+    },
+    {
+     "kind": "preference",
+     "contains": "Don't add new global variables"
+    },
+    {
+     "kind": "preference",
+     "contains": "context deadlines on every outbound HTTP call"
+    },
+    {
+     "kind": "procedure",
+     "contains": "go test -race ./..."
+    },
+    {
+     "kind": "procedure",
+     "contains": "go test ./..."
+    },
+    {
+     "kind": "procedure",
+     "contains": "go vet ./..."
+    }
+   ]
+  },
+  {
+   "id": "rust-cli",
+   "cwd": "/tmp/eval/tool",
+   "turns": [
+    {
+     "user": "Never use unwrap in library code; return errors instead."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "cargo test"
+     },
+     "result": "test result: ok. 17 passed",
+     "error": false
+    },
+    {
+     "assistant": "Decision: the config file format is TOML, because users already edit Cargo.toml by hand."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "cargo clippy -- -D warnings"
+     },
+     "result": "error: this `if` has identical blocks",
+     "error": true
+    },
+    {
+     "assistant": "Clippy fails because both branches of the verbosity check print the same message, so the second branch was a copy-paste leftover."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "cargo clippy -- -D warnings"
+     },
+     "result": "Finished",
+     "error": false
+    },
+    {
+     "user": "Keep the binary under 5 MB."
+    },
+    {
+     "assistant": "Current release size is 3.1 MB."
+    },
+    {
+     "user": "Sounds good."
+    }
+   ],
+   "expected": [
+    {
+     "kind": "preference",
+     "contains": "Never use unwrap in library code"
+    },
+    {
+     "kind": "decision",
+     "contains": "config file format is TOML"
+    },
+    {
+     "kind": "gotcha",
+     "contains": "both branches of the verbosity check"
+    },
+    {
+     "kind": "preference",
+     "contains": "Keep the binary under 5 MB"
+    },
+    {
+     "kind": "procedure",
+     "contains": "cargo clippy -- -D warnings"
+    },
+    {
+     "kind": "procedure",
+     "contains": "cargo test"
+    }
+   ]
+  },
+  {
+   "id": "chit-chat",
+   "cwd": "/tmp/eval/misc",
+   "turns": [
+    {
+     "user": "Hi, can you help me understand this repo?"
+    },
+    {
+     "assistant": "Sure. It is a small CLI that converts CSV files to JSON."
+    },
+    {
+     "tool": "Read",
+     "input": {
+      "file_path": "/tmp/eval/misc/README.md"
+     },
+     "result": "# csv2json",
+     "error": false
+    },
+    {
+     "user": "What happens if a row has more columns than the header?"
+    },
+    {
+     "assistant": "Extra columns are ignored and a warning is printed."
+    },
+    {
+     "user": "Okay thanks, that makes sense."
+    },
+    {
+     "assistant": "Happy to help. Let me know if you want to add a feature."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "ls -la"
+     },
+     "result": "README.md src",
+     "error": false
+    },
+    {
+     "user": "I tried running it yesterday and it was fine."
+    },
+    {
+     "assistant": "Great, nothing seems broken then."
+    }
+   ],
+   "expected": []
+  },
+  {
+   "id": "subagent",
+   "cwd": "/tmp/eval/sub",
+   "sidechain": true,
+   "turns": [
+    {
+     "user": "Fix the failing parser test in tests/test_parser.py and report back."
+    },
+    {
+     "user": "Never edit v1 migrations."
+    },
+    {
+     "user": "Don't touch env vars."
+    },
+    {
+     "user": "Always use the shared fixtures in tests/conftest.py for every new test."
+    },
+    {
+     "user": "The API is on Node 20 in production."
+    },
+    {
+     "user": "We decided to use sqlx for every database query in this crate."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "pytest -x tests/"
+     },
+     "result": "FAILED tests/test_parser.py::test_empty - KeyError",
+     "error": true
+    },
+    {
+     "assistant": "The root cause is a stale fixture cache in tests/conftest.py that survives between runs."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "pytest -x tests/"
+     },
+     "result": "12 passed",
+     "error": false
+    },
+    {
+     "assistant": "We decided to clear the fixture cache at session start, because stale entries hid the failure."
+    }
+   ],
+   "expected": [
+    {
+     "kind": "gotcha",
+     "contains": "stale fixture cache in tests/conftest.py"
+    },
+    {
+     "kind": "decision",
+     "contains": "clear the fixture cache at session start"
+    },
+    {
+     "kind": "procedure",
+     "contains": "pytest -x tests/"
+    }
+   ]
+  },
+  {
+   "id": "compound-cmds",
+   "cwd": "/tmp/eval/x",
+   "turns": [
+    {
+     "user": "Run the checks and tell me when they are green."
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "cd /tmp/eval/x && cargo test 2>&1 | tail -3"
+     },
+     "result": "test result: ok. 7 passed",
+     "error": false
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "export RUST_LOG=debug; cargo build --release"
+     },
+     "result": "Finished release",
+     "error": false
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "cd /tmp/eval/x && npm run dev | tee dev.log"
+     },
+     "result": "listening on 3000",
+     "error": false
+    },
+    {
+     "tool": "Bash",
+     "input": {
+      "command": "cd /tmp/eval/x && cargo run && echo done"
+     },
+     "result": "done",
+     "error": false
+    },
+    {
+     "assistant": "Both the tests and the release build are green."
+    }
+   ],
+   "expected": [
+    {
+     "kind": "procedure",
+     "contains": "`cargo test`"
+    },
+    {
+     "kind": "procedure",
+     "contains": "`cargo build --release`"
+    }
+   ]
+  },
+  {
+   "id": "question-no-mark",
+   "cwd": "/tmp/eval/ask",
+   "turns": [
+    {
+     "user": "what i need to understand is why we decided to use redis"
+    },
+    {
+     "assistant": "Redis already runs the job queue in the shared cluster."
+    },
+    {
+     "user": "how do we deploy this"
+    },
+    {
+     "user": "can you tell me why we never use the token bucket here"
+    },
+    {
+     "user": "is the API on Node 20 in production right now"
+    },
+    {
+     "assistant": "Deploys go through the release workflow in CI."
+    }
+   ],
+   "expected": []
+  }
+ ]
+}
