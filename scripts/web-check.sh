@@ -43,6 +43,9 @@ grep -q 'Content-Security-Policy' "$W/index.html" && ok "CSP meta present" || ba
 total=$(cat "$W/index.html" "$W/404.html" "$W"/assets/*.css "$W"/assets/*.js "$W/favicon.svg" | wc -c | tr -d ' ')
 [ "$total" -lt 102400 ] && ok "page weight ${total} bytes (< 100 KB)" || bad "page weight ${total} bytes exceeds 100 KB"
 
+# 5a. The <base> that keeps assets working at /recalla (no trailing slash) is present.
+grep -q '<base href="/recalla/">' "$W/index.html" && ok "<base href=/recalla/> present" || bad "web/index.html lost its <base href=\"/recalla/\">"
+
 # 5. The version in the download links matches Cargo.toml.
 ver=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
 grep -q "data-version=\"$ver\"" "$W/index.html" && ok "download version matches Cargo.toml ($ver)" || bad "web/index.html data-version does not match Cargo.toml ($ver)"

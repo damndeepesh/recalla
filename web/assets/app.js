@@ -3,6 +3,25 @@
   var VERSION = root.dataset.version;
   root.classList.add("js");
 
+  // In-page links: with <base href="/recalla/"> a bare "#how" would navigate to
+  // /recalla/#how, reloading the page when it was opened at /recalla (no slash).
+  // Scroll in place instead, so nothing reloads at either URL.
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var id = decodeURIComponent(a.getAttribute("href").slice(1));
+    var target = id ? document.getElementById(id) : document.body;
+    if (!target) return;
+    e.preventDefault();
+    var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: calm ? "auto" : "smooth" });
+    if (id) {
+      history.replaceState(null, "", location.pathname + location.search + "#" + id);
+      if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
+    }
+  });
+
   // Version lives in <html data-version>; rewrite the static fallback links to match it.
   document.querySelectorAll("[data-ver]").forEach(function (el) { el.textContent = VERSION; });
   document.querySelectorAll("a[data-asset]").forEach(function (a) {
