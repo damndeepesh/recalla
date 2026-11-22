@@ -1,6 +1,6 @@
 updated: 2026-11-22
 milestone: MVP
-branch: chore/secret-scan
+branch: docs/public-readme
 task: "Claude Code harness: locate + parse JSONL into `Event`s (incl. tool calls)"
 status: planned
 plan: null
@@ -8,7 +8,7 @@ done:
   - redaction merged (PR #3); known gaps filed as issues #4-#8
   - gitleaks CI job + make secrets (D-011)
 next:
-  - merge chore/secret-scan PR
+  - merge public README PR
   - /plan Claude Code harness
 blockers:
   - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
@@ -18,4 +18,4 @@ notes:
   - anchors item must validate anchor.path/source_path stay under project root before reading files
   - never commit secret-shaped literals; build at runtime or use {S} placeholders; run make secrets
   - harness must JSON-decode strings and drop signature/encrypted_content/base64 image fields before redact (D-009)
-  - repo is private: GitHub push protection off, gitleaks CI is the blocking gate
+  - repo is public: GitHub push protection + gitleaks CI both active
