@@ -51,38 +51,69 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for components and data flow.
 
 ## Status
 
-| Component                                                           | State          |
-| ------------------------------------------------------------------- | -------------- |
-| Memory model + SQLite store (dedup, supersede/restore, BM25 search) | ✅ Done        |
-| Layered secret redaction (known formats, keyword values, entropy)   | ✅ Done        |
-| Claude Code + Codex session parsers                                 | 🚧 In progress |
-| Resumable backfill + raw archive                                    | ⏳ Planned     |
-| Rule-based memory extraction                                        | ⏳ Planned     |
-| Code anchors + staleness                                            | ⏳ Planned     |
-| Context packs + token ledger                                        | ⏳ Planned     |
-| MCP server + agent hooks                                            | ⏳ Planned     |
+Alpha (v0.1.0). Everything in the MVP is built and covered by tests and an end-to-end script.
 
-The full plan is in [ROADMAP.md](ROADMAP.md), with current work in [TODO.md](TODO.md).
+| Component | State |
+| --- | --- |
+| Memory model + SQLite store (dedup, supersede/restore, BM25 search) | ✅ |
+| Layered secret redaction (known formats, keyword values, entropy) | ✅ |
+| Claude Code and Codex session parsers, resumable backfill, raw archive | ✅ |
+| Rule-based extraction (preferences, decisions, gotchas, procedures, facts, tasks) | ✅ |
+| Code anchors + staleness (Rust, Python, Go, TypeScript, JavaScript) | ✅ |
+| Token-budgeted context packs + injection ledger | ✅ |
+| MCP server (4 tools) + Claude Code hooks | ✅ |
+| Markdown mirror + `rebuild` | ✅ |
+| Gemini CLI / OpenCode / Cursor sessions, contradiction resolution, embeddings | 🗺️ planned, see [ROADMAP.md](ROADMAP.md) |
 
 ## Getting started
 
-Recalla isn't released yet. To build from source:
-
 ```bash
-git clone https://github.com/damndeepesh/recalla
-cd recalla
-make check   # format, lint, tests
-make build   # target/release/recalla
+cargo install recalla
+# or from source:
+cargo install --git https://github.com/damndeepesh/recalla
 ```
 
-Requires stable Rust (installed automatically via `rust-toolchain.toml` when using rustup).
+Needs a stable Rust toolchain. macOS and Linux are tested in CI; Windows is untested.
 
-**Usage:**
+Then, in your terminal:
+
+```bash
+recalla backfill        # import your Claude Code + Codex history and extract memories
+recalla hooks install   # new Claude Code sessions start with relevant memory (backs up settings.json first)
+```
+
+Restart Claude Code and open a project you have history for. `recalla pack` shows what would be injected.
+
+To work from a checkout instead: `git clone https://github.com/damndeepesh/recalla && cd recalla && make check`.
+
+## Numbers
+
+Measured on an Apple M2, reproducible from a checkout:
+
+| What | Result | How |
+| --- | --- | --- |
+| Backfill of a 320 MB synthetic Claude + Codex history | 21.6 s (re-run: 0.03 s) | `make perf` |
+| Session-start hook with 100k memories | p95 13 ms | `make perf` |
+| MCP tool descriptions | about 430 tokens for all 4 tools | `make e2e` |
+| Binary size | 10 MB (each language grammar is a cargo feature) | `cargo build --release` |
+| Extraction quality | precision 1.00, recall 0.92 on a hand-labeled **synthetic** eval (53 labels). Treat this as a regression gate, not a claim about your logs. | `cargo test --test extract_eval` |
+
+`make e2e` runs 64 end-to-end checks on the release binary: planted secrets never reach the database, hooks never touch your other settings, MCP works in both protocol versions, anchors flag the right function, and the mirror rebuilds identically.
+
+## Known limits
+
+- **Extraction is rule-based.** It is precise but misses implicit rules, and it can still pick up a stray sentence. Check what it found with `recalla search`. To drop a wrong memory, ask your agent to forget it through the MCP `review` tool (reversible with `recalla confirm <id>`); a standalone `recalla forget` command is the first post-release item. Please [open an issue](https://github.com/damndeepesh/recalla/issues) for anything it gets wrong.
+- **Anchors need code to anchor to.** A memory is anchored when it names a symbol that exists in a file from the same session (or a file path in its text). Prose-only histories produce few anchors.
+- **Claude Code gets the hooks.** Codex is covered by `backfill` and by MCP; native Codex hooks are on the roadmap.
+- **English only** for extraction phrases.
+
+## Commands
 
 ```bash
 recalla backfill              # import Claude Code + Codex history and extract memories
 recalla hooks install         # inject memory at session start, capture new turns (backs up settings.json)
-claude mcp add --scope user recalla -- "$(command -v recalla)" mcp   # optional: recall/remember/review/why tools
+# optional: expose recall/remember/review/why as MCP tools
+claude mcp add --scope user recalla -- "$(command -v recalla)" mcp
 
 recalla pack --budget 1500    # see the context pack for the current project
 recalla search "rate limit"   # inspect memories
@@ -121,7 +152,7 @@ To report a vulnerability, see [SECURITY.md](SECURITY.md). Please don't open a p
 ## Design principles
 
 - **Trust over recall:** a stale or unverifiable memory is worse than none.
-- **Measured, not claimed:** token cost and benchmark results are published, including losses.
+- **Measured, not claimed:** every number in this README comes from a command you can run (`make perf`, `make e2e`, the eval). Known weak spots are listed above, not hidden.
 - **Small surface:** few dependencies and few MCP tools. Every dependency is justified in [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md).
 
 ## Contributing
