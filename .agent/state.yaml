@@ -1,18 +1,19 @@
 updated: 2026-11-22
 milestone: MVP
-branch: docs/public-readme
-task: "Claude Code harness: locate + parse JSONL into `Event`s (incl. tool calls)"
-status: planned
-plan: null
+branch: feature/claude-harness
+task: "Ingest pipeline: resumable checkpoints, zstd archive, `recalla backfill` + report"
+status: review
+plan: .agent/plans/claude-harness.md
 done:
-  - redaction merged (PR #3); known gaps filed as issues #4-#8
-  - gitleaks CI job + make secrets (D-011)
+  - claude harness: discovery + parser, 19 tests, 258 MB/s, 0 malformed on real logs
 next:
-  - merge public README PR
-  - /plan Claude Code harness
+  - PR for claude harness, then /plan ingest pipeline
 blockers:
   - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
 notes:
+  - provenance unique index must include source_path (subagent files share parent sessionId); fix in migration v1 before first release
+  - no compaction summaries in real logs yet; Summary path only fixture-tested
+  - ingest order per event: redact -> truncate_middle(MAX_EVENT_BYTES) -> extract; only resume from offsets returned by parse_session
   - search scope filter is exact; pack must union Global + Project memories itself
   - schema v1 not shipped yet: still safe to edit migration 0 until first release
   - anchors item must validate anchor.path/source_path stay under project root before reading files
