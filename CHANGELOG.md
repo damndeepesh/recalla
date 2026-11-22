@@ -3,6 +3,9 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+### Changed
+- Published crate excludes internal agent state, CI and dev-only files
+
 ### Fixed
 - MCP: Global memories are read-only (no confirm/forget), and `why` hides their sources
 
