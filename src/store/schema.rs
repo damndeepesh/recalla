@@ -162,6 +162,18 @@ const MIGRATIONS: &[&str] = &[
         extractor_version INTEGER NOT NULL DEFAULT 0
     );
     ",
+    // v4: injection ledger (what was served to agents, and what it cost).
+    "
+    CREATE TABLE injections (
+        id          INTEGER PRIMARY KEY,
+        at          INTEGER NOT NULL,
+        project     TEXT,
+        budget      INTEGER NOT NULL,
+        est_tokens  INTEGER NOT NULL,
+        memory_uids TEXT NOT NULL,
+        via         TEXT NOT NULL CHECK (via IN ('cli','hook','mcp'))
+    );
+    ",
 ];
 
 /// Schema version this build produces.
@@ -326,7 +338,7 @@ mod tests {
              VALUES (1, 'h', 's', 1, 0, 0, 0, 'user_text', 'kept across v3');",
         )
         .unwrap();
-        migrate(&mut conn).unwrap();
+        migrate_to(&mut conn, 3).unwrap();
         assert_eq!(user_version(&conn), 3);
         let text: String = conn
             .query_row("SELECT text FROM events", [], |r| r.get(0))
@@ -339,6 +351,37 @@ mod tests {
         assert!(
             conn.execute("INSERT INTO extract_state (id) VALUES (2)", [])
                 .is_err()
+        );
+    }
+
+    #[test]
+    fn v3_data_survives_v4_migration() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate_to(&mut conn, 3).unwrap();
+        conn.execute(
+            "INSERT INTO extract_state (id, last_event_id) VALUES (1, 9)",
+            [],
+        )
+        .unwrap();
+        migrate(&mut conn).unwrap();
+        assert_eq!(user_version(&conn), 4);
+        let last: i64 = conn
+            .query_row("SELECT last_event_id FROM extract_state", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(last, 9);
+        conn.execute(
+            "INSERT INTO injections (at, budget, est_tokens, memory_uids, via)
+             VALUES (1, 10, 5, '[]', 'cli')",
+            [],
+        )
+        .unwrap();
+        assert!(
+            conn.execute(
+                "INSERT INTO injections (at, budget, est_tokens, memory_uids, via)
+                 VALUES (1, 10, 5, '[]', 'bogus')",
+                [],
+            )
+            .is_err()
         );
     }
 }

@@ -13,3 +13,5 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - Store schema v2: sources, events (+FTS5), segments; provenance uniqueness includes source path
 - Rule-based extractor: preferences, decisions (incl. ADR files), gotchas, procedures, facts and tasks from stored events; incremental and checkpointed; `recalla extract`, `recalla search`; backfill runs extraction (`--no-extract` to skip)
 - Store schema v3: extraction checkpoint
+- Context packs: `recalla pack` (token-budgeted, ranked, per-project), injection ledger (`recalla stats`, schema v4), provenance view (`recalla why`)
+- Preferences are project-scoped unless explicitly global (extractor v2)

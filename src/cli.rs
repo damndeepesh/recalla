@@ -3,20 +3,23 @@
 //!
 //! Exit codes: 0 ok, 1 some files failed, 2 usage or setup error.
 
+use std::collections::HashMap;
 use std::ffi::OsString;
 use std::io::Write;
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 use serde_json::{Value, json};
 
 use crate::extract;
+use crate::extract::scope::project_key;
 use crate::harness::claude;
 use crate::ingest::{self, Options, Report};
-use crate::model::{Kind, Scope};
+use crate::model::{Kind, Memory, Scope, Status};
+use crate::pack;
 use crate::paths;
-use crate::store::{Filter, Hit, Store};
+use crate::store::{Filter, Hit, Store, Via};
 
 #[derive(Debug, Parser)]
 #[command(name = "recalla", version, about, arg_required_else_help = true)]
@@ -84,6 +87,50 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Print a token-budgeted context pack for a project (empty if none).
+    Pack {
+        /// Token budget, measured with a conservative estimate.
+        #[arg(long, default_value_t = 1500)]
+        budget: usize,
+        /// Project key [default: the git toplevel of the current directory].
+        #[arg(long, value_name = "PROJECT")]
+        project: Option<String>,
+        /// Favor memories matching these words.
+        #[arg(long, value_name = "TEXT")]
+        query: Option<String>,
+        #[arg(long, value_enum, default_value_t = Format::Md)]
+        format: Format,
+        /// Don't record this injection in the ledger.
+        #[arg(long)]
+        no_log: bool,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+    },
+    /// Show what memory has been injected and what it cost.
+    Stats {
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+        /// Print as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Explain a memory: its provenance and the source text it came from.
+    Why {
+        /// Memory id or a prefix of at least 4 hex characters.
+        id: String,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+        /// Print as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+/// Output format of `recalla pack`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum Format {
+    Md,
+    Json,
 }
 
 const DATA_DIR_HELP: &str =
@@ -95,6 +142,7 @@ const USAGE: u8 = 2;
 
 /// Runs the CLI with `args` (including the program name) and returns the
 /// process exit code. Normal output goes to `out`, diagnostics to `err`.
+#[allow(clippy::too_many_lines)] // one flat dispatch over subcommands
 pub fn run<I, T>(args: I, out: &mut impl Write, err: &mut impl Write) -> u8
 where
     I: IntoIterator<Item = T>,
@@ -190,7 +238,317 @@ where
                 Err(e) => emit(err, &format!("error: {e}\n"), USAGE),
             }
         }
+        Command::Pack {
+            budget,
+            project,
+            query,
+            format,
+            no_log,
+            data_dir,
+        } => {
+            let args = PackArgs {
+                budget,
+                project,
+                query,
+                no_log,
+            };
+            run_pack(&args, format, data_dir, out, err)
+        }
+        Command::Stats { data_dir, json } => {
+            read_only(data_dir, out, err, |s| stats_text(s, json).map(Why::Found))
+        }
+        Command::Why { id, data_dir, json } => read_only(data_dir, out, err, |s| why(s, &id, json)),
     }
+}
+
+#[derive(Clone)]
+struct PackArgs {
+    budget: usize,
+    project: Option<String>,
+    query: Option<String>,
+    no_log: bool,
+}
+
+/// Opens the existing store and prints what `f` produces: exit 0 for a
+/// found result, 2 for an ambiguous one or any error, 1 for a missing one.
+fn read_only(
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+    f: impl FnOnce(&Store) -> Result<Why, String>,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    match open_existing(&data_dir).and_then(|s| f(&s)) {
+        Ok(Why::Found(text)) => emit(out, &text, OK),
+        Ok(Why::Ambiguous(text)) => emit(err, &text, USAGE),
+        Ok(Why::Missing(what)) => emit(
+            err,
+            &format!("error: no memory matches {what}\n"),
+            SOME_FAILED,
+        ),
+        Err(e) => emit(err, &format!("error: {e}\n"), USAGE),
+    }
+}
+
+/// `recalla pack`. Hooks call this, so a missing database is a hint on
+/// stderr with exit 0, never a failure.
+fn run_pack(
+    args: &PackArgs,
+    format: Format,
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let db = paths::db_path(&data_dir);
+    if !db.is_file() {
+        let hint = format!(
+            "recalla: no database at {}; run `recalla backfill` first\n",
+            db.display()
+        );
+        return emit(err, &hint, OK);
+    }
+    let project = args.project.clone().or_else(|| {
+        let cwd = std::env::current_dir().ok()?;
+        Some(project_key(&cwd.to_string_lossy()))
+    });
+    let args = PackArgs {
+        project,
+        ..args.clone()
+    };
+    match pack_for(&data_dir, &args) {
+        Ok(p) => {
+            let text = match format {
+                Format::Md if p.markdown.is_empty() => String::new(),
+                Format::Md => format!("{}\n", p.markdown),
+                Format::Json => format!("{}\n", p.json),
+            };
+            emit(out, &text, OK)
+        }
+        Err(e) => emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    }
+}
+
+/// Builds the pack and, unless disabled, records it in the ledger. Nothing
+/// is recorded when nothing was injected.
+fn pack_for(data_dir: &std::path::Path, args: &PackArgs) -> Result<pack::Pack, String> {
+    let mut store = open_existing(data_dir)?;
+    let project = args.project.as_deref();
+    let memories = store
+        .memories_for_project(project, &[Status::Active, Status::NeedsReverify])
+        .map_err(|e| e.to_string())?;
+    let boosts = match args.query.as_deref() {
+        Some(q) => {
+            let hits = store
+                .search(q, &Filter::default(), SEARCH_LIMIT)
+                .map_err(|e| e.to_string())?;
+            let scored: Vec<_> = hits.into_iter().map(|h| (h.memory.uid, h.score)).collect();
+            pack::query_boosts(&scored)
+        }
+        None => HashMap::new(),
+    };
+    let label = project.map_or("global", |p| {
+        std::path::Path::new(p)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or(p)
+    });
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()
+        .and_then(|d| i64::try_from(d.as_millis()).ok())
+        .unwrap_or(0);
+    let built = pack::build(&memories, args.budget, label, &boosts, now);
+    if !args.no_log && !built.included_uids.is_empty() {
+        store
+            .record_injection(
+                project,
+                args.budget,
+                built.est_tokens,
+                &built.included_uids,
+                Via::Cli,
+            )
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(built)
+}
+
+/// Best-matching memories considered for a `--query` boost.
+const SEARCH_LIMIT: usize = 50;
+
+fn stats_text(store: &Store, json: bool) -> Result<String, String> {
+    let st = store.injection_stats().map_err(|e| e.to_string())?;
+    let counts = store.memory_counts().map_err(|e| e.to_string())?;
+    let top: Vec<(Option<Memory>, &String, u64)> = st
+        .top_memories
+        .iter()
+        .map(|(uid, n)| Ok((store.get(uid).map_err(|e| e.to_string())?, uid, *n)))
+        .collect::<Result<_, String>>()?;
+    let avg = st.est_tokens.checked_div(st.injections).unwrap_or(0);
+    if json {
+        return Ok(format!(
+            "{}\n",
+            json!({
+                "injections": st.injections,
+                "est_tokens": st.est_tokens,
+                "avg_est_tokens": avg,
+                "per_project": st.per_project.iter().map(|p| json!({
+                    "project": p.project, "injections": p.injections, "est_tokens": p.est_tokens,
+                })).collect::<Vec<_>>(),
+                "top_memories": top.iter().map(|(m, uid, n)| json!({
+                    "uid": uid, "count": n,
+                    "kind": m.as_ref().map(|m| m.kind.to_string()),
+                    "text": m.as_ref().map(|m| truncate_chars(&m.text, 120)),
+                })).collect::<Vec<_>>(),
+                "memories": counts.iter().map(|(k, s, n)| json!({
+                    "kind": k.to_string(), "status": s.to_string(), "count": n,
+                })).collect::<Vec<_>>(),
+            })
+        ));
+    }
+    let mut lines = vec![format!(
+        "injections  {} (avg {avg} tok, total {} tok est.)",
+        st.injections, st.est_tokens
+    )];
+    for p in &st.per_project {
+        lines.push(format!(
+            "  {}  {} injections, {} tok",
+            p.project.as_deref().unwrap_or("(none)"),
+            p.injections,
+            p.est_tokens
+        ));
+    }
+    if !top.is_empty() {
+        lines.push("most injected".to_owned());
+    }
+    for (m, uid, n) in &top {
+        let what = m.as_ref().map_or_else(String::new, |m| {
+            format!("{}  {}", m.kind, truncate_chars(&m.text, 80))
+        });
+        lines.push(format!("  {n:>3}x  {}  {what}", prefix(uid, 8)));
+    }
+    let by_status = counts
+        .iter()
+        .map(|(k, s, n)| format!("{k}/{s} {n}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    lines.push(format!(
+        "memories    {}",
+        if by_status.is_empty() {
+            "none"
+        } else {
+            &by_status
+        }
+    ));
+    Ok(lines.join("\n") + "\n")
+}
+
+enum Why {
+    Found(String),
+    /// Candidate list for stderr.
+    Ambiguous(String),
+    Missing(String),
+}
+
+/// Longest source-event excerpt `why` prints.
+const EVENT_CHARS: usize = 300;
+
+fn why(store: &Store, id: &str, json: bool) -> Result<Why, String> {
+    let mut found = store
+        .memories_by_uid_prefix(id)
+        .map_err(|e| e.to_string())?;
+    let m = match found.len() {
+        0 => return Ok(Why::Missing(id.to_owned())),
+        1 => found.remove(0),
+        _ => {
+            let list = found
+                .iter()
+                .map(|m| {
+                    let (uid, text) = (prefix(&m.uid, 12), truncate_chars(&m.text, 80));
+                    format!("  {uid}  {}  {text}", m.kind)
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            return Ok(Why::Ambiguous(format!(
+                "error: {id} matches {} memories; use a longer prefix:\n{list}\n",
+                found.len()
+            )));
+        }
+    };
+    let mut prov = Vec::new();
+    for p in &m.provenance {
+        let events = match (&p.source_path, p.line) {
+            (Some(path), Some(line)) => {
+                store.event_text_at(path, line).map_err(|e| e.to_string())?
+            }
+            _ => Vec::new(),
+        };
+        let file = p.source_path.as_deref().map(|s| {
+            std::path::Path::new(s)
+                .file_name()
+                .map_or_else(|| s.to_owned(), |n| n.to_string_lossy().into_owned())
+        });
+        prov.push((p, file, events));
+    }
+    if json {
+        return Ok(Why::Found(format!(
+            "{}\n",
+            json!({
+                "uid": m.uid, "kind": m.kind.to_string(), "text": m.text,
+                "scope": m.scope.to_string(), "confidence": m.confidence,
+                "seen_count": m.seen_count, "status": m.status.to_string(),
+                "provenance": prov.iter().map(|(p, file, events)| json!({
+                    "origin": p.origin.to_string(), "harness": p.harness,
+                    "session": p.session_id.as_deref().map(|s| prefix(s, 8)),
+                    "source_file": file, "line": p.line,
+                    "events": events.iter().map(|e| truncate_chars(e, EVENT_CHARS)).collect::<Vec<_>>(),
+                })).collect::<Vec<_>>(),
+                "anchors": m.anchors.iter().map(|a| json!({
+                    "path": a.path, "symbol": a.symbol,
+                })).collect::<Vec<_>>(),
+            })
+        )));
+    }
+    let mut lines = vec![
+        format!("{}  {}  {}", m.uid, m.kind, m.status),
+        format!("  {}", truncate_chars(&m.text, 1000)),
+        format!(
+            "  scope {}  confidence {:.2}  seen {}",
+            m.scope.to_string().replace('\u{1f}', " > "),
+            m.confidence,
+            m.seen_count
+        ),
+        "provenance".to_owned(),
+    ];
+    for (p, file, events) in &prov {
+        let line = p.line.map_or_else(|| "?".to_owned(), |l| l.to_string());
+        lines.push(format!(
+            "  {} {} {} line {line} ({})",
+            p.harness.as_deref().unwrap_or("-"),
+            prefix(p.session_id.as_deref().unwrap_or("-"), 8),
+            file.as_deref().unwrap_or("-"),
+            p.origin
+        ));
+        lines.extend(
+            events
+                .iter()
+                .map(|e| format!("    > {}", truncate_chars(e, EVENT_CHARS))),
+        );
+    }
+    if !m.anchors.is_empty() {
+        lines.push("anchors".to_owned());
+        lines.extend(m.anchors.iter().map(|a| match &a.symbol {
+            Some(sym) => format!("  {} ({sym})", a.path),
+            None => format!("  {}", a.path),
+        }));
+    }
+    Ok(Why::Found(lines.join("\n") + "\n"))
 }
 
 /// Ingest, then (when `extract`) extract; one combined report.
@@ -295,13 +653,7 @@ fn human_extract(r: &extract::Report) -> String {
 }
 
 fn truncate_chars(text: &str, max: usize) -> String {
-    let one_line = text.split_whitespace().collect::<Vec<_>>().join(" ");
-    if one_line.chars().count() <= max {
-        return one_line;
-    }
-    let mut cut: String = one_line.chars().take(max.saturating_sub(3)).collect();
-    cut.push_str("...");
-    cut
+    crate::pack::one_line(text, max)
 }
 
 fn human_hits(hits: &[Hit]) -> String {

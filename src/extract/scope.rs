@@ -43,12 +43,23 @@ pub fn project_scope(project: Option<&str>) -> Scope {
 /// (contains `/` or a file extension) or a backticked identifier.
 #[must_use]
 pub fn preference_scope(sentence: &str, project: Option<&str>) -> Scope {
-    if mentions_project_specifics(sentence) {
-        project_scope(project)
-    } else {
+    // Project by default: a preference said in one repo ("Prefer SwiftUI")
+    // must not leak into every other project's pack. Only explicit cues
+    // ("in all projects", "everywhere", "globally") make it global. User-wide
+    // rules already live in the agent's own global instructions file.
+    if GLOBAL_CUE.is_match(sentence) && !mentions_project_specifics(sentence) {
         Scope::Global
+    } else {
+        project_scope(project)
     }
 }
+
+static GLOBAL_CUE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+    regex::Regex::new(
+        r"(?i)\b(?:in (?:all|every|any) (?:projects?|repos?|repositories)|across (?:all )?(?:projects|repos)|everywhere|globally|in general|for every project)\b",
+    )
+    .expect("valid built-in regex")
+});
 
 #[cfg(test)]
 mod tests {
@@ -96,6 +107,14 @@ mod tests {
         let p = Some("/work/app");
         assert_eq!(
             preference_scope("Always write small commits.", p),
+            Scope::Project("/work/app".into())
+        );
+        assert_eq!(
+            preference_scope("Always write small commits in all projects.", p),
+            Scope::Global
+        );
+        assert_eq!(
+            preference_scope("Never touch that org, everywhere.", p),
             Scope::Global
         );
         assert_eq!(
