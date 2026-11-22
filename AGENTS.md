@@ -14,6 +14,7 @@ Local-first memory engine for coding agents. It backfills session history into a
 - `make check`: fmt-check + clippy + tests (must pass before push)
 - `make build`: release binary (`target/release/recalla`)
 - `make secrets`: gitleaks over full history (also a CI job)
+- `recalla backfill [--data-dir D] [--root R] [--no-archive] [--dry-run] [--json]`: import Claude Code sessions
 
 ## Layout
 

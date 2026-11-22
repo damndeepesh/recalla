@@ -19,10 +19,12 @@ path = "src/main.rs"
 
 [dependencies]
 blake3 = "1.8"
+clap = { version = "4", features = ["derive"] }
 regex = "1"
 serde_json = "1"
 rusqlite = { version = "0.43", features = ["bundled"] }
 thiserror = "2"
+zstd = "0.13"
 
 [lints.rust]
 unsafe_code = "forbid"

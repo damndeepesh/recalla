@@ -5,7 +5,7 @@
 - [x] Core model + store: `Memory`/`Provenance`/`Anchor` types, SQLite schema + migrations, FTS5, dedup, supersede/archive
 - [x] Redaction: rules + entropy, secret fixture corpus
 - [x] Claude Code harness: locate + parse JSONL into `Event`s (incl. tool calls)
-- [ ] Ingest pipeline: resumable checkpoints, zstd archive, `recalla backfill` + report
+- [x] Ingest pipeline: resumable checkpoints, zstd archive, `recalla backfill` + report
 - [ ] Rule-based extractor: typed memories with confidence + provenance, labeled eval set
 - [ ] Codex harness
 - [ ] Anchors: tree-sitter symbols (Rust, TS/JS, Python, Go) + `needs_reverify` + `confirm`

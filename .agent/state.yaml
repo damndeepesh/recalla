@@ -1,19 +1,20 @@
 updated: 2026-11-22
 milestone: MVP
-branch: feature/claude-harness
-task: "Ingest pipeline: resumable checkpoints, zstd archive, `recalla backfill` + report"
-status: review
-plan: .agent/plans/claude-harness.md
+branch: feature/ingest
+task: "Rule-based extractor: typed memories with confidence + provenance, labeled eval set"
+status: in_progress
+plan: .agent/plans/ingest.md
 done:
-  - claude harness: discovery + parser, 19 tests, 258 MB/s, 0 malformed on real logs
+  - ingest + recalla backfill: 30 MB real logs in 0.65 s, idempotent rerun, 0 real leaks (gitleaks over stored text)
 next:
-  - PR for claude harness, then /plan ingest pipeline
+  - merge ingest PR after CI
+  - start feature/extractor from drafted plan (Sonnet builders; Opus only for security review)
 blockers:
   - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
 notes:
-  - provenance unique index must include source_path (subagent files share parent sessionId); fix in migration v1 before first release
   - no compaction summaries in real logs yet; Summary path only fixture-tested
-  - ingest order per event: redact -> truncate_middle(MAX_EVENT_BYTES) -> extract; only resume from offsets returned by parse_session
+  - extractor reads redacted events from `events`; never re-read raw logs/archive for memory text
+  - dry-run opens an empty in-memory store, so it reports every file as new
   - search scope filter is exact; pack must union Global + Project memories itself
   - schema v1 not shipped yet: still safe to edit migration 0 until first release
   - anchors item must validate anchor.path/source_path stay under project root before reading files

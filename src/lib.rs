@@ -4,8 +4,12 @@
 
 #![cfg_attr(test, allow(clippy::unwrap_used))]
 
+pub mod archive;
+pub mod cli;
 pub mod harness;
+pub mod ingest;
 pub mod model;
+pub mod paths;
 pub mod redact;
 pub mod store;
 

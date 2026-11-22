@@ -9,3 +9,5 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - SQLite store: migrations, dedup with provenance merge, supersede/archive/restore, FTS5 BM25 search with safe query escaping
 - Secret redaction: known credential formats, keyword-assignment values, entropy catch-all; linear-time, idempotent
 - Claude Code harness: session discovery (incl. subagents) and streaming, resumable JSONL parser into normalized events
+- `recalla backfill`: resumable, idempotent import of Claude Code sessions into redacted events, with a content-addressed zstd archive of raw bytes (`--no-archive`, `--dry-run`, `--json`)
+- Store schema v2: sources, events (+FTS5), segments; provenance uniqueness includes source path
