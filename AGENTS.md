@@ -13,6 +13,7 @@ Local-first memory engine for coding agents. It backfills session history into a
 - `make fmt`: format
 - `make check`: fmt-check + clippy + tests (must pass before push)
 - `make build`: release binary (`target/release/recalla`)
+- `make secrets`: gitleaks over full history (also a CI job)
 
 ## Layout
 
@@ -31,4 +32,5 @@ Local-first memory engine for coding agents. It backfills session history into a
 - All SQL lives in `store`; other modules don't touch the DB.
 - MCP surface ≤4 tools, `tools/list` ≤1k tokens. Adding a tool needs a DESIGN_DECISIONS entry.
 - Never commit real session transcripts; fixtures must be synthetic.
+- Never write secret-shaped literals (incl. `password=<word>`); build them at runtime or use a `{S}` template placeholder. Run `make secrets` before pushing.
 - Each new dependency needs a DESIGN_DECISIONS entry.

@@ -71,3 +71,10 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Decision: `tests/realistic_corpus.rs` (108 real-world credential templates × 20 runtime secrets) is the merge gate for any redaction change. `redact()` reruns detection on its own output (≤4 extra passes) and maps new findings back, which makes idempotence hold by construction.
 - Why: Testing what developers actually write catches whole missing formats. The fixpoint costs ~45% throughput (82 to 46 MB/s, still ~7 s per 300 MB) for a guarantee instead of a heuristic.
 - Rejected: More rule-probing rounds as the only gate (diminishing returns); targeted idempotence patches only (fuzz still found failures).
+
+## D-011 gitleaks in CI replaces push protection (2026-11-22)
+
+- Context: Making the repo private turned off GitHub secret scanning and push protection (needs paid GHAS). GitGuardian still comments on PRs but doesn't block.
+- Decision: A `secrets` CI job runs `gitleaks/gitleaks-action@v2` over full history; `make secrets` runs the same locally. `.gitleaks.toml` extends the default rules with one allowlist: matches containing runtime template placeholders (`{S}`, `{pw}`, ...). Files are never ignored wholesale.
+- Why: Free for personal repos, blocks merges on a leak, and catches generic `password=` literals our vendor-format grep missed.
+- Rejected: Path allowlists for tests/ (would hide real leaks in fixtures); relying on GitGuardian alone (non-blocking).

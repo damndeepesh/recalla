@@ -1,0 +1,11 @@
+# gitleaks config: default rules plus one narrow allowlist.
+# Test fixtures are templates whose secret is a `{S}`/`{pw}`-style placeholder
+# filled at runtime (see tests/realistic_corpus.rs). Only matches that contain
+# such a placeholder are skipped; whole files are never ignored.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "runtime-filled test template placeholders"
+regexTarget = "match"
+regexes = ['''\{(S|pw|v|pem|t|tok|secret)\}''']
