@@ -29,3 +29,16 @@ A GitHub Pages workflow publishes `web/` on pushes to `web/**` at `https://damnd
 ## Regenerate `assets/og.png`
 
 Edit `tools/og.html`, serve the folder as above, and screenshot it at exactly 1200x630 with any headless browser (for example Playwright: `page.setViewportSize({width:1200,height:630})`, open `/recalla/tools/og.html`, `page.screenshot({path:'assets/og.png'})`).
+
+## Publishing to deepeshgupta.dev/recalla
+
+The page is deployed to GitHub Pages (`https://damndeepesh.github.io/recalla/`) by `.github/workflows/pages.yml`. `deepeshgupta.dev/recalla` is served by the portfolio site, which carries a copy under `public/recalla/` (a proxy rewrite is not reliably supported by its Cloudflare adapter). After changing `web/`, refresh that copy from a checkout of this repo next to a checkout of the portfolio:
+
+```bash
+rsync -a --delete \
+  --exclude tools --exclude README.md --exclude 404.html --exclude .nojekyll \
+  --exclude robots.txt --exclude sitemap.xml \
+  web/ ../portfolio/public/recalla/
+```
+
+Then commit and merge that change in the portfolio repo; Cloudflare redeploys it.
