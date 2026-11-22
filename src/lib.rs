@@ -5,6 +5,7 @@
 #![cfg_attr(test, allow(clippy::unwrap_used))]
 
 pub mod model;
+pub mod redact;
 pub mod store;
 
 /// Crate version, as reported by `recalla --version`.
