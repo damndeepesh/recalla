@@ -89,6 +89,7 @@ fn memory(uid: String, kind: Kind, text: &str) -> Memory {
         valid_to: None,
         provenance: Vec::new(),
         anchors: Vec::new(),
+        stale_reason: None,
     }
 }
 

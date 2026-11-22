@@ -17,6 +17,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde_json::{Value, json};
 use thiserror::Error;
 
+use crate::anchor;
 use crate::extract::{self, scope::project_key};
 use crate::ingest::{self, Options};
 use crate::ops::{self, PackArgs};
@@ -27,6 +28,8 @@ use crate::store::{Store, StoreError, Via};
 pub const BUSY: Duration = Duration::from_secs(2);
 /// Largest stdin a hook reads.
 const MAX_STDIN: u64 = 1 << 20;
+/// Time the staleness check may take after a capture.
+const CAPTURE_CHECK_BUDGET: Duration = Duration::from_millis(200);
 const DEFAULT_BUDGET: usize = 1500;
 const BUDGET_RANGE: std::ops::RangeInclusive<usize> = 100..=8000;
 /// The log is cut to its last `LOG_KEEP` bytes once it passes `LOG_MAX`.
@@ -243,6 +246,13 @@ fn capture(payload: &Value, ctx: &Ctx) -> Result<(), HookError> {
         return Err(HookError::store(&format!("ingest failed: {}", f.error)));
     }
     extract::run(&mut store, &extract::Options::default())?;
+    // Code edited during the session may have outdated memories.
+    if let Some(cwd) = payload.get("cwd").and_then(Value::as_str) {
+        let project = project_key(cwd);
+        if anchor::project_dir(&project).is_some() {
+            anchor::check(&mut store, &project, Some(CAPTURE_CHECK_BUDGET))?;
+        }
+    }
     Ok(())
 }
 

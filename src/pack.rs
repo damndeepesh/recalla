@@ -11,6 +11,8 @@ use crate::model::{Kind, Memory, Status};
 
 /// Longest memory text (in chars) shown on one pack line.
 const MAX_LINE_CHARS: usize = 300;
+/// Longest stale reason (in chars) appended to a re-verify line.
+const MAX_REASON_CHARS: usize = 80;
 /// Recency half-life-ish constant, in days.
 const RECENCY_DAYS: f64 = 90.0;
 const MS_PER_DAY: f64 = 86_400_000.0;
@@ -141,7 +143,8 @@ const fn section(m: &Memory) -> usize {
     }
 }
 
-/// `- text [uid8]`, with ` (N×)` for procedures seen more than once.
+/// `- text [uid8]`, with ` (N×)` for procedures seen more than once and
+/// ` (reason)` for a stale memory.
 /// `None` for a memory with no visible text.
 fn item(m: &Memory) -> Option<(String, String)> {
     let text = one_line(&m.text, MAX_LINE_CHARS);
@@ -153,8 +156,14 @@ fn item(m: &Memory) -> Option<(String, String)> {
     } else {
         String::new()
     };
+    let reason = m
+        .stale_reason
+        .as_deref()
+        .map(|r| one_line(r, MAX_REASON_CHARS))
+        .filter(|r| !r.is_empty() && m.status == Status::NeedsReverify)
+        .map_or_else(String::new, |r| format!(" ({r})"));
     let uid8: String = m.uid.chars().take(8).collect();
-    Some((format!("- {text}{seen} [{uid8}]"), text))
+    Some((format!("- {text}{seen}{reason} [{uid8}]"), text))
 }
 
 /// Ranks `memories` and greedily fills `budget` estimated tokens, skipping
@@ -318,6 +327,7 @@ mod tests {
             valid_to: None,
             provenance: Vec::new(),
             anchors: Vec::new(),
+            stale_reason: None,
         }
     }
 
@@ -482,6 +492,24 @@ mod tests {
         let hits = HashMap::from([(b.uid.clone(), 0.0)]);
         let p = build(&[a.clone(), b.clone()], 4000, "demo", &hits, NOW);
         assert_eq!(p.included_uids, [b.uid, a.uid]);
+    }
+
+    #[test]
+    fn stale_reason_is_shown_and_counted_in_the_budget() {
+        let mut stale = mem("9", Kind::Fact, "insert is cheap");
+        stale.status = Status::NeedsReverify;
+        stale.stale_reason = Some("symbol changed: Store::insert\nx".into());
+        let p = pack(&[stale.clone()], 4000);
+        assert!(
+            p.markdown
+                .ends_with("- insert is cheap (symbol changed: Store::insert x) [90000000]"),
+            "{}",
+            p.markdown
+        );
+        assert_eq!(p.est_tokens, est_tokens(&p.markdown));
+        // A reason on an active memory is ignored.
+        stale.status = Status::Active;
+        assert!(!pack(&[stale], 4000).markdown.contains("symbol changed"));
     }
 
     #[test]

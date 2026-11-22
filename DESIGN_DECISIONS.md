@@ -128,3 +128,17 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Why: a memory tool must not be able to break or slow a coding session, and `settings.json` holds the user's other hooks and permissions. serde_json's `preserve_order` feature (pulls `indexmap`) keeps key order so users' diffs stay small and the hook JSON has the documented key order.
 - Rejected: non-zero exit or stderr on error (shown to the model or blocks the session); editing settings through string splicing (fragile); a JSON-with-comments parser (Claude Code settings are plain JSON); skipping backups for no-op installs is intentional (nothing is written).
 
+
+## D-019 tree-sitter for symbol maps; one cargo feature per language (2026-11-22)
+
+- Context: Code anchors need the byte range of the definition a memory talks about, so a reformat or an edit elsewhere in the file doesn't flag it stale. Needed for Rust, Python, Go, TS/TSX and JS.
+- Decision: Add `tree-sitter` 0.27 (+ `streaming-iterator`, which its `QueryCursor::matches` API requires) and grammars `tree-sitter-{rust 0.24, python 0.25, go 0.25, typescript 0.23, javascript 0.25}`, each optional behind `lang-rust|python|go|ts|js` (all on by default). A language whose feature is off gets path-only anchors. Parsing is capped at 2 MB and 500 ms and returns no symbols on failure. Release binary: 4,810,704 B before, 10,116,464 B after (+5.3 MB, all five grammars), 4,827,792 B with `--no-default-features`.
+- Why: Real parsing gets nested items right (methods qualified by their `impl` type or class, nested classes, `const f = () => ...`, items inside macros-free modules) where line regexes break on braces in strings, comments and multi-line signatures. A false "changed" or "removed" erodes trust in the whole staleness signal, which is the product's differentiator. The size cost is real but bounded, and the feature flags let packagers drop languages.
+- Rejected: Per-language regex symbol maps (about 0 KB, but wrong on nesting, impl methods and string/comment content, and each new language is another bespoke regex); `ast-grep`/`syntect` wrappers (heavier, same grammars underneath); `git2` for HEAD (C dependency; reading `.git/HEAD` directly is enough for an informational field).
+
+## D-020 Paths and branch names are redacted with layers 1-2 only (2026-11-22)
+
+- Context: Layer 3 (entropy) redacted random-looking path components such as tempdir names, turning `cwd` and so the project key into `[REDACTED:high-entropy]`; anchoring and `check` then silently skipped those projects.
+- Decision: `redact_path` runs layers 1 and 2 plus the residual pass (known formats, keyword assignments, URL credentials) but not layer 3. Ingest uses it for `cwd` and `git_branch`; `text` and `tool_name` still use full `redact`.
+- Why: Random path components (tempdirs, hashes, build ids) are common and rarely secrets, while known credential formats and `key=value` secrets embedded in a path are still caught.
+- Rejected: An allow-list of tempdir shapes (brittle, per-OS); redacting then restoring the project key (leaks the redacted value into the key); skipping redaction for paths entirely (misses tokens pasted into a cwd).

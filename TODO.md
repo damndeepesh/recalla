@@ -10,7 +10,7 @@
 - [x] Pack + ledger: project detection, ranking, token budget, `recalla pack`, `recalla stats`
 - [x] MCP server: `recall`, `remember`, `review`, `why` (≤1k tokens)
 - [x] Hooks: idempotent install/uninstall for Claude Code (Codex via MCP registration; native Codex capture lands with the Codex harness)
-- [ ] Anchors: tree-sitter symbols (Rust, TS/JS, Python, Go) + `needs_reverify` + `confirm`
+- [x] Anchors: tree-sitter symbols (Rust, TS/JS, Python, Go) + `needs_reverify` + `confirm`
 - [ ] Markdown mirror + `recalla rebuild`
 - [ ] Codex harness
 - [ ] Perf pass: 300 MB backfill <5 min, hook p95 <100 ms

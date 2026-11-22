@@ -17,6 +17,7 @@ Local-first memory engine for coding agents. It backfills session history into a
 - `recalla backfill [--data-dir D] [--root R] [--no-archive] [--no-extract] [--dry-run] [--json]`: import + extract
 - `recalla extract [--rebuild]` / `recalla search <q> [--kind K] [--project P]`: re-extract / inspect memories
 - `recalla pack [--budget N] [--query Q] [--format md|json]` / `recalla stats` / `recalla why <id>`: context pack, ledger, provenance
+- `recalla check [--project P] [--json]` / `recalla confirm <id>`: flag memories whose anchored code changed / re-anchor one
 - `recalla mcp [--data-dir D] [--project P]`: MCP stdio server (tools: recall, remember, review, why)
 - `recalla hooks <install|uninstall|status> [--settings P] [--dry-run]` / `recalla hook <session-start|capture>`: Claude Code hooks (never block, log to `<data>/log/hook.log`)
 - `cargo test --test extract_eval -- --nocapture`: extractor precision/recall table

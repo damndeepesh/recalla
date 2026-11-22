@@ -1,5 +1,6 @@
 //! SQLite store: the only module that runs SQL.
 
+mod anchor;
 mod extract;
 mod ingest;
 mod pack;
@@ -96,6 +97,7 @@ fn memory_from_row(row: &Row<'_>) -> rusqlite::Result<Memory> {
         valid_to: row.get(13)?,
         provenance: Vec::new(),
         anchors: Vec::new(),
+        stale_reason: None,
     })
 }
 

@@ -1,18 +1,19 @@
 updated: 2026-11-22
 milestone: MVP
-branch: feature/mcp-hooks
-task: "Anchors: tree-sitter symbols (Rust, TS/JS, Python, Go) + `needs_reverify` + `confirm`"
+branch: feature/anchors
+task: "Codex harness"
 status: review
-plan: .agent/plans/mcp-hooks.md
+plan: .agent/plans/anchors.md
 done:
-  - MCP + hooks end to end on real data: session-start ~1ms, capture 0.13s/7.4MB, install/uninstall exact on a copy of real settings
+  - anchors: symbol anchoring (text + session-window files), staleness check, confirm, pack reasons; 279 lib tests
 next:
-  - security review + PR for mcp-hooks
-  - then anchors (code-anchored staleness: the core differentiator), then Codex harness, perf pass, mirror
-  - launch-ready once anchors land: draft launch post + Show HN for user
+  - security review + PR for anchors
+  - then Codex harness, perf pass, markdown mirror; launch prep (drafts in scratchpad launch-drafts.md)
 blockers:
   - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
 notes:
+  - local real history too small to show anchors (0 on 8 sessions); mechanism proven in tests; re-check on larger history
+  - tool-input file paths still go through entropy redaction: window files with random path components are ignored
   - real-data lesson: eval written alongside rules overfits; always check real logs before trusting eval numbers
   - no compaction summaries in real logs yet; Summary path only fixture-tested
   - extractor reads redacted events from `events`; never re-read raw logs/archive for memory text

@@ -96,7 +96,20 @@ const MAX_PASSES: usize = 4;
 /// until a pass finds nothing (at most [`MAX_PASSES`] extra passes).
 #[must_use]
 pub fn redact(text: &str) -> Redacted<'_> {
-    let mut findings = detect(text);
+    redact_layers(text, true)
+}
+
+/// As [`redact`], for file paths and branch names: layers 1 and 2 plus the
+/// residual pass (known formats, keyword assignments, URL credentials), but
+/// not the entropy layer. Random path components (tempdirs, hashes) are
+/// common and rarely secrets; redacting them would corrupt project keys.
+#[must_use]
+pub fn redact_path(text: &str) -> Redacted<'_> {
+    redact_layers(text, false)
+}
+
+fn redact_layers(text: &str, entropy: bool) -> Redacted<'_> {
+    let mut findings = detect(text, entropy);
     if findings.is_empty() {
         return Redacted {
             text: Cow::Borrowed(text),
@@ -105,7 +118,7 @@ pub fn redact(text: &str) -> Redacted<'_> {
     }
     let mut out = render(text, &findings);
     for _ in 0..MAX_PASSES {
-        let again = detect(&out);
+        let again = detect(&out, entropy);
         if again.is_empty() {
             break;
         }
@@ -128,12 +141,14 @@ pub fn redact(text: &str) -> Redacted<'_> {
     }
 }
 
-/// All layers plus the residual pass over `text`, merged.
-fn detect(text: &str) -> Vec<Finding> {
+/// All layers (entropy only when asked) plus the residual pass over `text`, merged.
+fn detect(text: &str, entropy: bool) -> Vec<Finding> {
     let (mut found, mut seen) = (Vec::new(), Vec::new());
     rules::known(text, &mut found);
     rules::assignments(text, &mut found, &mut seen);
-    entropy::scan(text, &mut found);
+    if entropy {
+        entropy::scan(text, &mut found);
+    }
 
     let markers: Vec<(usize, usize)> = MARKER
         .find_iter(text)
@@ -300,6 +315,43 @@ mod tests {
 
     fn spans(f: &[Finding]) -> Vec<(&'static str, usize, usize)> {
         f.iter().map(|f| (f.rule, f.start, f.end)).collect()
+    }
+
+    #[test]
+    fn redact_path_keeps_random_components_but_catches_credentials() {
+        let tmp = "/private/var/folders/xy/abcDEF123ghiJKL456/T/.tmpQ8zK2pLm9Rw4";
+        assert!(
+            redact(tmp)
+                .findings
+                .iter()
+                .any(|f| f.rule == "high-entropy")
+        );
+        let r = redact_path(tmp);
+        assert!(r.is_clean());
+        assert_eq!(r.text, tmp);
+
+        let token = format!("ghp_{}", test_token(11, 36, ALNUM));
+        let cwd = format!("/work/{token}/app");
+        let r = redact_path(&cwd);
+        assert_eq!(r.text, "/work/[REDACTED:github-token]/app");
+        let url = format!("https://user:{}@host/repo", test_token(5, 16, ALNUM));
+        assert!(!redact_path(&url).is_clean());
+    }
+
+    #[test]
+    fn redact_path_is_idempotent() {
+        let token = format!("ghp_{}", test_token(12, 36, ALNUM));
+        for input in [
+            format!("/work/{token}/app"),
+            format!("/a/password={}/b", test_token(3, 16, ALNUM)),
+            "/private/var/folders/xy/abcDEF123ghiJKL456/T/.tmpQ8zK2pLm9Rw4".to_owned(),
+            "feature/plain-branch".to_owned(),
+        ] {
+            let once = redact_path(&input).text.into_owned();
+            let twice = redact_path(&once);
+            assert!(twice.is_clean(), "{once} -> {}", twice.text);
+            assert_eq!(twice.text, once);
+        }
     }
 
     #[test]

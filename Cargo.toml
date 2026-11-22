@@ -24,7 +24,22 @@ regex = "1"
 serde_json = { version = "1", features = ["preserve_order"] }
 rusqlite = { version = "0.43", features = ["bundled"] }
 thiserror = "2"
+streaming-iterator = "0.1"
+tree-sitter = "0.27"
+tree-sitter-go = { version = "0.25", optional = true }
+tree-sitter-javascript = { version = "0.25", optional = true }
+tree-sitter-python = { version = "0.25", optional = true }
+tree-sitter-rust = { version = "0.24", optional = true }
+tree-sitter-typescript = { version = "0.23", optional = true }
 zstd = "0.13"
+
+[features]
+default = ["lang-rust", "lang-python", "lang-go", "lang-ts", "lang-js"]
+lang-rust = ["dep:tree-sitter-rust"]
+lang-python = ["dep:tree-sitter-python"]
+lang-go = ["dep:tree-sitter-go"]
+lang-ts = ["dep:tree-sitter-typescript"]
+lang-js = ["dep:tree-sitter-javascript"]
 
 [lints.rust]
 unsafe_code = "forbid"

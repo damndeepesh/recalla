@@ -10,7 +10,8 @@ use std::time::Duration;
 use serde_json::json;
 use thiserror::Error;
 
-use crate::model::Status;
+use crate::anchor;
+use crate::model::{Scope, Status};
 use crate::pack;
 use crate::paths;
 use crate::store::{DEFAULT_BUSY, Filter, Store, StoreError, Via};
@@ -39,6 +40,9 @@ pub fn pack_for(data_dir: &Path, args: &PackArgs) -> Result<pack::Pack, String> 
 /// A message naming the failure (SQLite error).
 pub fn pack_with(store: &mut Store, args: &PackArgs) -> Result<pack::Pack, String> {
     let project = args.project.as_deref();
+    if let Some(key) = project.filter(|k| anchor::project_dir(k).is_some()) {
+        anchor::check(store, key, Some(PACK_CHECK_BUDGET)).map_err(|e| e.to_string())?;
+    }
     let memories = store
         .memories_for_project(project, &[Status::Active, Status::NeedsReverify])
         .map_err(|e| e.to_string())?;
@@ -76,6 +80,52 @@ pub fn pack_with(store: &mut Store, args: &PackArgs) -> Result<pack::Pack, Strin
             .map_err(|e| e.to_string())?;
     }
     Ok(built)
+}
+
+/// Time the staleness check may take before a pack is built.
+pub const PACK_CHECK_BUDGET: Duration = Duration::from_millis(50);
+/// Confidence floor a confirmed memory gets.
+pub const CONFIRMED_CONFIDENCE: f32 = 0.9;
+
+/// Confirms a memory: re-anchors it against the code as it is now (from its
+/// text and existing anchor paths), clears stale reasons, sets it active and
+/// raises its confidence to at least [`CONFIRMED_CONFIDENCE`]. Returns how
+/// many anchors it has afterwards. Global memories have no code to anchor.
+///
+/// # Errors
+/// A message naming the failure (unknown id, SQLite error).
+pub fn confirm(store: &mut Store, uid: &str) -> Result<usize, String> {
+    let m = store
+        .get(uid)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("No memory matches {uid}"))?;
+    let root = match &m.scope {
+        Scope::Project(k) | Scope::Module { project: k, .. } => anchor::project_dir(k),
+        Scope::Global => None,
+    };
+    let anchors = if let Some(root) = root {
+        // Path-only anchors stay path anchors; symbol anchors came from a
+        // symbol match (often a session-window file), so re-resolve those as
+        // symbol-only and never degrade them to a whole-file anchor.
+        let (sym, plain): (Vec<_>, Vec<_>) = m.anchors.iter().partition(|a| a.symbol.is_some());
+        let paths: Vec<String> = plain.iter().map(|a| a.path.clone()).collect();
+        let symbol_only: Vec<String> = sym.iter().map(|a| a.path.clone()).collect();
+        let fresh = anchor::resolve_with(&m.text, &paths, &symbol_only, root);
+        store
+            .replace_anchors(uid, &fresh)
+            .map_err(|e| e.to_string())?;
+        fresh.len()
+    } else {
+        store.clear_stale(uid).map_err(|e| e.to_string())?;
+        m.anchors.len()
+    };
+    store
+        .set_status(uid, Status::Active)
+        .map_err(|e| e.to_string())?;
+    store
+        .set_confidence(uid, m.confidence.max(CONFIRMED_CONFIDENCE))
+        .map_err(|e| e.to_string())?;
+    Ok(anchors)
 }
 
 /// Best-matching memories considered for a `--query` boost.

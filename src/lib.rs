@@ -4,6 +4,7 @@
 
 #![cfg_attr(test, allow(clippy::unwrap_used, clippy::assert_is_empty))]
 
+pub mod anchor;
 pub mod archive;
 pub mod cli;
 pub mod extract;

@@ -19,4 +19,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - Context packs: `recalla pack` (token-budgeted, ranked, per-project), injection ledger (`recalla stats`, schema v4), provenance view (`recalla why`)
 - Preferences are project-scoped unless explicitly global (extractor v2)
 - `recalla mcp`: stdio MCP server (2026-07-28 + legacy) with `recall`, `remember`, `review`, `why` (~430 tokens)
+- Code anchors: memories pinned to tree-sitter symbols (Rust, Python, Go, TS/TSX, JS); `needs_reverify` with a reason when the symbol changes or disappears; `recalla check`, `recalla confirm`; packs show the reason
+- `redact_path` for cwd/branch (no entropy layer) so project keys survive random path components
 - Claude Code hooks: `recalla hook session-start|capture`, `recalla hooks install|uninstall|status` (never block; settings backed up, atomic, order-preserving)

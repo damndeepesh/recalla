@@ -4,7 +4,7 @@
 use serde_json::{Value, json};
 
 use super::McpCtx;
-use crate::model::{Kind, Memory, NewMemory, Origin, Provenance, Scope, Status};
+use crate::model::{Kind, Memory, NewMemory, Origin, Provenance, Scope};
 use crate::ops::{self, PackArgs, Why};
 use crate::paths;
 use crate::redact::redact;
@@ -14,7 +14,6 @@ const MAX_TEXT_CHARS: usize = 1000;
 const MIN_BUDGET: i64 = 100;
 const MAX_BUDGET: i64 = 8000;
 const DEFAULT_BUDGET: usize = 1200;
-const CONFIRMED_CONFIDENCE: f32 = 0.9;
 const REMEMBER_IMPORTANCE: u8 = 2;
 const MAX_CANDIDATES: usize = 5;
 const EMPTY: &str = "No memories yet for this project.";
@@ -180,7 +179,7 @@ fn remember(args: &Value, ctx: &McpCtx) -> Result<String, String> {
         kind,
         text: clean,
         scope,
-        confidence: CONFIRMED_CONFIDENCE,
+        confidence: ops::CONFIRMED_CONFIDENCE,
         importance: REMEMBER_IMPORTANCE,
     };
     let prov = Provenance {
@@ -257,12 +256,7 @@ fn review(args: &Value, ctx: &McpCtx) -> Result<String, String> {
             "Forgot {uid8} (archived, reversible: restore with review confirm)"
         ));
     }
-    store
-        .set_status(&m.uid, Status::Active)
-        .map_err(|e| e.to_string())?;
-    store
-        .set_confidence(&m.uid, m.confidence.max(CONFIRMED_CONFIDENCE))
-        .map_err(|e| e.to_string())?;
+    ops::confirm(&mut store, &m.uid)?;
     Ok(format!("Confirmed {uid8}"))
 }
 
