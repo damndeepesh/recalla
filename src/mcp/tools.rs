@@ -188,6 +188,18 @@ fn remember(args: &Value, ctx: &McpCtx) -> Result<String, String> {
     };
     let mut store = ops::open_or_create(&ctx.data_dir).map_err(|e| e.to_string())?;
     let outcome = store.insert(&new, &prov).map_err(|e| e.to_string())?;
+    // Pin a new memory to the code it names, exactly as extraction does, so
+    // agent-saved memories also go stale when that code changes.
+    if let (Insert::Inserted(uid), Scope::Project(key)) = (&outcome, &new.scope) {
+        if let Some(root) = crate::anchor::project_dir(key) {
+            let paths = crate::extract::text::path_tokens(&new.text);
+            let anchors = crate::anchor::resolve_with(&new.text, &paths, &[], root);
+            store
+                .replace_anchors(uid, &anchors)
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    let _ = crate::mirror::sync_best_effort(&mut store, &ctx.data_dir);
     let uid8 = ops::prefix(outcome.uid(), 8);
     Ok(match outcome {
         Insert::Inserted(_) => format!("Saved {uid8}"),
@@ -252,11 +264,13 @@ fn review(args: &Value, ctx: &McpCtx) -> Result<String, String> {
     let uid8 = ops::prefix(&m.uid, 8);
     if action == "forget" {
         store.archive(&m.uid).map_err(|e| e.to_string())?;
+        let _ = crate::mirror::sync_best_effort(&mut store, &ctx.data_dir);
         return Ok(format!(
             "Forgot {uid8} (archived, reversible: restore with review confirm)"
         ));
     }
     ops::confirm(&mut store, &m.uid)?;
+    let _ = crate::mirror::sync_best_effort(&mut store, &ctx.data_dir);
     Ok(format!("Confirmed {uid8}"))
 }
 

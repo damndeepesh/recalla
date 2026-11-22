@@ -430,3 +430,44 @@ fn global_memories_are_read_only_and_hide_sources_over_mcp() {
         "source file must be hidden: {msg}"
     );
 }
+
+#[test]
+fn remember_anchors_memories_to_the_code_they_name() {
+    // Agent-saved memories must go stale like extracted ones: pin them to the
+    // symbol and file the text names.
+    let dir = tempfile::tempdir().unwrap();
+    let proj = dir.path().join("proj");
+    std::fs::create_dir_all(proj.join("src")).unwrap();
+    std::fs::write(
+        proj.join("src/store.rs"),
+        "pub struct Store;\nimpl Store {\n    pub fn insert(&self) -> u32 {\n        1\n    }\n}\n",
+    )
+    .unwrap();
+    let c = McpCtx {
+        data_dir: dir.path().join("data"),
+        project: Some(proj.to_string_lossy().into_owned()),
+    };
+    let (msg, err) = tool(
+        &c,
+        "remember",
+        &json!({"text": "`Store::insert` in src/store.rs must run in a transaction.", "kind": "decision"}),
+    );
+    assert!(!err, "{msg}");
+    let store = crate::ops::open_existing(&c.data_dir).unwrap();
+    let uid = msg.rsplit(' ').next().unwrap();
+    let m = &store.memories_by_uid_prefix(uid).unwrap()[0];
+    assert!(
+        m.anchors
+            .iter()
+            .any(|a| a.symbol.as_deref() == Some("Store::insert")),
+        "{:?}",
+        m.anchors
+    );
+    // A project that is not a real directory simply gets no anchors.
+    let (_, err) = tool(
+        &ctx(&dir),
+        "remember",
+        &json!({"text": "plain note about nothing"}),
+    );
+    assert!(!err);
+}

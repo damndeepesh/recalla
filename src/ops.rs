@@ -153,7 +153,7 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
         .memories_by_uid_prefix(id)
         .map_err(|e| e.to_string())?;
     let m = match found.len() {
-        0 => return Ok(Why::Missing(id.to_owned())),
+        0 => return Ok(Why::Missing(clean(id))),
         1 => found.remove(0),
         _ => {
             let list = found
@@ -179,9 +179,11 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
             _ => Vec::new(),
         };
         let file = p.source_path.as_deref().filter(|_| sources).map(|s| {
-            Path::new(s)
-                .file_name()
-                .map_or_else(|| s.to_owned(), |n| n.to_string_lossy().into_owned())
+            clean(
+                &Path::new(s)
+                    .file_name()
+                    .map_or_else(|| s.to_owned(), |n| n.to_string_lossy().into_owned()),
+            )
         });
         prov.push((p, file, events));
     }
@@ -189,27 +191,28 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
         return Ok(Why::Found(format!(
             "{}\n",
             json!({
-                "uid": m.uid, "kind": m.kind.to_string(), "text": m.text,
-                "scope": m.scope.to_string(), "confidence": m.confidence,
+                "uid": clean(&m.uid), "kind": m.kind.to_string(),
+                "text": truncate_chars(&m.text, 2000),
+                "scope": clean(&m.scope.to_string()), "confidence": m.confidence,
                 "seen_count": m.seen_count, "status": m.status.to_string(),
                 "provenance": prov.iter().map(|(p, file, events)| json!({
-                    "origin": p.origin.to_string(), "harness": p.harness,
+                    "origin": p.origin.to_string(), "harness": p.harness.as_deref().map(clean),
                     "session": p.session_id.as_deref().map(|s| prefix(s, 8)),
                     "source_file": file, "line": p.line,
                     "events": events.iter().map(|e| truncate_chars(e, EVENT_CHARS)).collect::<Vec<_>>(),
                 })).collect::<Vec<_>>(),
                 "anchors": m.anchors.iter().map(|a| json!({
-                    "path": a.path, "symbol": a.symbol,
+                    "path": clean(&a.path), "symbol": a.symbol.as_deref().map(clean),
                 })).collect::<Vec<_>>(),
             })
         )));
     }
     let mut lines = vec![
-        format!("{}  {}  {}", m.uid, m.kind, m.status),
+        format!("{}  {}  {}", clean(&m.uid), m.kind, m.status),
         format!("  {}", truncate_chars(&m.text, 1000)),
         format!(
             "  scope {}  confidence {:.2}  seen {}",
-            m.scope.to_string().replace('\u{1f}', " > "),
+            clean(&m.scope.to_string().replace('\u{1f}', " > ")),
             m.confidence,
             m.seen_count
         ),
@@ -219,7 +222,7 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
         let line = p.line.map_or_else(|| "?".to_owned(), |l| l.to_string());
         lines.push(format!(
             "  {} {} {} line {line} ({})",
-            p.harness.as_deref().unwrap_or("-"),
+            clean(p.harness.as_deref().unwrap_or("-")),
             prefix(p.session_id.as_deref().unwrap_or("-"), 8),
             file.as_deref().unwrap_or("-"),
             p.origin
@@ -233,8 +236,8 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
     if !m.anchors.is_empty() {
         lines.push("anchors".to_owned());
         lines.extend(m.anchors.iter().map(|a| match &a.symbol {
-            Some(sym) => format!("  {} ({sym})", a.path),
-            None => format!("  {}", a.path),
+            Some(sym) => format!("  {} ({})", clean(&a.path), clean(sym)),
+            None => format!("  {}", clean(&a.path)),
         }));
     }
     Ok(Why::Found(lines.join("\n") + "\n"))
@@ -296,5 +299,16 @@ pub fn truncate_chars(text: &str, max: usize) -> String {
 /// First `n` chars of `s`.
 #[must_use]
 pub fn prefix(s: &str, n: usize) -> String {
-    s.chars().take(n).collect()
+    let head: String = s.chars().take(n).collect();
+    clean(&head)
 }
+
+/// `s` made safe to print: one line, no control or invisible characters.
+/// Everything that comes from logs, the database or a mirror goes through it.
+#[must_use]
+pub fn clean(s: &str) -> String {
+    pack::one_line(s, CLEAN_MAX)
+}
+
+/// Longest cleaned field.
+const CLEAN_MAX: usize = 500;

@@ -3,6 +3,7 @@
 mod anchor;
 mod extract;
 mod ingest;
+mod mirror;
 mod pack;
 mod schema;
 mod search;
@@ -20,6 +21,7 @@ use crate::model::{self, Anchor, Memory, NewMemory, Origin, Provenance, Scope, S
 
 pub use extract::EventRow;
 pub use ingest::{Checkpoint, SegmentRow, SourceRow, StoredEvent, StoredKind};
+pub use mirror::FullMemory;
 pub use pack::{InjectionStats, ProjectInjections, Via};
 pub use schema::version as schema_version;
 pub use search::{Filter, Hit};
@@ -108,6 +110,16 @@ fn require(conn: &Connection, uid: &str) -> Result<i64, StoreError> {
     })
     .optional()?
     .ok_or_else(|| StoreError::NotFound(uid.to_owned()))
+}
+
+/// Bumps a memory's `updated_at` when only its children (anchors) changed, so
+/// "last changed" stays truthful. (The mirror relies on triggers, not this.)
+fn touch(conn: &Connection, id: i64, now: i64) -> Result<(), StoreError> {
+    conn.execute(
+        "UPDATE memories SET updated_at = ?2 WHERE id = ?1",
+        [id, now],
+    )?;
+    Ok(())
 }
 
 /// The body of [`Store::insert`] inside an open transaction.
@@ -345,8 +357,12 @@ impl Store {
     /// # Errors
     /// `NotFound` if the memory doesn't exist.
     pub fn add_anchor(&mut self, uid: &str, anchor: &Anchor) -> Result<(), StoreError> {
-        let id = require(&self.conn, uid)?;
-        self.conn.execute(
+        let now = (self.clock)();
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let id = require(&tx, uid)?;
+        let added = tx.execute(
             "INSERT OR IGNORE INTO anchors (memory_id, path, symbol, lang, content_hash, git_commit)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
             params![
@@ -358,6 +374,10 @@ impl Store {
                 anchor.git_commit
             ],
         )?;
+        if added > 0 {
+            touch(&tx, id, now)?;
+        }
+        tx.commit()?;
         Ok(())
     }
 

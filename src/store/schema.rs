@@ -179,6 +179,45 @@ const MIGRATIONS: &[&str] = &[
     // v6: pack path (`memories_for_project`, `anchors_for_project`) filters on
     // scope_project and status; without this it scans the whole table.
     "CREATE INDEX memories_project_status ON memories (scope_project, status);",
+    // v7: markdown mirror dirty set. Triggers mark a memory dirty whenever it
+    // or its anchors/provenance change; the mirror sync clears marks it has
+    // written. `seq` is a fresh number on every (re)mark, so a sync only clears
+    // the exact marks it saw and a change made meanwhile stays dirty. No clock
+    // is involved. Seeded with every existing memory.
+    "CREATE TABLE mirror_dirty (
+        seq        INTEGER PRIMARY KEY AUTOINCREMENT,
+        memory_id  INTEGER NOT NULL UNIQUE
+    );
+    INSERT INTO mirror_dirty (memory_id) SELECT id FROM memories;
+    CREATE TRIGGER mirror_memories_ai AFTER INSERT ON memories BEGIN
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (new.id);
+    END;
+    CREATE TRIGGER mirror_memories_au AFTER UPDATE ON memories BEGIN
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (new.id);
+    END;
+    CREATE TRIGGER mirror_memories_ad AFTER DELETE ON memories BEGIN
+        DELETE FROM mirror_dirty WHERE memory_id = old.id;
+    END;
+    CREATE TRIGGER mirror_anchors_ai AFTER INSERT ON anchors BEGIN
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (new.memory_id);
+    END;
+    CREATE TRIGGER mirror_anchors_au AFTER UPDATE ON anchors BEGIN
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (new.memory_id);
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (old.memory_id);
+    END;
+    CREATE TRIGGER mirror_anchors_ad AFTER DELETE ON anchors BEGIN
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (old.memory_id);
+    END;
+    CREATE TRIGGER mirror_provenance_ai AFTER INSERT ON provenance BEGIN
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (new.memory_id);
+    END;
+    CREATE TRIGGER mirror_provenance_au AFTER UPDATE ON provenance BEGIN
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (new.memory_id);
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (old.memory_id);
+    END;
+    CREATE TRIGGER mirror_provenance_ad AFTER DELETE ON provenance BEGIN
+        INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (old.memory_id);
+    END;",
 ];
 
 /// Schema version this build produces.
@@ -424,7 +463,7 @@ mod tests {
         )
         .unwrap();
         migrate(&mut conn).unwrap();
-        assert_eq!(user_version(&conn), 6);
+        assert_eq!(user_version(&conn), version());
         let plan: String = conn
             .prepare(
                 "EXPLAIN QUERY PLAN SELECT id FROM memories
@@ -437,5 +476,63 @@ mod tests {
             .unwrap()
             .join(" | ");
         assert!(plan.contains("memories_project_status"), "{plan}");
+    }
+
+    fn dirty(conn: &Connection) -> Vec<i64> {
+        conn.prepare("SELECT memory_id FROM mirror_dirty ORDER BY memory_id")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect()
+    }
+
+    #[test]
+    fn v7_triggers_track_changed_memories() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate(&mut conn).unwrap();
+        let ins = "INSERT INTO memories (uid, kind, text, scope_key, confidence, importance,
+            status, seen_count, created_at, updated_at, valid_from)
+            VALUES (?1, 'fact', ?1, 'g', 0.5, 1, 'active', 1, 0, 0, 0)";
+        conn.execute(ins, ["a"]).unwrap();
+        conn.execute(ins, ["b"]).unwrap();
+        assert_eq!(dirty(&conn), vec![1, 2]);
+        conn.execute("DELETE FROM mirror_dirty", []).unwrap();
+        conn.execute("INSERT INTO anchors (memory_id, path) VALUES (2, 'x')", [])
+            .unwrap();
+        assert_eq!(dirty(&conn), vec![2]);
+        conn.execute("DELETE FROM mirror_dirty", []).unwrap();
+        conn.execute("UPDATE anchors SET memory_id = 1", [])
+            .unwrap();
+        assert_eq!(dirty(&conn), vec![1, 2]);
+        conn.execute("DELETE FROM mirror_dirty", []).unwrap();
+        conn.execute("DELETE FROM anchors", []).unwrap();
+        assert_eq!(dirty(&conn), vec![1]);
+        conn.execute("DELETE FROM mirror_dirty", []).unwrap();
+        conn.execute(
+            "INSERT INTO provenance (memory_id, origin, created_at) VALUES (2, 'backfill', 0)",
+            [],
+        )
+        .unwrap();
+        assert_eq!(dirty(&conn), vec![2]);
+        conn.execute("DELETE FROM provenance", []).unwrap();
+        conn.execute("DELETE FROM memories WHERE id = 2", [])
+            .unwrap();
+        assert_eq!(dirty(&conn), Vec::<i64>::new());
+    }
+
+    #[test]
+    fn v7_seeds_existing_memories() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate_to(&mut conn, 6).unwrap();
+        conn.execute(
+            "INSERT INTO memories (uid, kind, text, scope_key, confidence, importance,
+                status, seen_count, created_at, updated_at, valid_from)
+             VALUES ('a', 'fact', 'a', 'g', 0.5, 1, 'active', 1, 0, 0, 0)",
+            [],
+        )
+        .unwrap();
+        migrate(&mut conn).unwrap();
+        assert_eq!(dirty(&conn), vec![1]);
     }
 }

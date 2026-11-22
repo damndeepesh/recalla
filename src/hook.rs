@@ -20,6 +20,7 @@ use thiserror::Error;
 use crate::anchor;
 use crate::extract::{self, scope::project_key};
 use crate::ingest::{self, Options};
+use crate::mirror;
 use crate::ops::{self, PackArgs};
 use crate::paths;
 use crate::store::{Store, StoreError, Via};
@@ -76,6 +77,8 @@ enum HookError {
     Store(String),
     #[error("{0}")]
     Io(String),
+    #[error("{0}")]
+    Mirror(String),
     #[error("panic")]
     Panic,
 }
@@ -88,6 +91,7 @@ impl HookError {
             Self::Busy => "busy",
             Self::Store(_) => "store",
             Self::Io(_) => "io",
+            Self::Mirror(_) => "mirror",
             Self::Panic => "panic",
         }
     }
@@ -254,7 +258,8 @@ fn capture(payload: &Value, ctx: &Ctx) -> Result<(), HookError> {
             anchor::check(&mut store, &project, Some(CAPTURE_CHECK_BUDGET))?;
         }
     }
-    Ok(())
+    mirror::sync_best_effort(&mut store, &ctx.data_dir)
+        .map_or(Ok(()), |w| Err(HookError::Mirror(w)))
 }
 
 /// Appends one line to the hook log, trimming it first when it is too big.

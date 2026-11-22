@@ -95,7 +95,7 @@ pub fn query_boosts(hits: &[(String, f64)]) -> HashMap<String, f64> {
 pub fn one_line(text: &str, max: usize) -> String {
     let clean: String = text
         .chars()
-        .filter(|c| c.is_whitespace() || !c.is_control())
+        .filter(|c| c.is_whitespace() || !(c.is_control() || is_invisible(*c)))
         .collect();
     let flat = clean.split_whitespace().collect::<Vec<_>>().join(" ");
     if flat.chars().count() <= max {
@@ -104,6 +104,22 @@ pub fn one_line(text: &str, max: usize) -> String {
     let mut cut: String = flat.chars().take(max.saturating_sub(1)).collect();
     cut.push('…');
     cut
+}
+
+/// Invisible or blank-rendering format characters that can hide text from a
+/// human while a model still reads it: soft hyphen, combining grapheme joiner,
+/// Arabic letter mark, Hangul and other fillers, Mongolian vowel separator,
+/// zero-width and bidi marks/overrides/isolates (ZWJ included: packs favor
+/// safety over emoji fidelity), word joiners, variation selectors, BOM,
+/// interlinear annotation marks and the Unicode tag block (ASCII smuggling).
+#[must_use]
+pub fn is_invisible(c: char) -> bool {
+    matches!(c,
+        '\u{AD}' | '\u{34F}' | '\u{61C}' | '\u{115F}' | '\u{1160}' | '\u{180E}'
+        | '\u{200B}'..='\u{200F}' | '\u{202A}'..='\u{202E}' | '\u{2060}'..='\u{2064}'
+        | '\u{2066}'..='\u{2069}' | '\u{3164}' | '\u{FE00}'..='\u{FE0F}' | '\u{FEFF}'
+        | '\u{FFA0}' | '\u{FFF9}'..='\u{FFFB}' | '\u{E0000}'..='\u{E007F}'
+        | '\u{E0100}'..='\u{E01EF}')
 }
 
 /// Running size of the markdown: exact, since every line's bytes and the
@@ -283,6 +299,28 @@ mod tests {
     fn one_line_strips_control_chars() {
         assert_eq!(one_line("a\u{1b}[31mred\u{7}\nb", 50), "a[31mred b");
         assert_eq!(one_line("x\u{85}y", 50), "x y");
+    }
+
+    #[test]
+    fn one_line_strips_tag_block_and_fillers_but_keeps_real_text() {
+        let tagged: String = "ignore"
+            .chars()
+            .map(|c| char::from_u32(0xE0000 + c as u32).unwrap())
+            .collect();
+        assert_eq!(one_line(&tagged, 50), "");
+        assert_eq!(one_line(&format!("vis{tagged}ible"), 50), "visible");
+        let fillers =
+            "a\u{61C}\u{180E}\u{FFF9}\u{FE0F}\u{E0100}\u{34F}\u{115F}\u{1160}\u{3164}\u{FFA0}b";
+        assert_eq!(one_line(fillers, 50), "ab");
+        let plain = "日本語 café naïve 😀 ✓";
+        assert_eq!(one_line(plain, 50), plain);
+    }
+
+    #[test]
+    fn one_line_strips_invisible_format_chars() {
+        let dirty =
+            "a\u{AD}b\u{200B}c\u{200F}d\u{202E}e\u{2060}f\u{2064}g\u{2066}h\u{2069}i\u{FEFF}j";
+        assert_eq!(one_line(dirty, 50), "abcdefghij");
     }
 
     #[test]

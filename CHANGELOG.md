@@ -10,6 +10,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - MCP: Global memories are read-only (no confirm/forget), and `why` hides their sources
 
 ### Added
+- Markdown mirror: one `.md` file per memory under `<data>/mirror` (own YAML subset, `format: 1`), kept in sync incrementally after backfill/extract, hooks, MCP `remember`/`review` and `confirm`/`check`; `recalla mirror [--full]`; schema v7 (`mirror_dirty`, trigger-maintained, clock-independent); anchor changes now bump `updated_at`
+- `recalla rebuild --from-mirror [DIR] [--yes] [--allow-drop]`: verified, all-or-nothing restore of the memory layer in one transaction on the live DB (safe while `recalla mcp` or hooks run), with a `VACUUM INTO` backup; refuses unredacted or hostile mirror files
 - Initial project scaffold
 - Core memory model (`Kind`, `Scope`, `Status`, `Provenance`, `Anchor`) with deterministic blake3 uids
 - SQLite store: migrations, dedup with provenance merge, supersede/archive/restore, FTS5 BM25 search with safe query escaping
@@ -24,6 +26,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - `recalla mcp`: stdio MCP server (2026-07-28 + legacy) with `recall`, `remember`, `review`, `why` (~430 tokens)
 - Performance: `make perf` (319.5 MB synthetic backfill in 21.6 s; session-start p95 12.6 ms on 100k memories); schema v6 index on (scope_project, status)
 - Codex harness: `backfill` imports Codex CLI sessions too (`--harness`, `--codex-root`); one memory carries provenance from both agents
+- `recalla mirror` and `recalla rebuild --from-mirror`: one readable markdown file per memory; rebuild verifies ids, refuses tampered, unredacted or hostile files, backs up with `VACUUM INTO` and replaces the memory layer in one transaction, so it is safe while Claude Code or `recalla mcp` are running
+- `make e2e`: 61-check end-to-end functional script (planted secrets, hooks safety, MCP both eras, anchors staleness, mirror round trip)
+- MCP `remember` anchors memories to the code they name, so agent-saved memories go stale like extracted ones
 - Code anchors: memories pinned to tree-sitter symbols (Rust, Python, Go, TS/TSX, JS); `needs_reverify` with a reason when the symbol changes or disappears; `recalla check`, `recalla confirm`; packs show the reason
 - `redact_path` for cwd/branch (no entropy layer) so project keys survive random path components
 - Claude Code hooks: `recalla hook session-start|capture`, `recalla hooks install|uninstall|status` (never block; settings backed up, atomic, order-preserving)

@@ -1,4 +1,4 @@
-.PHONY: setup dev fmt check build perf secrets
+.PHONY: setup dev fmt check build perf secrets e2e
 
 setup:
 	rustup show active-toolchain
@@ -26,3 +26,7 @@ perf:
 # Scan full git history for secrets (needs gitleaks: brew install gitleaks). Also runs in CI.
 secrets:
 	gitleaks git . --redact --no-banner
+
+# End-to-end functional checklist against the release binary (planted secrets, hooks, MCP, anchors, mirror).
+e2e: build
+	bash scripts/e2e.sh target/release/recalla

@@ -7,3 +7,6 @@
 .env.*
 .DS_Store
 .claude/settings.local.json
+
+# Internal drafts (kept locally, not published)
+.agent/launch-drafts.md
