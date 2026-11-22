@@ -78,3 +78,13 @@ flowchart LR
 - Merge gate: `tests/realistic_corpus.rs`, 108 real-world credential templates.
 - Spans merge (earliest start, then longest, then lowest layer). Offsets are byte offsets on char boundaries in the original text.
 - Measured on real sessions: 46 MB/s release. Most layer-3 hits are structural blobs (`signature`, `encrypted_content`, base64 images), which harness parsers should drop before redaction.
+
+## Harness: Claude Code (`harness::claude`)
+- Root: `$CLAUDE_CONFIG_DIR` or `~/.claude`.
+- Discovery: `projects/*/*.jsonl` plus `projects/*/*/subagents/*.jsonl`. Symlinks are skipped at every level, including symlinked directories such as `subagents/`.
+- `parse_session(path, from_offset)` returns `(events, stats, next_offset)`. It reads line by line, never consumes a partial last line, and keeps line numbers absolute on resume.
+- Kept: user text, assistant text, tool calls (compact JSON input), tool results, compaction summaries.
+- Dropped and counted in `ParseStats`: thinking, images, telemetry/UI record types, `isMeta` records, and `<system-reminder>`/command-wrapper spans.
+- Event text is emitted whole. Ingest redacts FIRST, then truncates to 32 KB (`truncate_middle`), so a cut can never split a secret.
+- Output is decoded text. It is NOT redacted; ingest must redact every event's text, including tool-call JSON.
+- Measured on real logs: 258 MB/s, 0 malformed lines across 26 files.

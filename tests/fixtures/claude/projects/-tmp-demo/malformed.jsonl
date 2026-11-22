@@ -1,0 +1,5 @@
+{"type":"user","uuid":"c0000001","timestamp":"2025-01-02T05:00:00Z","message":{"role":"user","content":"before the bad line"}}
+{"type":"user","uuid":"c0000002", broken json
+[1,2,3]
+
+{"type":"user","uuid":"c0000003","timestamp":"not-a-time","message":{"role":"user","content":"after the bad line"}}

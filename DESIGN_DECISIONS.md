@@ -78,3 +78,10 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Decision: A `secrets` CI job runs `gitleaks/gitleaks-action@v2` over full history; `make secrets` runs the same locally. `.gitleaks.toml` extends the default rules with one allowlist: matches containing runtime template placeholders (`{S}`, `{pw}`, ...). Files are never ignored wholesale.
 - Why: Free for personal repos, blocks merges on a leak, and catches generic `password=` literals our vendor-format grep missed.
 - Rejected: Path allowlists for tests/ (would hide real leaks in fixtures); relying on GitGuardian alone (non-blocking).
+
+## D-012 serde_json with lenient Value parsing for harness logs (2026-11-22)
+
+- Context: Claude Code session logs are JSONL in an external format that changes between versions. The harness must decode every line.
+- Decision: Add `serde_json = "1"` (no serde derive in our code). Parse each line into `serde_json::Value` and read fields through accessors; missing or unknown fields are counted in `ParseStats`, never fatal.
+- Why: Decoding is mandatory (D-009) and serde_json is the de-facto standard, pure Rust. `Value` tolerates schema drift where typed structs would reject whole records.
+- Rejected: Typed serde structs (brittle against an external, versioned format); simd-json (unneeded complexity for MB-scale files).
