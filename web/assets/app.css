@@ -252,6 +252,7 @@ p {
 }
 .sec > .wrap {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s3);
 }
 .sec h2 {
@@ -283,6 +284,7 @@ p {
 }
 .hero .wrap {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s4);
   align-items: start;
 }
@@ -333,7 +335,8 @@ p {
   display: flex;
 }
 .tab {
-  padding: 0 1rem;
+  padding: 0 0.8rem;
+  white-space: nowrap;
   background: none;
   border: 0;
   border-bottom: 3px solid transparent;
@@ -576,10 +579,10 @@ figcaption {
 }
 .node text {
   fill: var(--ink);
-  font: 600 14px var(--sans);
+  font: 600 16px var(--sans);
 }
 .node text.sub {
-  font: 12px var(--mono);
+  font: 13px var(--mono);
   fill: var(--muted);
 }
 .node.key text.sub {
@@ -906,4 +909,19 @@ footer a {
   * {
     transition: none !important;
   }
+}
+
+.body > .grid > li,
+.body.grid > li,
+.body.nums > li,
+.cards > li {
+  margin-top: 0;
+}
+.body.grid > li + li,
+.body.nums > li + li {
+  margin-top: 0;
+}
+.brand img {
+  border-radius: 7px;
+  box-shadow: 0 0 0 1px var(--line);
 }
