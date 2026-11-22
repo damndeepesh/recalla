@@ -183,8 +183,8 @@ pub fn version() -> u32 {
 }
 
 /// Per-connection settings. WAL is skipped for in-memory databases.
-pub(super) fn configure(conn: &Connection, wal: bool) -> Result<(), StoreError> {
-    conn.busy_timeout(Duration::from_millis(5000))?;
+pub(super) fn configure(conn: &Connection, wal: bool, busy: Duration) -> Result<(), StoreError> {
+    conn.busy_timeout(busy)?;
     conn.pragma_update(None, "foreign_keys", "ON")?;
     if wal {
         conn.query_row("PRAGMA journal_mode = WAL", [], |_| Ok(()))?;

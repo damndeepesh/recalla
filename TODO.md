@@ -8,8 +8,8 @@
 - [x] Ingest pipeline: resumable checkpoints, zstd archive, `recalla backfill` + report
 - [x] Rule-based extractor: typed memories with confidence + provenance, labeled eval set
 - [x] Pack + ledger: project detection, ranking, token budget, `recalla pack`, `recalla stats`
-- [ ] MCP server: `recall`, `remember`, `review`, `why` (≤1k tokens)
-- [ ] Hooks: idempotent install/uninstall for Claude Code + Codex
+- [x] MCP server: `recall`, `remember`, `review`, `why` (≤1k tokens)
+- [x] Hooks: idempotent install/uninstall for Claude Code (Codex via MCP registration; native Codex capture lands with the Codex harness)
 - [ ] Anchors: tree-sitter symbols (Rust, TS/JS, Python, Go) + `needs_reverify` + `confirm`
 - [ ] Markdown mirror + `recalla rebuild`
 - [ ] Codex harness

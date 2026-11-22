@@ -1,14 +1,15 @@
 updated: 2026-11-22
 milestone: MVP
-branch: feature/pack
-task: "MCP server: `recall`, `remember`, `review`, `why` (≤1k tokens)"
+branch: feature/mcp-hooks
+task: "Anchors: tree-sitter symbols (Rust, TS/JS, Python, Go) + `needs_reverify` + `confirm`"
 status: review
-plan: .agent/plans/pack.md
+plan: .agent/plans/mcp-hooks.md
 done:
-  - packs + ledger + why/stats; real packs from real history work (make check 15x tops recalla pack)
+  - MCP + hooks end to end on real data: session-start ~1ms, capture 0.13s/7.4MB, install/uninstall exact on a copy of real settings
 next:
-  - security review + PR for packs
-  - then MCP + hooks from scratchpad mcp-hooks-plan.md (combined: both wrap pack)
+  - security review + PR for mcp-hooks
+  - then anchors (code-anchored staleness: the core differentiator), then Codex harness, perf pass, mirror
+  - launch-ready once anchors land: draft launch post + Show HN for user
 blockers:
   - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
 notes:

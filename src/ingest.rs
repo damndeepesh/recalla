@@ -19,6 +19,7 @@ use thiserror::Error;
 use crate::archive;
 use crate::harness::claude::ClaudeCode;
 use crate::harness::{Event, EventKind, Harness, MAX_EVENT_BYTES, count_newlines, truncate_middle};
+use crate::ops::{self, OpenError};
 use crate::paths;
 use crate::redact::redact;
 use crate::store::{Checkpoint, SegmentRow, Store, StoreError, StoredEvent, StoredKind};
@@ -103,8 +104,8 @@ impl Report {
 pub enum IngestError {
     #[error("cannot list sessions under {}: {source}", path.display())]
     Discover { path: PathBuf, source: io::Error },
-    #[error("cannot prepare data dir {}: {source}", path.display())]
-    DataDir { path: PathBuf, source: io::Error },
+    #[error(transparent)]
+    Open(#[from] OpenError),
     #[error("cannot open store: {0}")]
     Store(#[from] StoreError),
 }
@@ -158,28 +159,39 @@ pub fn run(opts: &Options) -> Result<Report, IngestError> {
         Err(e) if e.kind() == io::ErrorKind::NotFound => opts.root.clone(),
         Err(e) => return Err(discover_err(e)),
     };
-    let files = harness.discover(&root).map_err(discover_err)?;
+    let files: Vec<PathBuf> = harness
+        .discover(&root)
+        .map_err(discover_err)?
+        .into_iter()
+        .map(|f| f.path)
+        .collect();
     let mut store = open_store(opts)?;
+    Ok(ingest_paths(&mut store, opts, &files, started))
+}
+
+/// Imports just `files` into an already-open `store`, through the same
+/// per-file pipeline as [`run`]. The caller must pass canonical paths under
+/// the canonicalized `<root>/projects` (so the source key equals what a full
+/// [`run`] produces) and decides whether they are trusted.
+pub fn run_files(store: &mut Store, opts: &Options, files: &[PathBuf]) -> Report {
+    ingest_paths(store, opts, files, Instant::now())
+}
+
+fn ingest_paths(store: &mut Store, opts: &Options, files: &[PathBuf], started: Instant) -> Report {
+    let harness = ClaudeCode;
     let mut report = Report::default();
     let archive_dir = paths::archive_dir(&opts.data_dir);
-    for file in &files {
+    for path in files {
         report.files_seen += 1;
-        if let Err(e) = ingest_file(
-            &harness,
-            &mut store,
-            opts,
-            &archive_dir,
-            &file.path,
-            &mut report,
-        ) {
+        if let Err(e) = ingest_file(&harness, store, opts, &archive_dir, path, &mut report) {
             report.failed.push(Failure {
-                path: file.path.to_string_lossy().into_owned(),
+                path: path.to_string_lossy().into_owned(),
                 error: e.kind(),
             });
         }
     }
     report.duration_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
-    Ok(report)
+    report
 }
 
 /// The real store (data dir 0700, DB 0600), or an in-memory one for a dry
@@ -188,16 +200,7 @@ fn open_store(opts: &Options) -> Result<Store, IngestError> {
     if opts.dry_run {
         return Ok(Store::open_in_memory()?);
     }
-    let dir_err = |source| IngestError::DataDir {
-        path: opts.data_dir.clone(),
-        source,
-    };
-    paths::ensure_dir(&opts.data_dir).map_err(dir_err)?;
-    let db = paths::db_path(&opts.data_dir);
-    paths::ensure_private_file(&db).map_err(dir_err)?;
-    let store = Store::open(&db)?;
-    paths::restrict_file(&db).map_err(dir_err)?;
-    Ok(store)
+    Ok(ops::open_or_create(&opts.data_dir)?)
 }
 
 /// Hex blake3 of the first `min(IDENTITY_PREFIX, upto)` bytes of `file`.
