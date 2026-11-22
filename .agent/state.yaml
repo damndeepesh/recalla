@@ -1,23 +1,21 @@
 updated: 2026-11-22
 milestone: MVP
-branch: feature/redaction
-task: "Redaction: rules + entropy, secret fixture corpus"
-status: review
-plan: .agent/plans/redaction.md
+branch: chore/secret-scan
+task: "Claude Code harness: locate + parse JSONL into `Event`s (incl. tool calls)"
+status: planned
+plan: null
 done:
-  - redact module, 3 layers, 71 tests, 57 MB/s on real sessions
-  - fixed 11 security-review findings (quadratic rescan, path bypasses, 8 keyword/header/url/placeholder/id bypasses); structural pass (D-009), realistic corpus gate 108/108 + fixpoint idempotence (D-010); 114 tests, 46 MB/s
+  - redaction merged (PR #3); known gaps filed as issues #4-#8
+  - gitleaks CI job + make secrets (D-011)
 next:
-  - merge PR #3 after CI; file known Mediums as issues
-  - ask user: add gitleaks CI step + local secret-grep target (repo now private, push protection off)
-  - next TODO item: Claude Code harness (parse JSONL into Events)
+  - merge chore/secret-scan PR
+  - /plan Claude Code harness
 blockers:
-  - need user's 300 MB session archive on this machine for FP check + harness work
+  - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
 notes:
   - search scope filter is exact; pack must union Global + Project memories itself
   - schema v1 not shipped yet: still safe to edit migration 0 until first release
   - anchors item must validate anchor.path/source_path stay under project root before reading files
-  - never commit literal secret-looking strings (push protection + GitGuardian on); build fixtures at runtime
+  - never commit secret-shaped literals; build at runtime or use {S} placeholders; run make secrets
   - harness must JSON-decode strings and drop signature/encrypted_content/base64 image fields before redact (D-009)
-  - real-data FP check pending: local sessions are ~all this dev session; need user's 300 MB archive
-  - redact known gaps: layer 2 eats some prose values ("the token: ..."), misses lowercase+digit secrets without keyword
+  - repo is private: GitHub push protection off, gitleaks CI is the blocking gate

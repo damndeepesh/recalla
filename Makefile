@@ -1,4 +1,4 @@
-.PHONY: setup dev fmt check build
+.PHONY: setup dev fmt check build secrets
 
 setup:
 	rustup show active-toolchain
@@ -18,3 +18,7 @@ check:
 
 build:
 	cargo build --release --locked
+
+# Scan full git history for secrets (needs gitleaks: brew install gitleaks). Also runs in CI.
+secrets:
+	gitleaks git . --redact --no-banner
