@@ -387,6 +387,47 @@ fn scrub(text: &str, counts: &mut BTreeMap<String, u64>) -> String {
     r.text.into_owned()
 }
 
+/// Applies `f` to every string leaf of `v`.
+fn for_each_leaf(v: &mut Value, f: &mut impl FnMut(&mut String)) {
+    match v {
+        Value::String(s) => f(s),
+        Value::Array(a) => a.iter_mut().for_each(|x| for_each_leaf(x, f)),
+        Value::Object(o) => o.values_mut().for_each(|x| for_each_leaf(x, f)),
+        _ => {}
+    }
+}
+
+/// Smallest leaf cap tried before falling back to whole-string truncation.
+const MIN_LEAF_CAP: usize = 64;
+
+/// Redacts and bounds a tool call's text, which is the compact JSON of the
+/// tool input. Returns `None` when it is not JSON (caller treats it as plain
+/// text).
+///
+/// The text holds the ESCAPED form of each string, so a secret next to a tab
+/// or newline can survive redacting it as-is while the extractor later
+/// decodes it. So every string leaf is redacted decoded, then the serialized
+/// JSON is redacted too (key context such as `{"password":"..."}` is only
+/// visible there). Over-long input shrinks the longest leaves first, which
+/// keeps the JSON valid for the extractor.
+fn scrub_tool_input(text: &str, counts: &mut BTreeMap<String, u64>) -> Option<String> {
+    let mut value: Value = serde_json::from_str(text).ok()?;
+    for_each_leaf(&mut value, &mut |s| *s = scrub(s, counts));
+    let mut out = scrub(&value.to_string(), counts);
+    let mut cap = MAX_EVENT_BYTES / 2;
+    while out.len() > MAX_EVENT_BYTES && cap >= MIN_LEAF_CAP {
+        // Whole-string redaction can in principle break the JSON; if so,
+        // only the fallback below applies.
+        let Ok(mut v) = serde_json::from_str::<Value>(&out) else {
+            break;
+        };
+        for_each_leaf(&mut v, &mut |s| *s = truncate_middle(s, cap).0);
+        out = v.to_string();
+        cap /= 2;
+    }
+    Some(truncate_middle(&out, MAX_EVENT_BYTES).0)
+}
+
 /// Redact every content field, THEN truncate the text, so a cut can never
 /// split a secret. Ids (session, uuids, tool ids) are stored as-is.
 fn to_stored(e: &Event, seq: u32, counts: &mut BTreeMap<String, u64>) -> StoredEvent {
@@ -413,7 +454,11 @@ fn to_stored(e: &Event, seq: u32, counts: &mut BTreeMap<String, u64>) -> StoredE
             *is_error,
         ),
     };
-    let (text, _) = truncate_middle(&scrub(&e.text, counts), MAX_EVENT_BYTES);
+    let text = match &e.kind {
+        EventKind::ToolCall { .. } => scrub_tool_input(&e.text, counts),
+        _ => None,
+    }
+    .unwrap_or_else(|| truncate_middle(&scrub(&e.text, counts), MAX_EVENT_BYTES).0);
     StoredEvent {
         harness: e.harness.to_owned(),
         session_id: e.session_id.clone(),
@@ -465,6 +510,28 @@ mod tests {
             identity(&mut f, 10_000).unwrap(),
             blake3::hash(&big[..4096]).to_hex().to_string()
         );
+    }
+
+    #[test]
+    fn tool_input_leaves_are_redacted_decoded_and_json_stays_valid() {
+        let pw = crate::redact::test_token(7, 16, b"abcdefghijklmnopqrstuvwxyz0123456789");
+        let input = json!({"command": format!("deploy password=\t{pw}"), "n": 1});
+        let mut counts = BTreeMap::new();
+        let out = scrub_tool_input(&input.to_string(), &mut counts).unwrap();
+        assert!(!out.contains(&pw), "{out}");
+        assert!(out.contains("[REDACTED:"));
+        assert!(serde_json::from_str::<Value>(&out).is_ok());
+        assert!(!counts.is_empty());
+        assert_eq!(scrub_tool_input("not json {", &mut counts), None);
+    }
+
+    #[test]
+    fn oversized_tool_input_shrinks_leaves_not_the_json() {
+        let big = json!({"file_path": "a.md", "content": format!("head\n{}", "x ".repeat(60_000))});
+        let out = scrub_tool_input(&big.to_string(), &mut BTreeMap::new()).unwrap();
+        assert!(out.len() <= MAX_EVENT_BYTES, "{}", out.len());
+        let v: Value = serde_json::from_str(&out).unwrap();
+        assert!(v["content"].as_str().unwrap().starts_with("head"));
     }
 
     #[test]

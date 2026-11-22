@@ -253,7 +253,9 @@ impl Sink<'_> {
             text
         };
         let text = text.trim();
-        if text.is_empty() {
+        // An empty tool result is still a success signal (`go vet` prints
+        // nothing), so it is kept; empty prose carries nothing.
+        if text.is_empty() && !matches!(kind, EventKind::ToolResult { .. }) {
             return;
         }
         // Not truncated here: ingest redacts first, then truncates, so a cut
@@ -497,6 +499,35 @@ mod tests {
     fn command_wrappers() {
         let t = "<command-message>m</command-message><command-name>/go</command-name>\n<command-args>now</command-args><local-command-stdout>out</local-command-stdout>";
         assert_eq!(clean_injected(t).trim(), "/go\nnow");
+    }
+
+    #[test]
+    fn empty_tool_result_is_kept_but_empty_prose_is_not() {
+        let line = |content: &str| {
+            format!("{{\"type\":\"user\",\"uuid\":\"u\",\"message\":{{\"content\":{content}}}}}\n")
+        };
+        let body = [
+            line(r#"[{"type":"tool_result","tool_use_id":"t1","content":"","is_error":false}]"#),
+            line(r#"[{"type":"tool_result","tool_use_id":"t2","content":[]}]"#),
+            line(r#"[{"type":"tool_result","tool_use_id":"t3"}]"#),
+            line(r#"[{"type":"text","text":"  "}]"#),
+            line(r#""""#),
+        ]
+        .concat();
+        let (events, stats, _) = parse_bytes(body.as_bytes(), 0, 0, Path::new("/s.jsonl"));
+        let got: Vec<_> = events
+            .iter()
+            .map(|e| (e.kind.clone(), e.text.as_str()))
+            .collect();
+        let result = |id: &str| EventKind::ToolResult {
+            tool_use_id: id.into(),
+            is_error: false,
+        };
+        assert_eq!(
+            got,
+            [(result("t1"), ""), (result("t2"), ""), (result("t3"), "")]
+        );
+        assert_eq!(stats.events, 3);
     }
 
     #[test]

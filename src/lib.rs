@@ -2,10 +2,11 @@
 //!
 //! Modules land one MVP item at a time (see `TODO.md`).
 
-#![cfg_attr(test, allow(clippy::unwrap_used))]
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::assert_is_empty))]
 
 pub mod archive;
 pub mod cli;
+pub mod extract;
 pub mod harness;
 pub mod ingest;
 pub mod model;

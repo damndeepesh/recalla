@@ -94,7 +94,7 @@ flowchart LR
 - Per file:
   1. Identity check decides new / resume / restart / unchanged. It uses blake3 of the ingested prefix (≤4 KB) plus a hash of the last ingested line, and the checkpoint must sit on a `\n`. The root is canonicalized so one file has exactly one source.
   2. Read `[offset, len)` once; parse (`parse_bytes`) and archive from that same buffer.
-  3. Per event: `redact` text, tool name, cwd and branch, then `truncate_middle`.
+  3. Per event: `redact` text, tool name, cwd and branch, then `truncate_middle`. ToolCall JSON is redacted per string leaf and then as a whole, and truncated leaf-first so it stays valid (D-015).
   4. zstd segment of the raw bytes `[offset, next_offset)`.
   5. One IMMEDIATE txn: optional reset + events + checkpoint + segment row.
 - Re-runs are idempotent: `UNIQUE(source_id, line, seq)`. One line can emit several events.
@@ -106,3 +106,19 @@ flowchart LR
 - `events`: redacted, truncated events with full provenance, plus `events_fts` (FTS5).
 - `segments`: archive pieces per source.
 - Provenance uniqueness now includes `source_path`.
+
+## Extractor (`extract`, `recalla extract`)
+- Reads redacted `events` incrementally from the `extract_state` checkpoint (written after each 1000-event batch). Never reads raw logs or the archive.
+- Each event gets a context window of up to 8 earlier events in the same session; project keys are cached per cwd.
+- Rules are pure functions over `EventCtx`. Each one returns typed `Candidate`s, which pass through `Store::insert` (uid dedup bumps `seen_count`):
+  - **preference:** human user text with directive markers.
+  - **decision:** decision phrases, or `## D-NNN` blocks written to DESIGN_DECISIONS.md.
+  - **gotcha:** a cause explanation after a tool error in the current exchange.
+  - **procedure:** a successful build/test/lint command, normalized to its core (`cd X && make check | tail` becomes `make check`).
+  - **fact:** narrow `X is on <version/path>` shapes.
+  - **task:** TodoWrite / TaskCreate items; completed items get archived.
+- Subagent (sidechain) "user" text is the orchestrator's instructions, not the human's, so it never yields preferences, facts or user decisions.
+- Questions are skipped, including ones without a `?`.
+- `EXTRACTOR_VERSION` bump or `--rebuild`: archive backfill-only memories, then re-extract.
+- Eval gate: `tests/extract_eval.rs` over 11 synthetic sessions / 53 labels requires zero false positives. Real-data review is a standing step, because an eval written alongside the rules overfits.
+- Measured: 2,751 real events extracted in 26 ms.

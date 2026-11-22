@@ -66,6 +66,21 @@ impl StoredKind {
     }
 }
 
+impl StoredKind {
+    /// Inverse of [`StoredKind::as_str`].
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        Some(match s {
+            "user_text" => Self::UserText,
+            "assistant_text" => Self::AssistantText,
+            "tool_call" => Self::ToolCall,
+            "tool_result" => Self::ToolResult,
+            "summary" => Self::Summary,
+            _ => return None,
+        })
+    }
+}
+
 /// An event ready to persist. Content fields (`text`, `tool_name`, `cwd`,
 /// `git_branch`) must already be redacted; ids are stored as-is.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,7 +111,7 @@ fn int(v: u64) -> rusqlite::Result<i64> {
     i64::try_from(v).map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))
 }
 
-fn get_u64(r: &Row<'_>, idx: usize) -> rusqlite::Result<u64> {
+pub(super) fn get_u64(r: &Row<'_>, idx: usize) -> rusqlite::Result<u64> {
     let v: i64 = r.get(idx)?;
     u64::try_from(v)
         .map_err(|e| rusqlite::Error::FromSqlConversionFailure(idx, Type::Integer, Box::new(e)))
