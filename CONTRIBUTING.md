@@ -10,6 +10,10 @@ Thanks for helping out!
 
 Bugs and ideas: open an issue using the templates. Security issues: see SECURITY.md.
 
+## Landing page
+
+`web/` is a static site (no build step). Preview it under its real subpath: `mkdir -p /tmp/serve && ln -sfn "$PWD/web" /tmp/serve/recalla && python3 -m http.server -d /tmp/serve 8080`, then open http://localhost:8080/recalla/. `bash scripts/web-check.sh` must pass (no third-party requests, assets resolve, under 100 KB). Pushes to `main` that touch `web/` deploy to GitHub Pages.
+
 ## Releasing (maintainers)
 
 1. Move `[Unreleased]` in `CHANGELOG.md` to a dated `[X.Y.Z]` section and bump `version` in `Cargo.toml`; merge via PR once `make check` and `make e2e` are green.
