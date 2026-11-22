@@ -9,6 +9,9 @@ repository = "https://github.com/damndeepesh/recalla"
 readme = "README.md"
 keywords = ["ai", "agents", "memory", "mcp", "cli"]
 categories = ["command-line-utilities", "development-tools"]
+# Keep the published crate to what users need; internal agent state, CI and
+# dev-only docs stay in the repo.
+exclude = [".agent/", ".github/", ".claude/", ".gitleaks.toml", "CLAUDE.md", "AGENTS.md", "Makefile", "rust-toolchain.toml"]
 
 [lib]
 path = "src/lib.rs"
