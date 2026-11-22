@@ -176,6 +176,9 @@ const MIGRATIONS: &[&str] = &[
     ",
     // v5: why an anchor went stale (NULL = fresh).
     "ALTER TABLE anchors ADD COLUMN stale_reason TEXT;",
+    // v6: pack path (`memories_for_project`, `anchors_for_project`) filters on
+    // scope_project and status; without this it scans the whole table.
+    "CREATE INDEX memories_project_status ON memories (scope_project, status);",
 ];
 
 /// Schema version this build produces.
@@ -398,7 +401,7 @@ mod tests {
              INSERT INTO anchors (memory_id, path, symbol) VALUES (1, 'a.rs', 'f');",
         )
         .unwrap();
-        migrate(&mut conn).unwrap();
+        migrate_to(&mut conn, 5).unwrap();
         assert_eq!(user_version(&conn), 5);
         let (path, reason): (String, Option<String>) = conn
             .query_row("SELECT path, stale_reason FROM anchors", [], |r| {
@@ -408,5 +411,31 @@ mod tests {
         assert_eq!((path.as_str(), reason), ("a.rs", None));
         conn.execute("UPDATE anchors SET stale_reason = 'symbol changed'", [])
             .unwrap();
+    }
+
+    #[test]
+    fn v6_index_serves_project_lookups() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate_to(&mut conn, 5).unwrap();
+        conn.execute_batch(
+            "INSERT INTO memories (uid, kind, text, scope_key, scope_project, confidence,
+                 importance, created_at, updated_at, valid_from)
+             VALUES ('u', 'fact', 't', 'project:/p', '/p', 0.5, 1, 0, 0, 0);",
+        )
+        .unwrap();
+        migrate(&mut conn).unwrap();
+        assert_eq!(user_version(&conn), 6);
+        let plan: String = conn
+            .prepare(
+                "EXPLAIN QUERY PLAN SELECT id FROM memories
+                 WHERE (scope_project IS NULL OR scope_project = ?1) AND status = 'active'",
+            )
+            .unwrap()
+            .query_map(["/p"], |r| r.get::<_, String>(3))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap()
+            .join(" | ");
+        assert!(plan.contains("memories_project_status"), "{plan}");
     }
 }

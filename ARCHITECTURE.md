@@ -186,3 +186,22 @@ flowchart LR
 - A resume replays only the `session_meta`/`turn_context` lines of the prefix, to recover the session id and cwd.
 - `backfill --harness claude|codex|all` (default all). Each source row records its harness; extraction and packs are harness-agnostic, so one memory carries provenance from both agents.
 - Measured: 11.4 MB in 0.12 s, 451 events.
+
+## Performance
+- Run: `make perf` (`tests/perf.rs`, ignored tests, release build). Seeded synthetic data, regenerated each run in a tempdir.
+- Machine: Apple M2 (arm64), macOS, NVMe SSD.
+- Targets: SPEC invariants (hook <100 ms p95 on 100k memories; 300 MB backfill <5 min).
+
+| Test | Corpus | Result | Target |
+|---|---|---|---|
+| `backfill_300mb` | 319.5 MB, 601 files (~80% Claude / ~20% Codex), 158k events, archive on | ingest 14.5 s + extract 7.0 s = 21.5 s (14.9 MB/s), 9.7k memories, 2.4k redactions | <300 s |
+| no-op rerun | same corpus | 0.03 s | <5 s |
+| `hook_session_start_p95`, in-process | 100k memories, 50 projects, ~3k visible, ~200 anchors | p50 11.4 ms, p95 11.7 ms, p99 12.0 ms | p95 <100 ms |
+| session-start, spawned binary | same | p50 15.6 ms, p95 18.0 ms, p99 21.0 ms (first exec ~210 ms, one-off OS cost) | |
+| `mcp_recall_p95`, no query | same | p50 11.3 ms, p95 11.7 ms | |
+| `mcp_recall_p95`, FTS query | same | p50 32.8 ms, p95 40.2 ms | |
+
+- Fix from the first run: `memories_for_project` and `anchors_for_project` scanned the whole `memories` table. Migration v6 adds `memories(scope_project, status)`. Session-start p95 28.7 ms to 11.7 ms.
+- Peak RSS is reported on Linux only (`/proc/self/status`); no new dependency for macOS.
+- Corpus: user directives, assistant prose with decision/gotcha phrases, build/test Bash calls (15% failing, 5% with 5-50 KB logs), Read/Edit calls, base64 blobs, multibyte text, runtime-built fake secrets.
+

@@ -1,14 +1,13 @@
 updated: 2026-11-22
 milestone: MVP
-branch: feature/codex-harness
-task: "Perf pass: 300 MB backfill <5 min, hook p95 <100 ms"
+branch: chore/perf-pass
+task: "Markdown mirror + `recalla rebuild`"
 status: review
-plan: .agent/plans/codex-harness.md
+plan: null
 done:
-  - codex harness: real ~/.codex 11.4 MB in 0.12 s, real procedures/gotchas/preferences
+  - perf: 319.5 MB backfill 21.6 s; hook p95 12.6 ms @100k memories (v6 index fixed 28.7 ms scan)
 next:
-  - security review + PR for codex harness
-  - then perf pass (synthetic 300 MB corpus), markdown mirror; then launch prep
+  - PR for perf, then markdown mirror (last MVP item), then v0.1.0 release prep + launch
 blockers:
   - need user's 300 MB session archive on this machine for FP check (issue #8) + harness fixtures
 notes:

@@ -13,4 +13,4 @@
 - [x] Anchors: tree-sitter symbols (Rust, TS/JS, Python, Go) + `needs_reverify` + `confirm`
 - [ ] Markdown mirror + `recalla rebuild`
 - [x] Codex harness
-- [ ] Perf pass: 300 MB backfill <5 min, hook p95 <100 ms
+- [x] Perf pass: 300 MB backfill <5 min, hook p95 <100 ms
