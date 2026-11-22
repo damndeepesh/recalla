@@ -21,7 +21,7 @@ use crate::harness::claude::ClaudeCode;
 use crate::harness::{Event, EventKind, Harness, MAX_EVENT_BYTES, count_newlines, truncate_middle};
 use crate::ops::{self, OpenError};
 use crate::paths;
-use crate::redact::redact;
+use crate::redact::{Redacted, redact, redact_path};
 use crate::store::{Checkpoint, SegmentRow, Store, StoreError, StoredEvent, StoredKind};
 
 /// Bytes hashed from the start of a file to detect rewrites and rotation.
@@ -383,7 +383,15 @@ fn with_seq(events: &[Event]) -> impl Iterator<Item = (u32, &Event)> {
 
 /// Redacts `text`, adding its findings to `counts`.
 fn scrub(text: &str, counts: &mut BTreeMap<String, u64>) -> String {
-    let r = redact(text);
+    scrub_with(redact(text), counts)
+}
+
+/// As [`scrub`] for paths and branch names (no entropy layer, see D-020).
+fn scrub_path(text: &str, counts: &mut BTreeMap<String, u64>) -> String {
+    scrub_with(redact_path(text), counts)
+}
+
+fn scrub_with(r: Redacted<'_>, counts: &mut BTreeMap<String, u64>) -> String {
     for f in &r.findings {
         *counts.entry(f.rule.to_owned()).or_default() += 1;
     }
@@ -434,9 +442,8 @@ fn scrub_tool_input(text: &str, counts: &mut BTreeMap<String, u64>) -> Option<St
 /// Redact every content field, THEN truncate the text, so a cut can never
 /// split a secret. Ids (session, uuids, tool ids) are stored as-is.
 fn to_stored(e: &Event, seq: u32, counts: &mut BTreeMap<String, u64>) -> StoredEvent {
-    let mut opt = |v: Option<&str>| v.map(|s| scrub(s, counts));
-    let cwd = opt(e.cwd.as_deref());
-    let git_branch = opt(e.git_branch.as_deref());
+    let cwd = e.cwd.as_deref().map(|s| scrub_path(s, counts));
+    let git_branch = e.git_branch.as_deref().map(|s| scrub_path(s, counts));
     let (kind, tool_name, tool_id, is_error) = match &e.kind {
         EventKind::UserText => (StoredKind::UserText, None, None, false),
         EventKind::AssistantText => (StoredKind::AssistantText, None, None, false),

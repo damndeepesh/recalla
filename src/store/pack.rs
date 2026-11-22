@@ -77,11 +77,35 @@ impl Store {
                AND (m.scope_project IS NULL OR m.scope_project = ?1)
              ORDER BY m.id"
         );
-        Ok(self
+        let mut memories: Vec<Memory> = self
             .conn
             .prepare(&sql)?
             .query_map([project], memory_from_row)?
-            .collect::<Result<_, _>>()?)
+            .collect::<Result<_, _>>()?;
+        if memories.iter().any(|m| m.status == Status::NeedsReverify) {
+            let reasons = self.stale_reasons(project)?;
+            for m in &mut memories {
+                m.stale_reason = reasons.get(&m.uid).cloned();
+            }
+        }
+        Ok(memories)
+    }
+
+    /// First stale reason (lowest anchor id) per memory uid, for stale
+    /// anchors of live memories visible to `project`.
+    fn stale_reasons(&self, project: Option<&str>) -> Result<HashMap<String, String>, StoreError> {
+        let mut out = HashMap::new();
+        let mut stmt = self.conn.prepare_cached(
+            "SELECT m.uid, a.stale_reason FROM anchors a JOIN memories m ON m.id = a.memory_id
+             WHERE a.stale_reason IS NOT NULL AND m.status = 'needs_reverify'
+               AND (m.scope_project IS NULL OR m.scope_project = ?1)
+             ORDER BY a.id DESC",
+        )?;
+        for row in stmt.query_map([project], |r| Ok((r.get(0)?, r.get(1)?)))? {
+            let (uid, reason): (String, String) = row?;
+            out.insert(uid, reason); // DESC order: the lowest id wins last
+        }
+        Ok(out)
     }
 
     /// Appends a ledger row stamped with the store clock.

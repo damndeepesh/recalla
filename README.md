@@ -88,6 +88,8 @@ recalla pack --budget 1500    # see the context pack for the current project
 recalla search "rate limit"   # inspect memories
 recalla why <id>              # where a memory came from
 recalla stats                 # what was injected, and its token cost
+recalla check                 # flag memories whose anchored code changed
+recalla confirm <id>          # re-verify a flagged memory
 recalla hooks uninstall       # remove only Recalla's hook entries
 ```
 

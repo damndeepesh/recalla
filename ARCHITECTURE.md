@@ -154,3 +154,24 @@ flowchart LR
   - touches only entries whose command is exactly `<…/recalla> hook <sub>`; customized or merely-mentioning entries are left alone
   - backups are `create_new` (never overwritten), 0600
   - prints the MCP registration commands for Claude Code and Codex without running them
+
+## Code anchors (`anchor`, `recalla check|confirm`)
+- **Anchoring at extraction**, for Project/Module memories whose key is an existing dir:
+  - Candidate identifiers come from the memory text (backticked spans, CamelCase, snake_case).
+  - They are matched against tree-sitter definitions (Rust, Python, Go, TS/TSX, JS; each a cargo feature) in two sets of files:
+    - files named in the text, which can fall back to a path-only anchor;
+    - files read or edited in the same session window, symbol-only and never path-only.
+  - Anchor = path relative to the project root + qualified symbol + whitespace-normalized blake3 of the definition + git HEAD.
+  - Every path must canonicalize under the project root.
+- **Staleness** (`anchor::check`):
+  - A symbol changed, a symbol removed, or a file removed sets the memory to `needs_reverify`, with the reason stored on the anchor (schema v5).
+  - Edits to other symbols in the same file, and pure reformatting, change nothing.
+  - Path-only anchors go stale only when the file is deleted.
+  - It runs:
+    - with a 50 ms budget inside every pack (CLI, SessionStart hook, MCP `recall`)
+    - with 200 ms after hook capture
+    - in full via `recalla check`
+- **Confirm** (`recalla confirm`, MCP `review confirm`): re-resolve the anchors, clear the reasons, set the memory Active. Symbol anchors stay symbol-only.
+- **Pack:** the "Needs re-verify ⚠" lines show the reason, e.g. `(symbol changed: Store::insert)`.
+- **Redaction:** `cwd` and `git_branch` use `redact_path` (layers 1–2, no entropy), so random path components don't break project keys (D-020).
+- **Binary size:** 4.8 MB → 10.1 MB with all grammars, 4.8 MB with `--no-default-features` (D-019).

@@ -265,6 +265,8 @@ pub struct Memory {
     pub valid_to: Option<i64>,
     pub provenance: Vec<Provenance>,
     pub anchors: Vec<Anchor>,
+    /// Why the first stale anchor is stale. Only loaded for pack candidates.
+    pub stale_reason: Option<String>,
 }
 
 /// Trims and collapses whitespace runs to one space. Case is preserved

@@ -6,6 +6,7 @@
 
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::path::Path;
 use std::time::Instant;
 
 use serde_json::{Value, json};
@@ -13,8 +14,9 @@ use serde_json::{Value, json};
 use super::rules::task;
 use super::scope::{project_key, project_scope};
 use super::{EXTRACTOR_VERSION, EventCtx, extract_event_with};
-use crate::model::{self, Kind, NewMemory, Origin, Provenance, Status};
-use crate::store::{EventRow, Insert, Store, StoreError};
+use crate::anchor;
+use crate::model::{self, Kind, NewMemory, Origin, Provenance, Scope, Status};
+use crate::store::{EventRow, Insert, Store, StoreError, StoredKind};
 
 /// Events read per batch (and per checkpoint).
 const BATCH: u32 = 1000;
@@ -154,8 +156,18 @@ fn process(
             Insert::Duplicate(_) => &mut report.memories_duplicate,
         };
         *counts.entry(new.kind.to_string()).or_default() += 1;
-        for anchor in &c.anchors {
-            store.add_anchor(outcome.uid(), anchor)?;
+        let root = matches!(outcome, Insert::Inserted(_))
+            .then(|| anchor_root(&new.scope))
+            .flatten();
+        if let Some(root) = root {
+            let paths: Vec<String> = c.anchors.iter().map(|a| a.path.clone()).collect();
+            let window = window_files(ctx);
+            let resolved = anchor::resolve_with(&new.text, &paths, &window, Path::new(root));
+            store.replace_anchors(outcome.uid(), &resolved)?;
+        } else {
+            for anchor in &c.anchors {
+                store.add_anchor(outcome.uid(), anchor)?;
+            }
         }
         // A rebuild archived this memory moments ago; extracting it again
         // means it is still wanted.
@@ -169,6 +181,47 @@ fn process(
         }
     }
     archive_finished_tasks(store, ctx, project_of, report)
+}
+
+/// Files the session read or edited in the window (previous events plus the
+/// triggering one): `file_path`/`path`/`notebook_path` of Read, Edit, Write
+/// and `MultiEdit` calls. Candidates for symbol anchors only.
+fn window_files(ctx: &EventCtx<'_>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for e in ctx.prev.iter().chain(std::iter::once(ctx.event)) {
+        let is_file_tool = e.kind == StoredKind::ToolCall
+            && matches!(
+                e.tool_name.as_deref(),
+                Some("Read" | "Edit" | "Write" | "MultiEdit")
+            );
+        if !is_file_tool {
+            continue;
+        }
+        let Ok(input) = serde_json::from_str::<Value>(&e.text) else {
+            continue;
+        };
+        let file = ["file_path", "path", "notebook_path"]
+            .iter()
+            .find_map(|k| input.get(k)?.as_str())
+            .filter(|p| !p.is_empty());
+        if let Some(f) = file
+            && !out.iter().any(|o| o == f)
+        {
+            out.push(f.to_owned());
+        }
+    }
+    out
+}
+
+/// The project directory to anchor a memory under: its Project/Module key,
+/// when that is an absolute existing dir.
+fn anchor_root(scope: &Scope) -> Option<&str> {
+    match scope {
+        Scope::Project(key) | Scope::Module { project: key, .. } => {
+            anchor::project_dir(key).map(|_| key.as_str())
+        }
+        Scope::Global => None,
+    }
 }
 
 /// Archives the open task memory of every item this event completes or deletes.

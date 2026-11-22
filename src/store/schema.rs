@@ -174,6 +174,8 @@ const MIGRATIONS: &[&str] = &[
         via         TEXT NOT NULL CHECK (via IN ('cli','hook','mcp'))
     );
     ",
+    // v5: why an anchor went stale (NULL = fresh).
+    "ALTER TABLE anchors ADD COLUMN stale_reason TEXT;",
 ];
 
 /// Schema version this build produces.
@@ -363,7 +365,7 @@ mod tests {
             [],
         )
         .unwrap();
-        migrate(&mut conn).unwrap();
+        migrate_to(&mut conn, 4).unwrap();
         assert_eq!(user_version(&conn), 4);
         let last: i64 = conn
             .query_row("SELECT last_event_id FROM extract_state", [], |r| r.get(0))
@@ -383,5 +385,28 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn v4_data_survives_v5_migration() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate_to(&mut conn, 4).unwrap();
+        conn.execute_batch(
+            "INSERT INTO memories (uid, kind, text, scope_key, confidence, importance,
+                 created_at, updated_at, valid_from)
+             VALUES ('u', 'fact', 't', 'global', 0.5, 1, 0, 0, 0);
+             INSERT INTO anchors (memory_id, path, symbol) VALUES (1, 'a.rs', 'f');",
+        )
+        .unwrap();
+        migrate(&mut conn).unwrap();
+        assert_eq!(user_version(&conn), 5);
+        let (path, reason): (String, Option<String>) = conn
+            .query_row("SELECT path, stale_reason FROM anchors", [], |r| {
+                Ok((r.get(0)?, r.get(1)?))
+            })
+            .unwrap();
+        assert_eq!((path.as_str(), reason), ("a.rs", None));
+        conn.execute("UPDATE anchors SET stale_reason = 'symbol changed'", [])
+            .unwrap();
     }
 }

@@ -12,6 +12,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 
 use serde_json::{Value, json};
 
+use crate::anchor;
 use crate::extract;
 use crate::extract::scope::project_key;
 use crate::harness::claude;
@@ -20,7 +21,7 @@ use crate::hooks_cfg;
 use crate::ingest::{self, Options, Report};
 use crate::mcp::{self, McpCtx};
 use crate::model::{Kind, Memory, Scope};
-use crate::ops::{PackArgs, Why, open_existing, pack_for, prefix, truncate_chars, why};
+use crate::ops::{self, PackArgs, Why, open_existing, pack_for, prefix, truncate_chars, why};
 use crate::paths;
 use crate::store::{Filter, Hit, Store, Via};
 
@@ -148,6 +149,24 @@ enum Command {
         /// Show what would change; write nothing.
         #[arg(long)]
         dry_run: bool,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+    },
+    /// Check code anchors and flag memories whose code changed or vanished.
+    Check {
+        /// Project key [default: the git toplevel of the current directory].
+        #[arg(long, value_name = "PROJECT")]
+        project: Option<String>,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+        /// Print as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Confirm a memory is still right: re-anchor it to the code as it is now.
+    Confirm {
+        /// Memory id or a prefix of at least 4 hex characters.
+        id: String,
         #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
         data_dir: Option<PathBuf>,
     },
@@ -350,6 +369,12 @@ where
         Command::Stats { data_dir, json } => {
             read_only(data_dir, out, err, |s| stats_text(s, json).map(Why::Found))
         }
+        Command::Check {
+            project,
+            data_dir,
+            json,
+        } => run_check(project, data_dir, json, out, err),
+        Command::Confirm { id, data_dir } => run_confirm(&id, data_dir, out, err),
         Command::Why { id, data_dir, json } => {
             read_only(data_dir, out, err, |s| why(s, &id, json, true))
         }
@@ -480,6 +505,75 @@ fn read_only(
             SOME_FAILED,
         ),
         Err(e) => emit(err, &format!("error: {e}\n"), USAGE),
+    }
+}
+
+/// `recalla check`: a full, unbudgeted staleness check of one project.
+fn run_check(
+    project: Option<String>,
+    data_dir: Option<PathBuf>,
+    json: bool,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let Some(project) = project.or_else(default_project) else {
+        return emit(err, "error: no project; pass --project\n", USAGE);
+    };
+    if anchor::project_dir(&project).is_none() {
+        let msg = format!("error: {project} is not an existing absolute directory\n");
+        return emit(err, &msg, USAGE);
+    }
+    let report = open_existing(&data_dir)
+        .and_then(|mut s| anchor::check(&mut s, &project, None).map_err(|e| e.to_string()));
+    match report {
+        Ok(r) if json => emit(out, &format!("{}\n", r.to_json()), OK),
+        Ok(r) => emit(
+            out,
+            &format!(
+                "checked {} anchors: {} newly stale, {} stale but matching again (confirm to clear)\n",
+                r.checked, r.stale_new, r.recovered
+            ),
+            OK,
+        ),
+        Err(e) => emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    }
+}
+
+/// `recalla confirm <id>`.
+fn run_confirm(
+    id: &str,
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let result = open_existing(&data_dir).and_then(|mut store| {
+        let found = store
+            .memories_by_uid_prefix(id)
+            .map_err(|e| e.to_string())?;
+        match found.as_slice() {
+            [] => Err(format!("no memory matches {id}")),
+            [m] => ops::confirm(&mut store, &m.uid).map(|n| (m.uid.clone(), n)),
+            _ => Err(format!(
+                "{id} matches {} memories; use a longer prefix",
+                found.len()
+            )),
+        }
+    });
+    match result {
+        Ok((uid, n)) => emit(
+            out,
+            &format!("Confirmed {} ({n} anchors re-resolved)\n", prefix(&uid, 8)),
+            OK,
+        ),
+        Err(e) => emit(err, &format!("error: {e}\n"), SOME_FAILED),
     }
 }
 
