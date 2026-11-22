@@ -131,3 +131,26 @@ flowchart LR
 - Ledger: `injections` table (schema v4), one row per non-empty pack with via cli|hook|mcp. `stats` reports totals, per project and most-injected memories.
 - `why <uid-prefix>`: memory, provenance and the stored (redacted) source event text.
 - Preferences are project-scoped unless explicitly global ("in all projects", "everywhere"), so one repo's rules never leak into another's pack.
+
+## Agent integration (`mcp`, `hook`, `hooks_cfg`)
+- **MCP:** `recalla mcp` is a hand-rolled sync JSON-RPC over stdio (D-017), one message per line, with protocol-only stdout.
+  - Speaks both 2026-07-28 (`server/discover`, `_meta` protocolVersion, `resultType`) and legacy `initialize`.
+  - 4 tools, `tools/list` ≈430 tokens:
+    - `recall`: a pack, logged with via=mcp
+    - `remember`: redacted, Origin::Remember, always project-scoped (an agent can't plant memories in other projects)
+    - `review`: confirm, or a reversible forget
+    - `why`
+  - The store is opened lazily per call.
+  - `review` and `why` only reach this project's memories plus Global ones.
+- **Hooks** (Claude Code) never block, never write to stdout except the pack, and always exit 0. Errors go to `<data>/log/hook.log` (0600, rotated at 1 MB) (D-018).
+  - `hook session-start`: pack for `project_key(cwd)` emitted as `hookSpecificOutput.additionalContext`.
+  - `hook capture` (Stop, PreCompact): ingests ONLY `transcript_path`, and only if it sits under `<claude root>/projects`, then extracts. The source key matches backfill's, so there are no duplicates.
+  - Hook connections use a 2 s busy timeout.
+  - Measured: session-start ≈1 ms; capture 0.13 s for a 7.4 MB first run, 0.02 s incrementally.
+- **`hooks install|uninstall|status`** edits `~/.claude/settings.json`:
+  - refuses malformed JSON
+  - timestamped backup, atomic write, mode preserved, symlinks followed
+  - key order preserved (`serde_json/preserve_order`)
+  - touches only entries whose command is exactly `<…/recalla> hook <sub>`; customized or merely-mentioning entries are left alone
+  - backups are `create_new` (never overwritten), 0600
+  - prints the MCP registration commands for Claude Code and Codex without running them

@@ -9,7 +9,7 @@ mod search;
 use std::error::Error;
 use std::path::Path;
 use std::str::FromStr;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rusqlite::types::Type;
 use rusqlite::{Connection, OptionalExtension, Row, TransactionBehavior, params};
@@ -108,6 +108,9 @@ fn require(conn: &Connection, uid: &str) -> Result<i64, StoreError> {
     .ok_or_else(|| StoreError::NotFound(uid.to_owned()))
 }
 
+/// Default time a statement waits on another writer.
+pub const DEFAULT_BUSY: Duration = Duration::from_millis(5000);
+
 /// Handle to a Recalla database.
 pub struct Store {
     conn: Connection,
@@ -120,7 +123,16 @@ impl Store {
     /// # Errors
     /// Fails if the file can't be opened or migrated.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, StoreError> {
-        Self::init(Connection::open(path)?, true)
+        Self::open_with_busy(path, DEFAULT_BUSY)
+    }
+
+    /// [`Store::open`] with a custom SQLite busy timeout: how long any
+    /// statement (migration included) waits on another writer before failing.
+    ///
+    /// # Errors
+    /// Fails if the file can't be opened or migrated.
+    pub fn open_with_busy(path: impl AsRef<Path>, busy: Duration) -> Result<Self, StoreError> {
+        Self::init(Connection::open(path)?, true, busy)
     }
 
     /// Opens a private in-memory database (tests, dry runs).
@@ -128,11 +140,11 @@ impl Store {
     /// # Errors
     /// Fails if migration fails.
     pub fn open_in_memory() -> Result<Self, StoreError> {
-        Self::init(Connection::open_in_memory()?, false)
+        Self::init(Connection::open_in_memory()?, false, DEFAULT_BUSY)
     }
 
-    fn init(mut conn: Connection, wal: bool) -> Result<Self, StoreError> {
-        schema::configure(&conn, wal)?;
+    fn init(mut conn: Connection, wal: bool, busy: Duration) -> Result<Self, StoreError> {
+        schema::configure(&conn, wal, busy)?;
         schema::migrate(&mut conn)?;
         Ok(Self {
             conn,
@@ -385,6 +397,27 @@ impl Store {
         tx.commit()?;
         Ok(())
     }
+
+    /// Sets a memory's confidence.
+    ///
+    /// # Errors
+    /// `Invalid` outside 0..=1; `NotFound` if the memory doesn't exist.
+    pub fn set_confidence(&mut self, uid: &str, confidence: f32) -> Result<(), StoreError> {
+        if !(0.0..=1.0).contains(&confidence) {
+            return Err(StoreError::Invalid(
+                "confidence must be within 0..=1".to_owned(),
+            ));
+        }
+        let now = (self.clock)();
+        let changed = self.conn.execute(
+            "UPDATE memories SET confidence = ?2, updated_at = ?3 WHERE uid = ?1",
+            params![uid, confidence, now],
+        )?;
+        if changed == 0 {
+            return Err(StoreError::NotFound(uid.to_owned()));
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -563,6 +596,22 @@ mod tests {
         ));
         assert!(matches!(s.archive("nope"), Err(StoreError::NotFound(_))));
         assert!(matches!(s.restore("nope"), Err(StoreError::NotFound(_))));
+    }
+
+    #[test]
+    fn set_confidence_validates_and_updates() {
+        let mut s = Store::open_in_memory().unwrap();
+        let a = s.insert(&mem("a"), &prov(1)).unwrap().uid().to_owned();
+        s.set_confidence(&a, 0.9).unwrap();
+        assert!((s.get(&a).unwrap().unwrap().confidence - 0.9).abs() < f32::EPSILON);
+        assert!(matches!(
+            s.set_confidence(&a, 1.5),
+            Err(StoreError::Invalid(_))
+        ));
+        assert!(matches!(
+            s.set_confidence("nope", 0.5),
+            Err(StoreError::NotFound(_))
+        ));
     }
 
     #[test]

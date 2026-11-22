@@ -15,7 +15,7 @@ It turns your existing session history into compact, source-linked memories, fla
 </div>
 
 > [!WARNING]
-> **Pre-alpha.** `recalla backfill` imports Claude Code history and extracts memories; `recalla pack` prints a token-budgeted context pack. Hooks and MCP (automatic injection) are next. Follow [ROADMAP.md](ROADMAP.md) for progress. Star or watch the repo to hear about the first release.
+> **Pre-alpha.** Works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Expect rough edges; the extractor is rule-based and still being tuned. Follow [ROADMAP.md](ROADMAP.md) for progress. Star or watch the repo to hear about the first release.
 
 ---
 
@@ -77,17 +77,19 @@ make build   # target/release/recalla
 
 Requires stable Rust (installed automatically via `rust-toolchain.toml` when using rustup).
 
-**Usage today:**
+**Usage:**
 
 ```bash
 recalla backfill              # import Claude Code history and extract memories
-recalla pack --budget 1500    # context pack for the current project
+recalla hooks install         # inject memory at session start, capture new turns (backs up settings.json)
+claude mcp add --scope user recalla -- "$(command -v recalla)" mcp   # optional: recall/remember/review/why tools
+
+recalla pack --budget 1500    # see the context pack for the current project
 recalla search "rate limit"   # inspect memories
 recalla why <id>              # where a memory came from
 recalla stats                 # what was injected, and its token cost
+recalla hooks uninstall       # remove only Recalla's hook entries
 ```
-
-Coming next: `recalla hooks install` (automatic injection at session start) and `recalla mcp`.
 
 ## Privacy and security
 

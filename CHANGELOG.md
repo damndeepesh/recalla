@@ -15,3 +15,5 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - Store schema v3: extraction checkpoint
 - Context packs: `recalla pack` (token-budgeted, ranked, per-project), injection ledger (`recalla stats`, schema v4), provenance view (`recalla why`)
 - Preferences are project-scoped unless explicitly global (extractor v2)
+- `recalla mcp`: stdio MCP server (2026-07-28 + legacy) with `recall`, `remember`, `review`, `why` (~430 tokens)
+- Claude Code hooks: `recalla hook session-start|capture`, `recalla hooks install|uninstall|status` (never block; settings backed up, atomic, order-preserving)

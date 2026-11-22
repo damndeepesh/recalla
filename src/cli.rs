@@ -3,8 +3,8 @@
 //!
 //! Exit codes: 0 ok, 1 some files failed, 2 usage or setup error.
 
-use std::collections::HashMap;
 use std::ffi::OsString;
+use std::fmt::Write as _;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -15,9 +15,12 @@ use serde_json::{Value, json};
 use crate::extract;
 use crate::extract::scope::project_key;
 use crate::harness::claude;
+use crate::hook::{self, Ctx};
+use crate::hooks_cfg;
 use crate::ingest::{self, Options, Report};
-use crate::model::{Kind, Memory, Scope, Status};
-use crate::pack;
+use crate::mcp::{self, McpCtx};
+use crate::model::{Kind, Memory, Scope};
+use crate::ops::{PackArgs, Why, open_existing, pack_for, prefix, truncate_chars, why};
 use crate::paths;
 use crate::store::{Filter, Hit, Store, Via};
 
@@ -114,6 +117,40 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Serve MCP tools (recall, remember, review, why) over stdio.
+    Mcp {
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+        /// Project key [default: `$CLAUDE_PROJECT_DIR`, else the git toplevel of the current directory].
+        #[arg(long, value_name = "PROJECT")]
+        project: Option<String>,
+    },
+    /// Claude Code hook entry point; reads the hook JSON on stdin. Always exits 0.
+    Hook {
+        #[arg(value_enum)]
+        event: HookEvent,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+        #[arg(
+            long,
+            value_name = "PATH",
+            help = "Claude config dir [default: $CLAUDE_CONFIG_DIR or ~/.claude]"
+        )]
+        root: Option<PathBuf>,
+    },
+    /// Install, remove or inspect Recalla's Claude Code hooks.
+    Hooks {
+        #[arg(value_enum)]
+        action: HooksAction,
+        /// Settings file [default: `$CLAUDE_CONFIG_DIR/settings.json` or `~/.claude/settings.json`].
+        #[arg(long, value_name = "PATH")]
+        settings: Option<PathBuf>,
+        /// Show what would change; write nothing.
+        #[arg(long)]
+        dry_run: bool,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+    },
     /// Explain a memory: its provenance and the source text it came from.
     Why {
         /// Memory id or a prefix of at least 4 hex characters.
@@ -124,6 +161,21 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+}
+
+/// Which hook `recalla hook` serves.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum HookEvent {
+    SessionStart,
+    /// For `Stop` and `PreCompact`.
+    Capture,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+enum HooksAction {
+    Install,
+    Uninstall,
+    Status,
 }
 
 /// Output format of `recalla pack`.
@@ -251,9 +303,50 @@ where
                 project,
                 query,
                 no_log,
+                via: Via::Cli,
             };
             run_pack(&args, format, data_dir, out, err)
         }
+        Command::Mcp { data_dir, project } => {
+            let data_dir = match resolve_data_dir(data_dir) {
+                Ok(d) => d,
+                Err(msg) => return emit(err, &msg, USAGE),
+            };
+            let project = project.or_else(default_project);
+            let ctx = McpCtx { data_dir, project };
+            // stdout is protocol-only, so `out` is not used here.
+            let (stdin, stdout) = (std::io::stdin(), std::io::stdout());
+            match mcp::serve(stdin.lock(), stdout.lock(), &ctx) {
+                Ok(()) => OK,
+                Err(e) => emit(err, &format!("error: mcp: {e}\n"), SOME_FAILED),
+            }
+        }
+        Command::Hook {
+            event,
+            data_dir,
+            root,
+        } => {
+            // A hook never fails the session: no data dir means nothing to do.
+            if let Some(data_dir) = data_dir.or_else(paths::data_dir) {
+                hook::silence_panics();
+                let ctx = Ctx {
+                    data_dir,
+                    root: root.or_else(claude::default_root),
+                };
+                let event = match event {
+                    HookEvent::SessionStart => hook::Event::SessionStart,
+                    HookEvent::Capture => hook::Event::Capture,
+                };
+                hook::run(event, std::io::stdin().lock(), out, &ctx);
+            }
+            OK
+        }
+        Command::Hooks {
+            action,
+            settings,
+            dry_run,
+            data_dir,
+        } => run_hooks(action, settings, dry_run, data_dir, out, err),
         Command::Stats { data_dir, json } => {
             read_only(data_dir, out, err, |s| stats_text(s, json).map(Why::Found))
         }
@@ -261,12 +354,107 @@ where
     }
 }
 
-#[derive(Clone)]
-struct PackArgs {
-    budget: usize,
-    project: Option<String>,
-    query: Option<String>,
-    no_log: bool,
+/// `recalla hooks install|uninstall|status`.
+fn run_hooks(
+    action: HooksAction,
+    settings: Option<PathBuf>,
+    dry_run: bool,
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let Some(settings) =
+        settings.or_else(|| claude::default_root().map(|r| r.join("settings.json")))
+    else {
+        return emit(err, "error: no --settings given and HOME is unset\n", USAGE);
+    };
+    let exe = match std::env::current_exe().and_then(std::fs::canonicalize) {
+        Ok(e) => e,
+        Err(e) => {
+            return emit(
+                err,
+                &format!("error: cannot locate recalla binary: {e}\n"),
+                USAGE,
+            );
+        }
+    };
+    let result = match action {
+        HooksAction::Install => hooks_cfg::install(&settings, &exe, dry_run),
+        HooksAction::Uninstall => hooks_cfg::uninstall(&settings, dry_run),
+        HooksAction::Status => return hooks_status(&settings, data_dir, out, err),
+    };
+    let o = match result {
+        Ok(o) => o,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    let mut text = format!("settings: {}\n", settings.display());
+    for line in &o.changes {
+        let _ = writeln!(text, "  {line}");
+    }
+    match (&o.backup, o.changed, dry_run) {
+        (_, false, _) => text += "no changes\n",
+        (_, true, true) => text += "dry run: nothing written\n",
+        (Some(b), true, false) => {
+            let _ = writeln!(text, "backup: {}", b.display());
+        }
+        (None, true, false) => text += "created new settings file\n",
+    }
+    if action == HooksAction::Install {
+        text += &hooks_cfg::mcp_hints(&exe);
+    }
+    emit(out, &text, OK)
+}
+
+fn hooks_status(
+    settings: &std::path::Path,
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let events = match hooks_cfg::installed(settings) {
+        Ok(e) => e,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let mut text = format!("settings: {}\n", settings.display());
+    for (event, yes) in events {
+        let _ = writeln!(
+            text,
+            "  {event}: {}",
+            if yes { "installed" } else { "not installed" }
+        );
+    }
+    let _ = writeln!(text, "data dir: {}", data_dir.display());
+    match open_existing(&data_dir).and_then(|s| s.memory_counts().map_err(|e| e.to_string())) {
+        Ok(counts) => {
+            let mut by_status = std::collections::BTreeMap::<String, u64>::new();
+            for (_, status, n) in counts {
+                *by_status.entry(status.to_string()).or_default() += n;
+            }
+            let _ = writeln!(
+                text,
+                "database: present, memories {}",
+                kind_counts(&by_status)
+            );
+        }
+        Err(_) if !paths::db_path(&data_dir).is_file() => text += "database: missing\n",
+        Err(e) => {
+            let _ = writeln!(text, "database: unreadable ({e})");
+        }
+    }
+    let tail = hook::log_tail(&data_dir, 5);
+    if tail.is_empty() {
+        text += "hook log: empty\n";
+    } else {
+        text += "hook log (last 5):\n";
+        for l in &tail {
+            let _ = writeln!(text, "  {l}");
+        }
+    }
+    emit(out, &text, OK)
 }
 
 /// Opens the existing store and prints what `f` produces: exit 0 for a
@@ -335,53 +523,6 @@ fn run_pack(
     }
 }
 
-/// Builds the pack and, unless disabled, records it in the ledger. Nothing
-/// is recorded when nothing was injected.
-fn pack_for(data_dir: &std::path::Path, args: &PackArgs) -> Result<pack::Pack, String> {
-    let mut store = open_existing(data_dir)?;
-    let project = args.project.as_deref();
-    let memories = store
-        .memories_for_project(project, &[Status::Active, Status::NeedsReverify])
-        .map_err(|e| e.to_string())?;
-    let boosts = match args.query.as_deref() {
-        Some(q) => {
-            let hits = store
-                .search(q, &Filter::default(), SEARCH_LIMIT)
-                .map_err(|e| e.to_string())?;
-            let scored: Vec<_> = hits.into_iter().map(|h| (h.memory.uid, h.score)).collect();
-            pack::query_boosts(&scored)
-        }
-        None => HashMap::new(),
-    };
-    let label = project.map_or("global", |p| {
-        std::path::Path::new(p)
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or(p)
-    });
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .ok()
-        .and_then(|d| i64::try_from(d.as_millis()).ok())
-        .unwrap_or(0);
-    let built = pack::build(&memories, args.budget, label, &boosts, now);
-    if !args.no_log && !built.included_uids.is_empty() {
-        store
-            .record_injection(
-                project,
-                args.budget,
-                built.est_tokens,
-                &built.included_uids,
-                Via::Cli,
-            )
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(built)
-}
-
-/// Best-matching memories considered for a `--query` boost.
-const SEARCH_LIMIT: usize = 50;
-
 fn stats_text(store: &Store, json: bool) -> Result<String, String> {
     let st = store.injection_stats().map_err(|e| e.to_string())?;
     let counts = store.memory_counts().map_err(|e| e.to_string())?;
@@ -449,108 +590,6 @@ fn stats_text(store: &Store, json: bool) -> Result<String, String> {
     Ok(lines.join("\n") + "\n")
 }
 
-enum Why {
-    Found(String),
-    /// Candidate list for stderr.
-    Ambiguous(String),
-    Missing(String),
-}
-
-/// Longest source-event excerpt `why` prints.
-const EVENT_CHARS: usize = 300;
-
-fn why(store: &Store, id: &str, json: bool) -> Result<Why, String> {
-    let mut found = store
-        .memories_by_uid_prefix(id)
-        .map_err(|e| e.to_string())?;
-    let m = match found.len() {
-        0 => return Ok(Why::Missing(id.to_owned())),
-        1 => found.remove(0),
-        _ => {
-            let list = found
-                .iter()
-                .map(|m| {
-                    let (uid, text) = (prefix(&m.uid, 12), truncate_chars(&m.text, 80));
-                    format!("  {uid}  {}  {text}", m.kind)
-                })
-                .collect::<Vec<_>>()
-                .join("\n");
-            return Ok(Why::Ambiguous(format!(
-                "error: {id} matches {} memories; use a longer prefix:\n{list}\n",
-                found.len()
-            )));
-        }
-    };
-    let mut prov = Vec::new();
-    for p in &m.provenance {
-        let events = match (&p.source_path, p.line) {
-            (Some(path), Some(line)) => {
-                store.event_text_at(path, line).map_err(|e| e.to_string())?
-            }
-            _ => Vec::new(),
-        };
-        let file = p.source_path.as_deref().map(|s| {
-            std::path::Path::new(s)
-                .file_name()
-                .map_or_else(|| s.to_owned(), |n| n.to_string_lossy().into_owned())
-        });
-        prov.push((p, file, events));
-    }
-    if json {
-        return Ok(Why::Found(format!(
-            "{}\n",
-            json!({
-                "uid": m.uid, "kind": m.kind.to_string(), "text": m.text,
-                "scope": m.scope.to_string(), "confidence": m.confidence,
-                "seen_count": m.seen_count, "status": m.status.to_string(),
-                "provenance": prov.iter().map(|(p, file, events)| json!({
-                    "origin": p.origin.to_string(), "harness": p.harness,
-                    "session": p.session_id.as_deref().map(|s| prefix(s, 8)),
-                    "source_file": file, "line": p.line,
-                    "events": events.iter().map(|e| truncate_chars(e, EVENT_CHARS)).collect::<Vec<_>>(),
-                })).collect::<Vec<_>>(),
-                "anchors": m.anchors.iter().map(|a| json!({
-                    "path": a.path, "symbol": a.symbol,
-                })).collect::<Vec<_>>(),
-            })
-        )));
-    }
-    let mut lines = vec![
-        format!("{}  {}  {}", m.uid, m.kind, m.status),
-        format!("  {}", truncate_chars(&m.text, 1000)),
-        format!(
-            "  scope {}  confidence {:.2}  seen {}",
-            m.scope.to_string().replace('\u{1f}', " > "),
-            m.confidence,
-            m.seen_count
-        ),
-        "provenance".to_owned(),
-    ];
-    for (p, file, events) in &prov {
-        let line = p.line.map_or_else(|| "?".to_owned(), |l| l.to_string());
-        lines.push(format!(
-            "  {} {} {} line {line} ({})",
-            p.harness.as_deref().unwrap_or("-"),
-            prefix(p.session_id.as_deref().unwrap_or("-"), 8),
-            file.as_deref().unwrap_or("-"),
-            p.origin
-        ));
-        lines.extend(
-            events
-                .iter()
-                .map(|e| format!("    > {}", truncate_chars(e, EVENT_CHARS))),
-        );
-    }
-    if !m.anchors.is_empty() {
-        lines.push("anchors".to_owned());
-        lines.extend(m.anchors.iter().map(|a| match &a.symbol {
-            Some(sym) => format!("  {} ({sym})", a.path),
-            None => format!("  {}", a.path),
-        }));
-    }
-    Ok(Why::Found(lines.join("\n") + "\n"))
-}
-
 /// Ingest, then (when `extract`) extract; one combined report.
 fn backfill(
     opts: &Options,
@@ -597,22 +636,21 @@ fn extract_text(r: &extract::Report, json: bool) -> String {
     }
 }
 
+/// `$CLAUDE_PROJECT_DIR` (set by Claude Code), else the current directory,
+/// resolved to its git toplevel.
+fn default_project() -> Option<String> {
+    let dir = std::env::var("CLAUDE_PROJECT_DIR")
+        .ok()
+        .filter(|d| !d.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| std::env::current_dir().ok())?;
+    Some(project_key(&dir.to_string_lossy()))
+}
+
 fn resolve_data_dir(given: Option<PathBuf>) -> Result<PathBuf, String> {
     given
         .or_else(paths::data_dir)
         .ok_or_else(|| "error: no --data-dir given and HOME is unset\n".to_owned())
-}
-
-/// Opens the existing store; never creates one.
-fn open_existing(data_dir: &std::path::Path) -> Result<Store, String> {
-    let db = paths::db_path(data_dir);
-    if !db.is_file() {
-        return Err(format!(
-            "no database at {}; run `recalla backfill` first",
-            db.display()
-        ));
-    }
-    Store::open(&db).map_err(|e| format!("cannot open store: {e}"))
 }
 
 fn extract_into(data_dir: &std::path::Path, rebuild: bool) -> Result<extract::Report, String> {
@@ -652,10 +690,6 @@ fn human_extract(r: &extract::Report) -> String {
     lines.join("\n") + "\n"
 }
 
-fn truncate_chars(text: &str, max: usize) -> String {
-    crate::pack::one_line(text, max)
-}
-
 fn human_hits(hits: &[Hit]) -> String {
     if hits.is_empty() {
         return "no matches\n".to_owned();
@@ -680,11 +714,6 @@ fn human_hits(hits: &[Hit]) -> String {
         }
     }
     lines.join("\n") + "\n"
-}
-
-/// First `n` chars of `s`.
-fn prefix(s: &str, n: usize) -> String {
-    s.chars().take(n).collect()
 }
 
 fn hit_json(h: &Hit) -> Value {
