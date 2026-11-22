@@ -66,6 +66,13 @@
     var ua = navigator.userAgent || "";
     var uad = navigator.userAgentData;
     var plat = ((uad && uad.platform) || navigator.platform || "").toLowerCase();
+    var win = /^win/.test(plat) || /Windows/.test(ua);
+    if (win) {
+      var wsl = document.querySelector('.card[data-os="linux"][data-arch="x64"]');
+      wsl.classList.add("is-rec");
+      wsl.querySelector(".rec").textContent = "Use inside WSL";
+      return;
+    }
     var os = /mac/.test(plat) || /Macintosh/.test(ua) ? "mac" : /linux/.test(plat) || (/Linux/.test(ua) && !/Android/.test(ua)) ? "linux" : null;
     if (!os) return;
     var a = arch || (/aarch64|arm64|armv8/i.test(ua + plat) ? "arm" : os === "linux" ? "x64" : null);

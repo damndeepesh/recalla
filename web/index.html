@@ -312,7 +312,7 @@ checked 1 anchors: 1 newly stale, 0 stale but matching again (confirm to clear)
 
 <section class="sec" id="download" aria-labelledby="h-dl">
   <div class="wrap">
-    <div class="head"><h2 id="h-dl">Download</h2><p class="lede">v<span data-ver>0.1.0</span>. macOS and Linux.</p></div>
+    <div class="head"><h2 id="h-dl">Download</h2><p class="lede">v<span data-ver>0.1.0</span>. macOS and Linux; Windows via WSL.</p></div>
     <div class="body">
       <ul class="cards" id="cards">
         <li><div class="card" data-os="mac" data-arch="arm">
@@ -328,8 +328,8 @@ checked 1 anchors: 1 newly stale, 0 stale but matching again (confirm to clear)
           <span class="rec">Recommended for your system</span><h3>Linux, arm64</h3><span class="tgt">aarch64-unknown-linux-gnu</span>
           <a class="btn" data-asset="aarch64-unknown-linux-gnu" href="https://github.com/damndeepesh/recalla/releases/download/v0.1.0/recalla-v0.1.0-aarch64-unknown-linux-gnu.tar.gz">Download .tar.gz</a></div></li>
         <li><div class="card planned">
-          <h3>Windows: planned</h3><span class="tgt">not supported yet</span>
-          <a class="btn ghost" href="https://github.com/damndeepesh/recalla/blob/main/ROADMAP.md">See the roadmap</a></div></li>
+          <h3>Windows: use WSL</h3><span class="tgt">native build not working yet</span>
+          <p class="note">The Linux build runs inside WSL today. <a href="https://github.com/damndeepesh/recalla/issues">Native Windows is planned</a>.</p></div></li>
         <li><div class="card">
           <h3>Checksums</h3><span class="tgt">SHA256SUMS</span>
           <a class="btn ghost" data-asset="SHA256SUMS" href="https://github.com/damndeepesh/recalla/releases/download/v0.1.0/SHA256SUMS">Download SHA256SUMS</a></div></li>
@@ -341,7 +341,7 @@ checked 1 anchors: 1 newly stale, 0 stale but matching again (confirm to clear)
         <div class="cmd"><code>cargo binstall recalla</code></div>
         <h3 class="subhead">Verify what you downloaded</h3>
         <div class="cmd"><code>gh attestation verify &lt;file&gt; --repo damndeepesh/recalla</code></div>
-        <p class="note">Releases carry SHA256SUMS and provenance attestations. A binary downloaded in a browser on macOS may need <code>xattr -d com.apple.quarantine &lt;file&gt;</code>, because the binaries are not notarized. Windows is untested today.</p>
+        <p class="note">Releases carry SHA256SUMS and provenance attestations. A binary downloaded in a browser on macOS may need <code>xattr -d com.apple.quarantine &lt;file&gt;</code>, because the binaries are not notarized. Native Windows is not supported yet; use WSL.</p>
       </div>
     </div>
   </div>
@@ -357,7 +357,7 @@ checked 1 anchors: 1 newly stale, 0 stale but matching again (confirm to clear)
         <li><strong>Claude Code gets the hooks.</strong> Codex is covered by <code>backfill</code> and MCP. Native Codex hooks are on the roadmap.</li>
         <li><strong>English only</strong> for extraction phrases.</li>
         <li><strong>Extraction quality is measured on a synthetic eval</strong> (53 labels). Treat it as a regression gate, not a claim about your logs.</li>
-        <li><strong>macOS and Linux are tested in CI.</strong> Windows is untested.</li>
+        <li><strong>macOS and Linux are tested in CI.</strong> Native Windows does not work yet; use WSL.</li>
       </ul>
       <div class="road">
         <div><h3>Toward v1.0</h3><ul><li>Better extraction</li><li>Contradiction resolution</li><li>Optional local embeddings</li><li>Native Codex hooks</li><li>Gemini CLI, OpenCode and Cursor harnesses</li><li>Published benchmarks, losses included</li></ul></div>
