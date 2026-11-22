@@ -88,3 +88,21 @@ flowchart LR
 - Event text is emitted whole. Ingest redacts FIRST, then truncates to 32 KB (`truncate_middle`), so a cut can never split a secret.
 - Output is decoded text. It is NOT redacted; ingest must redact every event's text, including tool-call JSON.
 - Measured on real logs: 258 MB/s, 0 malformed lines across 26 files.
+
+## Ingest (`ingest`, `recalla backfill`)
+- Data dir: `--data-dir`, else `$RECALLA_HOME`, else `$XDG_DATA_HOME/recalla`, else `~/.local/share/recalla`. Dirs are 0700; the DB and its WAL/SHM are 0600.
+- Per file:
+  1. Identity check decides new / resume / restart / unchanged. It uses blake3 of the ingested prefix (≤4 KB) plus a hash of the last ingested line, and the checkpoint must sit on a `\n`. The root is canonicalized so one file has exactly one source.
+  2. Read `[offset, len)` once; parse (`parse_bytes`) and archive from that same buffer.
+  3. Per event: `redact` text, tool name, cwd and branch, then `truncate_middle`.
+  4. zstd segment of the raw bytes `[offset, next_offset)`.
+  5. One IMMEDIATE txn: optional reset + events + checkpoint + segment row.
+- Re-runs are idempotent: `UNIQUE(source_id, line, seq)`. One line can emit several events.
+- Archive: `archive/<blake3>.zst`, content-addressed, written once (tmp + fsync + rename). Holds RAW bytes (local copy, 0600). `--no-archive` opts out.
+- Measured on real logs: 30.4 MB in 0.65 s (28 MB peak RSS). DB ~20% of raw; archive ~16% of raw. Re-run is a no-op in 1 ms.
+
+## Store schema (v2)
+- `sources`: one checkpoint per log file (identity, size, next_offset).
+- `events`: redacted, truncated events with full provenance, plus `events_fts` (FTS5).
+- `segments`: archive pieces per source.
+- Provenance uniqueness now includes `source_path`.

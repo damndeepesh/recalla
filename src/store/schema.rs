@@ -87,6 +87,73 @@ const MIGRATIONS: &[&str] = &[
         INSERT INTO memories_fts (rowid, text) VALUES (new.id, new.text);
     END;
     ",
+    // v2: ingest checkpoints, redacted events, archive segments.
+    "
+    CREATE TABLE sources (
+        id           INTEGER PRIMARY KEY,
+        harness      TEXT NOT NULL,
+        path         TEXT NOT NULL UNIQUE,
+        identity     TEXT NOT NULL,
+        tail_hash    TEXT NOT NULL DEFAULT '',
+        size         INTEGER NOT NULL,
+        next_offset  INTEGER NOT NULL,
+        events       INTEGER NOT NULL DEFAULT 0,
+        updated_at   INTEGER NOT NULL
+    );
+
+    CREATE TABLE events (
+        id            INTEGER PRIMARY KEY,
+        source_id     INTEGER NOT NULL REFERENCES sources(id),
+        harness       TEXT NOT NULL,
+        session_id    TEXT NOT NULL,
+        message_uuid  TEXT,
+        parent_uuid   TEXT,
+        line          INTEGER NOT NULL,
+        seq           INTEGER NOT NULL,
+        byte_offset   INTEGER NOT NULL,
+        ts            INTEGER,
+        cwd           TEXT,
+        git_branch    TEXT,
+        sidechain     INTEGER NOT NULL,
+        kind          TEXT NOT NULL
+                      CHECK (kind IN ('user_text','assistant_text','tool_call','tool_result','summary')),
+        tool_name     TEXT,
+        tool_id       TEXT,
+        is_error      INTEGER NOT NULL DEFAULT 0,
+        text          TEXT NOT NULL,
+        UNIQUE (source_id, line, seq)
+    );
+    CREATE INDEX events_session ON events (session_id);
+
+    CREATE VIRTUAL TABLE events_fts USING fts5(
+        text, content='events', content_rowid='id'
+    );
+    CREATE TRIGGER events_ai AFTER INSERT ON events BEGIN
+        INSERT INTO events_fts (rowid, text) VALUES (new.id, new.text);
+    END;
+    CREATE TRIGGER events_ad AFTER DELETE ON events BEGIN
+        INSERT INTO events_fts (events_fts, rowid, text)
+        VALUES ('delete', old.id, old.text);
+    END;
+
+    CREATE TABLE segments (
+        source_id     INTEGER NOT NULL REFERENCES sources(id),
+        start_offset  INTEGER NOT NULL,
+        end_offset    INTEGER NOT NULL CHECK (end_offset > start_offset),
+        hash          TEXT NOT NULL,
+        PRIMARY KEY (source_id, start_offset)
+    );
+
+    DROP INDEX provenance_source;
+    CREATE UNIQUE INDEX provenance_source ON provenance (
+        memory_id,
+        COALESCE(harness, ''),
+        COALESCE(session_id, ''),
+        COALESCE(message_uuid, ''),
+        COALESCE(source_path, ''),
+        COALESCE(line, -1)
+    );
+    ",
 ];
 
 /// Schema version this build produces.
@@ -108,15 +175,20 @@ pub(super) fn configure(conn: &Connection, wal: bool) -> Result<(), StoreError> 
 /// Applies pending migrations in one write transaction. Safe to call
 /// repeatedly and from concurrent processes.
 pub(super) fn migrate(conn: &mut Connection) -> Result<(), StoreError> {
+    migrate_to(conn, version())
+}
+
+/// Applies migrations up to `target` (tests build older schemas with it).
+fn migrate_to(conn: &mut Connection, target: u32) -> Result<(), StoreError> {
     let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
     let current: u32 = tx.pragma_query_value(None, "user_version", |r| r.get(0))?;
-    let target = version();
     if current > target {
         return Err(StoreError::Invalid(format!(
-            "database schema v{current} is newer than this build (v{target})"
+            "database schema v{current} is newer than this build (v{})",
+            version()
         )));
     }
-    for sql in &MIGRATIONS[current as usize..] {
+    for sql in &MIGRATIONS[current as usize..target as usize] {
         tx.execute_batch(sql)?;
     }
     if current < target {
@@ -160,5 +232,77 @@ mod tests {
             .query_row("SELECT count(*) FROM memories_fts", [], |r| r.get(0))
             .unwrap();
         assert_eq!(n, 0);
+    }
+
+    #[test]
+    fn v1_data_survives_v2_migration() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate_to(&mut conn, 1).unwrap();
+        assert_eq!(user_version(&conn), 1);
+        conn.execute_batch(
+            "INSERT INTO memories (uid, kind, text, scope_key, confidence, importance,
+                 created_at, updated_at, valid_from)
+             VALUES ('u1', 'fact', 'kept across v2', 'global', 0.5, 1, 1, 1, 1);
+             INSERT INTO provenance (memory_id, origin, harness, session_id, source_path,
+                 line, created_at)
+             VALUES (1, 'backfill', 'claude-code', 's1', '/a.jsonl', 3, 1);",
+        )
+        .unwrap();
+
+        migrate(&mut conn).unwrap();
+        assert_eq!(user_version(&conn), 2);
+        let text: String = conn
+            .query_row("SELECT text FROM memories WHERE uid = 'u1'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(text, "kept across v2");
+        let hits: i64 = conn
+            .query_row(
+                "SELECT count(*) FROM memories_fts WHERE memories_fts MATCH 'kept'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(hits, 1);
+
+        // Same session and line from another file (a subagent log) is now a
+        // distinct provenance; the exact same source is still deduped.
+        let add = |path: &str| {
+            conn.execute(
+                "INSERT OR IGNORE INTO provenance (memory_id, origin, harness, session_id,
+                     source_path, line, created_at)
+                 VALUES (1, 'backfill', 'claude-code', 's1', ?1, 3, 2)",
+                [path],
+            )
+            .unwrap()
+        };
+        assert_eq!(add("/a.jsonl"), 0);
+        assert_eq!(add("/sub/agent.jsonl"), 1);
+    }
+
+    #[test]
+    fn events_fts_follows_insert_and_delete() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate(&mut conn).unwrap();
+        conn.execute_batch(
+            "INSERT INTO sources (harness, path, identity, size, next_offset, updated_at)
+             VALUES ('h', '/p', 'i', 1, 1, 0);
+             INSERT INTO events (source_id, harness, session_id, line, seq, byte_offset,
+                 sidechain, kind, text)
+             VALUES (1, 'h', 's', 1, 0, 0, 0, 'user_text', 'zebra crossing');",
+        )
+        .unwrap();
+        let count = |c: &Connection| -> i64 {
+            c.query_row(
+                "SELECT count(*) FROM events_fts WHERE events_fts MATCH 'zebra'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap()
+        };
+        assert_eq!(count(&conn), 1);
+        conn.execute("DELETE FROM events", []).unwrap();
+        assert_eq!(count(&conn), 0);
     }
 }

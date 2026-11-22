@@ -85,3 +85,17 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Decision: Add `serde_json = "1"` (no serde derive in our code). Parse each line into `serde_json::Value` and read fields through accessors; missing or unknown fields are counted in `ParseStats`, never fatal.
 - Why: Decoding is mandatory (D-009) and serde_json is the de-facto standard, pure Rust. `Value` tolerates schema drift where typed structs would reject whole records.
 - Rejected: Typed serde structs (brittle against an external, versioned format); simd-json (unneeded complexity for MB-scale files).
+
+## D-013 clap (derive) for the CLI parser (2026-11-22)
+
+- Context: The CLI grows to many subcommands (`backfill`, hooks, `mcp`, `why`, ...) with flags, help text and exit-code conventions.
+- Decision: `clap = { version = "4", features = ["derive"] }`; argument structs live in `cli`, `main.rs` only calls `cli::run`.
+- Why: The de-facto Rust standard; derive keeps flags, help and validation in one typed place; generated `--help`/`--version` and usage errors (exit 2) for free.
+- Rejected: lexopt / argh (smaller, but hand-written help and poorer DX across many subcommands); hand-rolled parsing (already outgrown).
+
+## D-014 zstd for the raw session archive (2026-11-22)
+
+- Context: The archive keeps an immutable copy of raw session bytes; JSONL logs are large and highly repetitive.
+- Decision: `zstd = "0.13"` (libzstd bindings), level 3, one content-addressed `<blake3>.zst` per ingested segment.
+- Why: Logs compress about 10x; zstd is fast at both ends and the C library is the reference implementation.
+- Rejected: ruzstd (pure-Rust encoder is slow and immature); gzip/flate2 (worse ratio and speed); no compression (about 10x more disk).

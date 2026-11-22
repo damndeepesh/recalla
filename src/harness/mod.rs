@@ -92,6 +92,37 @@ pub trait Harness {
     /// # Errors
     /// I/O errors, or `from_offset` past the end of the file.
     fn parse(&self, path: &Path, from_offset: u64) -> io::Result<(Vec<Event>, ParseStats, u64)>;
+
+    /// Parse complete lines of `bytes`, which begin at file offset
+    /// `base_offset` (a line start) after `base_line` lines. Returns the
+    /// events, stats and the number of bytes consumed.
+    fn parse_bytes(
+        &self,
+        bytes: &[u8],
+        base_offset: u64,
+        base_line: u64,
+        path: &Path,
+    ) -> (Vec<Event>, ParseStats, u64);
+}
+
+/// Count `\n` in the first `limit` bytes read from `reader`, leaving it
+/// positioned there.
+///
+/// # Errors
+/// I/O errors from reading.
+#[allow(clippy::naive_bytecount)] // a dependency isn't worth it here
+pub fn count_newlines(reader: impl io::Read, limit: u64) -> io::Result<u64> {
+    let mut reader = io::BufReader::new(reader.take(limit));
+    let mut count = 0;
+    loop {
+        let chunk = io::BufRead::fill_buf(&mut reader)?;
+        if chunk.is_empty() {
+            return Ok(count);
+        }
+        count += chunk.iter().filter(|&&b| b == b'\n').count() as u64;
+        let n = chunk.len();
+        io::BufRead::consume(&mut reader, n);
+    }
 }
 
 /// Keep the head and tail of `text` when it exceeds `max_bytes`, joined by an

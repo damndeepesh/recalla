@@ -1,11 +1,10 @@
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
-    if let Some("--version" | "-V") = std::env::args().nth(1).as_deref() {
-        println!("{}", recalla::version_line());
-        ExitCode::SUCCESS
-    } else {
-        eprintln!("{}\nusage: recalla --version", recalla::version_line());
-        ExitCode::from(2)
-    }
+    let code = recalla::cli::run(
+        std::env::args_os(),
+        &mut std::io::stdout().lock(),
+        &mut std::io::stderr().lock(),
+    );
+    ExitCode::from(code)
 }

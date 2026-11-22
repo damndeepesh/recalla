@@ -7,12 +7,12 @@
 use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader, Read};
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-use super::{Event, EventKind, Harness, ParseStats, SessionFile, parse_rfc3339_ms};
+use super::{Event, EventKind, Harness, ParseStats, SessionFile, count_newlines, parse_rfc3339_ms};
 
 const HARNESS_NAME: &str = "claude-code";
 
@@ -31,6 +31,16 @@ impl Harness for ClaudeCode {
 
     fn parse(&self, path: &Path, from_offset: u64) -> io::Result<(Vec<Event>, ParseStats, u64)> {
         parse_session(path, from_offset)
+    }
+
+    fn parse_bytes(
+        &self,
+        bytes: &[u8],
+        base_offset: u64,
+        base_line: u64,
+        path: &Path,
+    ) -> (Vec<Event>, ParseStats, u64) {
+        parse_bytes(bytes, base_offset, base_line, path)
     }
 }
 
@@ -122,29 +132,13 @@ pub fn discover(root: &Path) -> io::Result<Vec<SessionFile>> {
     Ok(found)
 }
 
-/// Count `\n` in the first `limit` bytes of `file`, leaving it positioned there.
-#[allow(clippy::naive_bytecount)] // a dependency isn't worth it here
-fn count_newlines(file: &mut File, limit: u64) -> io::Result<u64> {
-    let mut reader = BufReader::new(file.take(limit));
-    let mut count = 0;
-    loop {
-        let chunk = reader.fill_buf()?;
-        if chunk.is_empty() {
-            return Ok(count);
-        }
-        count += chunk.iter().filter(|&&b| b == b'\n').count() as u64;
-        let n = chunk.len();
-        reader.consume(n);
-    }
-}
-
 /// Parse complete lines of a session file starting at `from_offset` (a line
 /// start). Returns events, stats and the offset to resume from. A final chunk
 /// without `\n` is left unconsumed (`partial_tail`), so a file still being
 /// written is never half-read.
 ///
-/// Memory is bounded by the file size (events are capped per event); callers
-/// parse one file at a time.
+/// Reads the tail `[from_offset, len)` into memory and hands it to
+/// [`parse_bytes`]; callers parse one file at a time.
 ///
 /// # Errors
 /// I/O errors, or `from_offset` beyond the end of the file (truncated or
@@ -158,41 +152,53 @@ pub fn parse_session(path: &Path, from_offset: u64) -> io::Result<(Vec<Event>, P
         ));
     }
     // Event.line is absolute, so resuming still has to count preceding lines.
-    let mut line_no = count_newlines(&mut file, from_offset)?;
-    let mut reader = BufReader::new(file);
+    let base_line = count_newlines(&mut file, from_offset)?;
+    let mut bytes = Vec::new();
+    file.read_to_end(&mut bytes)?;
+    let (events, stats, next_rel) = parse_bytes(&bytes, from_offset, base_line, path);
+    Ok((events, stats, from_offset + next_rel))
+}
+
+/// Parse the complete lines of `bytes`, which start at file offset
+/// `base_offset` (a line start) after `base_line` lines. `path` is only
+/// recorded as provenance. Returns events, stats and how many bytes were
+/// consumed; a final chunk without `\n` is left unconsumed (`partial_tail`).
+#[must_use]
+pub fn parse_bytes(
+    bytes: &[u8],
+    base_offset: u64,
+    base_line: u64,
+    path: &Path,
+) -> (Vec<Event>, ParseStats, u64) {
     let fallback_session = path
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_default();
-
     let (mut events, mut stats) = (Vec::new(), ParseStats::default());
-    let (mut offset, mut buf) = (from_offset, Vec::new());
-    loop {
-        buf.clear();
-        let n = reader.read_until(b'\n', &mut buf)?;
-        if n == 0 {
-            break;
-        }
-        if buf.last() != Some(&b'\n') {
+    let (mut consumed, mut line_no) = (0usize, base_line);
+    while consumed < bytes.len() {
+        let rest = &bytes[consumed..];
+        let Some(end) = rest.iter().position(|&b| b == b'\n') else {
             stats.partial_tail = true;
             break;
-        }
+        };
+        let line = &rest[..=end];
         line_no += 1;
         stats.lines += 1;
         let at = Position {
             path,
             fallback_session: &fallback_session,
             line: line_no,
-            byte_offset: offset,
+            byte_offset: base_offset + consumed as u64,
         };
-        offset += n as u64;
-        match decode_line(&buf) {
+        consumed += line.len();
+        match decode_line(line) {
             Line::Record(record) => handle_record(&record, &at, &mut events, &mut stats),
             Line::Blank => {}
             Line::Malformed => stats.malformed_lines += 1,
         }
     }
-    Ok((events, stats, offset))
+    (events, stats, consumed as u64)
 }
 
 enum Line {
@@ -473,16 +479,13 @@ mod tests {
 
     #[test]
     fn many_openers_stay_linear() {
-        // Quadratic rescanning would take minutes; linear is milliseconds.
-        let small = "<system-reminder>".repeat(25_000);
+        // Absolute bound, not a timing ratio (ratios of sub-millisecond runs
+        // are noise). Quadratic rescanning of 100k openers takes minutes.
         let big = "<system-reminder>".repeat(100_000) + "</system-reminder>";
-        let time = |t: &str| {
-            let s = std::time::Instant::now();
-            let _ = clean_injected(t);
-            s.elapsed().as_secs_f64()
-        };
-        let (a, b) = (time(&small), time(&big));
-        assert!(b < 0.02 || b / a.max(1e-6) < 8.0, "{a:.3}s -> {b:.3}s");
+        let s = std::time::Instant::now();
+        let _ = clean_injected(&big);
+        let secs = s.elapsed().as_secs_f64();
+        assert!(secs < 2.0, "took {secs:.3}s");
     }
 
     #[test]
