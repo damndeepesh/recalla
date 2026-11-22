@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Fixed
+- Landing page works when a proxy serves it at `/recalla` without the trailing slash (`<base href="/recalla/">`, in-place anchor scrolling), guarded by `scripts/web-check.sh`
+
 ### Added
 - Landing page in `web/` (static, no third-party requests), deployed to GitHub Pages by `.github/workflows/pages.yml` and served at deepeshgupta.dev/recalla; `scripts/web-check.sh` guards its privacy promise in CI
 - Release downloads for macOS (arm64, x86_64) and Linux (x86_64, arm64); Windows users run the Linux build in WSL until native support lands (#32)
