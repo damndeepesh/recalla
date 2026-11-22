@@ -3,6 +3,8 @@
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: [SemVer](https://semver.org/).
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-11-22
 ### Changed
 - Published crate excludes internal agent state, CI and dev-only files
 
@@ -32,3 +34,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - Code anchors: memories pinned to tree-sitter symbols (Rust, Python, Go, TS/TSX, JS); `needs_reverify` with a reason when the symbol changes or disappears; `recalla check`, `recalla confirm`; packs show the reason
 - `redact_path` for cwd/branch (no entropy layer) so project keys survive random path components
 - Claude Code hooks: `recalla hook session-start|capture`, `recalla hooks install|uninstall|status` (never block; settings backed up, atomic, order-preserving)
+
+[Unreleased]: https://github.com/damndeepesh/recalla/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/damndeepesh/recalla/releases/tag/v0.1.0
