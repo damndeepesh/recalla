@@ -1,0 +1,45 @@
+name: pages
+
+# Deploys web/ to GitHub Pages (https://damndeepesh.github.io/recalla/). The
+# site is served at https://deepeshgupta.dev/recalla/ by a rewrite on the
+# portfolio site. One-time setup: repo Settings -> Pages -> Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the site
+        run: bash scripts/web-check.sh
+      - name: Stage the site (without dev-only files)
+        run: |
+          mkdir _site
+          cp -R web/. _site/
+          rm -rf _site/tools _site/README.md
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

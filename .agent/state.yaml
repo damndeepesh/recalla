@@ -8,5 +8,6 @@ done:
   - all 12 MVP items built; make check 457 tests; make e2e 64/64 on the release binary
   - final Opus security review: NO-GO on rebuild corrupting a live DB; fixed (VACUUM INTO + in-place txn, dirty-set mirror, redact-on-load, sanitized why/stats); repro verified
 next:
-  - on go: re-enable secret scanning + push protection once public; CHANGELOG [Unreleased] -> [0.1.0] dated; cargo publish; tag v0.1.0; GitHub release
-  - post-release: issue #27 recalla forget, extractor #13-#17, redaction #4-#8, GitHub Pages landing page
+  - landing page PR (web/ + pages workflow); user must enable Pages once (Settings -> Pages -> Source: GitHub Actions)
+  - portfolio PR: rewrite /recalla -> damndeepesh.github.io/recalla (user merges)
+  - recalla ui: see .agent/plans/ui.md on branch feature/ui (server core in progress)

@@ -4,6 +4,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+- Landing page in `web/` (static, no third-party requests), deployed to GitHub Pages by `.github/workflows/pages.yml` and served at deepeshgupta.dev/recalla; `scripts/web-check.sh` guards its privacy promise in CI
+- Release downloads for macOS (arm64, x86_64) and Linux (x86_64, arm64); Windows users run the Linux build in WSL until native support lands (#32)
+
 ## [0.1.0] - 2026-11-22
 ### Changed
 - Published crate excludes internal agent state, CI and dev-only files
