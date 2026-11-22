@@ -13,7 +13,7 @@ use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rusqlite::types::Type;
-use rusqlite::{Connection, OptionalExtension, Row, TransactionBehavior, params};
+use rusqlite::{Connection, OptionalExtension, Row, Transaction, TransactionBehavior, params};
 use thiserror::Error;
 
 use crate::model::{self, Anchor, Memory, NewMemory, Origin, Provenance, Scope, Status};
@@ -110,6 +110,66 @@ fn require(conn: &Connection, uid: &str) -> Result<i64, StoreError> {
     .ok_or_else(|| StoreError::NotFound(uid.to_owned()))
 }
 
+/// The body of [`Store::insert`] inside an open transaction.
+fn insert_in(
+    tx: &Transaction<'_>,
+    now: i64,
+    new: &NewMemory,
+    prov: &Provenance,
+) -> Result<Insert, StoreError> {
+    let uid = model::uid(new.kind, &new.scope, &new.text);
+    let existing: Option<i64> = tx
+        .query_row("SELECT id FROM memories WHERE uid = ?1", [&uid], |r| {
+            r.get(0)
+        })
+        .optional()?;
+    let (id, outcome) = if let Some(id) = existing {
+        tx.execute(
+            "UPDATE memories SET seen_count = seen_count + 1,
+                 confidence = max(confidence, ?2), updated_at = ?3 WHERE id = ?1",
+            params![id, new.confidence, now],
+        )?;
+        (id, Insert::Duplicate(uid))
+    } else {
+        let (project, path) = new.scope.parts();
+        tx.execute(
+            "INSERT INTO memories (uid, kind, text, scope_key, scope_project, scope_path,
+                 confidence, importance, created_at, updated_at, valid_from)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?9)",
+            params![
+                uid,
+                new.kind.as_str(),
+                new.text,
+                new.scope.to_string(),
+                project,
+                path,
+                new.confidence,
+                new.importance,
+                now
+            ],
+        )?;
+        (tx.last_insert_rowid(), Insert::Inserted(uid))
+    };
+    tx.execute(
+        "INSERT OR IGNORE INTO provenance
+             (memory_id, origin, harness, session_id, message_uuid, source_path, line,
+              git_commit, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![
+            id,
+            prov.origin.as_str(),
+            prov.harness,
+            prov.session_id,
+            prov.message_uuid,
+            prov.source_path,
+            prov.line,
+            prov.git_commit,
+            now
+        ],
+    )?;
+    Ok(outcome)
+}
+
 /// Default time a statement waits on another writer.
 pub const DEFAULT_BUSY: Duration = Duration::from_millis(5000);
 
@@ -181,61 +241,44 @@ impl Store {
         new.validate()
             .map_err(|e| StoreError::Invalid(e.to_owned()))?;
         let now = (self.clock)();
-        let uid = model::uid(new.kind, &new.scope, &new.text);
         let tx = self
             .conn
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let existing: Option<i64> = tx
-            .query_row("SELECT id FROM memories WHERE uid = ?1", [&uid], |r| {
-                r.get(0)
-            })
-            .optional()?;
-        let (id, outcome) = if let Some(id) = existing {
-            tx.execute(
-                "UPDATE memories SET seen_count = seen_count + 1,
-                     confidence = max(confidence, ?2), updated_at = ?3 WHERE id = ?1",
-                params![id, new.confidence, now],
-            )?;
-            (id, Insert::Duplicate(uid))
-        } else {
-            let (project, path) = new.scope.parts();
-            tx.execute(
-                "INSERT INTO memories (uid, kind, text, scope_key, scope_project, scope_path,
-                     confidence, importance, created_at, updated_at, valid_from)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?9)",
-                params![
-                    uid,
-                    new.kind.as_str(),
-                    new.text,
-                    new.scope.to_string(),
-                    project,
-                    path,
-                    new.confidence,
-                    new.importance,
-                    now
-                ],
-            )?;
-            (tx.last_insert_rowid(), Insert::Inserted(uid))
-        };
-        tx.execute(
-            "INSERT OR IGNORE INTO provenance
-                 (memory_id, origin, harness, session_id, message_uuid, source_path, line,
-                  git_commit, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            params![
-                id,
-                prov.origin.as_str(),
-                prov.harness,
-                prov.session_id,
-                prov.message_uuid,
-                prov.source_path,
-                prov.line,
-                prov.git_commit,
-                now
-            ],
-        )?;
+        let outcome = insert_in(&tx, now, new, prov)?;
         tx.commit()?;
         Ok(outcome)
+    }
+
+    /// Bulk [`Store::insert`] with anchors, all in one transaction. For
+    /// benchmarks and fixtures; the product paths use `insert`.
+    ///
+    /// # Errors
+    /// As `insert`; nothing is stored if any item fails.
+    #[doc(hidden)]
+    pub fn insert_many(
+        &mut self,
+        items: &[(NewMemory, Provenance, Vec<Anchor>)],
+    ) -> Result<(), StoreError> {
+        let now = (self.clock)();
+        let tx = self
+            .conn
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        for (new, prov, anchors) in items {
+            new.validate()
+                .map_err(|e| StoreError::Invalid(e.to_owned()))?;
+            let uid = insert_in(&tx, now, new, prov)?.uid().to_owned();
+            let id = require(&tx, &uid)?;
+            for a in anchors {
+                tx.execute(
+                    "INSERT OR IGNORE INTO anchors
+                         (memory_id, path, symbol, lang, content_hash, git_commit)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                    params![id, a.path, a.symbol, a.lang, a.content_hash, a.git_commit],
+                )?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
     }
 
     /// Fetches a memory with its provenance and anchors, in any status.
@@ -444,6 +487,28 @@ mod tests {
             confidence: 0.5,
             importance: 1,
         }
+    }
+
+    #[test]
+    fn insert_many_stores_memories_with_anchors_and_merges_duplicates() {
+        let mut store = Store::open_in_memory().unwrap();
+        let items: Vec<_> = ["a", "b", "a"]
+            .iter()
+            .enumerate()
+            .map(|(i, t)| {
+                let line = i64::try_from(i).unwrap();
+                (mem(t), prov(line), vec![Anchor::new("src/x.rs")])
+            })
+            .collect();
+        store.insert_many(&items).unwrap();
+        let all = store.all_memories(&[Status::Active]).unwrap();
+        assert_eq!(all.len(), 2);
+        let a = all.iter().find(|m| m.text == "a").unwrap();
+        let a = store.get(&a.uid).unwrap().unwrap();
+        assert_eq!(
+            (a.seen_count, a.provenance.len(), a.anchors.len()),
+            (2, 2, 1)
+        );
     }
 
     fn prov(line: i64) -> Provenance {
