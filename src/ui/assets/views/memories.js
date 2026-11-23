@@ -538,6 +538,7 @@ export function mount(ctx) {
           );
         };
         draw(d);
+        pane.firstElementChild?.classList.add("enter");
         if (focus) pane.querySelector("#mem-title")?.focus({ preventScroll: !wideMq.matches ? false : true });
         if (!wideMq.matches) window.scrollTo(0, 0);
       })

@@ -257,6 +257,8 @@ function importBody(ctx, onDone) {
 }
 
 // ---- 4. test recall ----
+const item = (m) => h("li", null, kindDot(m.kind), h("a", { href: memoryHref(m.uid) }, m.text));
+
 function testBody() {
   const out = h("div", { class: "stack", "aria-live": "polite" });
   const status = statusLine();
@@ -335,17 +337,12 @@ function testBody() {
             r.saved_pct == null ? "." : `, ${savedWords(r.saved_pct)} than sending them all.`,
           ),
           ruler(r.est_tokens, r.candidate_tokens),
-          h(
-            "ul",
-            { class: "side-list" },
-            r.memories.map((m) => h("li", null, kindDot(m.kind), " ", h("a", { href: memoryHref(m.uid) }, m.text))),
-          ),
-          h(
-            "details",
-            null,
-            h("summary", { class: "link-btn" }, "Show the pack text"),
-            codeBlock(r.markdown, "test pack", { tall: true }),
-          ),
+          h("ul", { class: "side-list recall-list" }, r.memories.slice(0, 6).map(item)),
+          r.memories.length > 6
+            ? h("details", null, h("summary", { class: "link-btn" }, `Show all ${num(r.memories.length)} memories`),
+                h("ul", { class: "side-list recall-list" }, r.memories.slice(6).map(item)))
+            : null,
+          h("details", null, h("summary", { class: "link-btn" }, "Show the pack text"), codeBlock(r.markdown, "test pack", { tall: true })),
         );
       }
     } catch (err) {

@@ -27,6 +27,7 @@ export function toast(text, tone = "ok", action = null) {
       ),
     );
   }
+  while (box.childElementCount >= 3) box.firstElementChild.remove();
   box.append(el);
   setTimeout(close, action ? 10000 : tone === "err" ? 9000 : 4000);
 }

@@ -2304,7 +2304,7 @@ dialog::backdrop {
     -24px 0 48px -32px light-dark(rgb(16 20 28 / 0.2), rgb(0 0 0 / 0.8));
 }
 @media (prefers-reduced-motion: no-preference) {
-  .pane > article {
+  .pane > article.enter {
     animation: slide-in 200ms var(--ease);
   }
   @keyframes slide-in {
@@ -2998,4 +2998,16 @@ dialog::backdrop {
   .md.has-pane .page-head {
     margin-bottom: var(--sp-4);
   }
+}
+.pane:empty { display: none; }
+.recall-list {
+  gap: var(--sp-2);
+}
+.recall-list li {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: var(--sp-3);
+}
+details > .recall-list {
+  margin-top: var(--sp-2);
 }

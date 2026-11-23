@@ -69,10 +69,10 @@ function status(o, c) {
   };
 }
 
-function installButton(onChange, label = "Install hooks") {
+function installButton(onChange, label = "Install hooks", cls = "btn attn") {
   const btn = h(
     "button",
-    { type: "button", class: "btn attn" },
+    { type: "button", class: cls },
     icon("plug", 16),
     h("span", null, label),
   );
@@ -248,7 +248,7 @@ function firstRun(c, onChange) {
         "Three hooks capture new sessions and deliver context when one starts.",
         hooksOk
           ? h("span", { class: "flag ok" }, icon("check", 12), "Connected")
-          : installButton(onChange),
+          : installButton(onChange, "Install hooks", "btn"),
       ),
       card(
         3,
