@@ -1,0 +1,116 @@
+//! Recalla, driven only through its public interfaces: MCP `remember` to
+//! write, `recalla pack` / `why` / `check` to read.
+
+use std::path::{Path, PathBuf};
+use std::process::Command;
+
+use serde_json::{Value, json};
+
+use crate::adapter::{Adapter, Ctx, Item, Recall, Support};
+use crate::mcp::Client;
+use crate::suite::Fact;
+
+pub struct Recalla {
+    bin: PathBuf,
+    data: PathBuf,
+    project: String,
+}
+
+impl Recalla {
+    pub fn new(bin: &Path, scratch: &Path) -> Result<Self, String> {
+        let data = scratch.join("recalla-data");
+        std::fs::create_dir_all(&data).map_err(|e| e.to_string())?;
+        Ok(Self {
+            bin: bin.to_path_buf(),
+            data,
+            project: "bench".into(),
+        })
+    }
+
+    fn run(&self, args: &[&str]) -> Result<String, String> {
+        let out = Command::new(&self.bin)
+            .args(args)
+            .arg("--data-dir")
+            .arg(&self.data)
+            .output()
+            .map_err(|e| format!("cannot run {}: {e}", self.bin.display()))?;
+        if out.status.success() {
+            Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+        } else {
+            Err(String::from_utf8_lossy(&out.stderr).trim().to_owned())
+        }
+    }
+}
+
+impl Adapter for Recalla {
+    fn name(&self) -> String {
+        "recalla".into()
+    }
+
+    fn feed_facts(&mut self, ctx: &Ctx<'_>) -> Result<Support, String> {
+        let args = vec![
+            "mcp".to_owned(),
+            "--data-dir".into(),
+            self.data.display().to_string(),
+            "--project".into(),
+            self.project.clone(),
+        ];
+        let mut c = Client::spawn(&self.bin.display().to_string(), &args)?;
+        for f in &ctx.suite.facts {
+            let kind = if f.kind == "decision" {
+                "decision"
+            } else {
+                "gotcha"
+            };
+            c.call(
+                "remember",
+                &json!({"text": Fact::feed_text(f), "kind": kind}),
+            )?;
+        }
+        Ok(Support::Done)
+    }
+
+    fn recall(&mut self, query: &str, budget: usize) -> Result<Recall, String> {
+        let b = budget.to_string();
+        let out = self.run(&[
+            "pack",
+            "--budget",
+            &b,
+            "--query",
+            query,
+            "--project",
+            &self.project,
+            "--format",
+            "json",
+        ])?;
+        let v: Value = serde_json::from_str(&out).map_err(|e| format!("pack json: {e}"))?;
+        let items = v["memories"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .map(|m| Item {
+                        text: m["text"].as_str().unwrap_or_default().to_owned(),
+                        id: m["uid"].as_str().map(str::to_owned),
+                        flagged_stale: m["status"].as_str() == Some("needs_reverify"),
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        Ok(Recall { items })
+    }
+
+    fn source(&mut self, item: &Item) -> Option<String> {
+        let id = item.id.as_deref()?;
+        self.run(&["why", id, "--json"]).ok()
+    }
+
+    fn exported(&mut self) -> Result<Option<Vec<String>>, String> {
+        let out = self.run(&["search", "", "--json", "--project", &self.project])?;
+        let v: Value = serde_json::from_str(&out).map_err(|e| e.to_string())?;
+        Ok(v.as_array().map(|a| {
+            a.iter()
+                .filter_map(|m| m["text"].as_str().map(str::to_owned))
+                .collect()
+        }))
+    }
+}

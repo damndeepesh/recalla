@@ -16,9 +16,9 @@ pub struct ProbeScore {
     pub budget: usize,
     pub with_files: bool,
     /// Share of required facts returned.
-    pub recall: f64,
+    pub recall: Option<f64>,
     /// 1 minus the share of returned tokens spent on facts about other files.
-    pub noise: f64,
+    pub noise: Option<f64>,
     /// Stale facts: 1 flagged, 0.5 left out, 0 served as current. `None` when the probe has none.
     pub staleness: Option<f64>,
     /// Share of returned required facts whose source the tool can name. `None` when not measured.
@@ -27,7 +27,7 @@ pub struct ProbeScore {
     pub false_flags: u32,
     pub tokens: usize,
     /// `max(0, 1 - tokens / dump) * recall`: tokens saved, but only counted if the fact arrived.
-    pub efficiency: f64,
+    pub efficiency: Option<f64>,
 }
 
 /// Tokens of the whole fact store, the no-budget reference.
@@ -73,14 +73,10 @@ pub fn score_probe(
 
     let hits: Vec<(&Fact, Vec<usize>)> = required.iter().map(|f| (*f, find(f))).collect();
     let found = hits.iter().filter(|(_, ix)| !ix.is_empty()).count();
-    let recall = ratio(found, required.len());
+    let recall = (!required.is_empty()).then(|| ratio(found, required.len()));
 
     let tokens = r.tokens();
-    let noise = if r.items.is_empty() {
-        0.0
-    } else {
-        1.0 - noise_share(suite, probe, r, &item_words)
-    };
+    let noise = (!r.items.is_empty()).then(|| 1.0 - noise_share(suite, probe, r, &item_words));
 
     let staleness = (!stale.is_empty()).then(|| {
         if r.items.is_empty() {
@@ -139,7 +135,7 @@ pub fn score_probe(
         provenance,
         false_flags,
         tokens,
-        efficiency: saved * recall,
+        efficiency: recall.map(|x| saved * x),
     }
 }
 
@@ -302,8 +298,8 @@ mod tests {
             items: vec![it(&s, "live1", false), it(&s, "stale1", true)],
         };
         let sc = score_probe(&s, &probe(), &r, 1500, true, None);
-        assert!((sc.recall - 1.0).abs() < 1e-9);
-        assert!((sc.noise - 1.0).abs() < 1e-9);
+        assert_eq!(sc.recall, Some(1.0));
+        assert_eq!(sc.noise, Some(1.0));
         assert_eq!(sc.staleness, Some(1.0));
         assert_eq!(sc.false_flags, 0);
     }
@@ -331,8 +327,8 @@ mod tests {
     fn empty_return_gets_no_credit_for_noise_or_staleness() {
         let s = suite();
         let sc = score_probe(&s, &probe(), &Recall::default(), 1500, true, None);
-        assert!(sc.recall.abs() < 1e-9);
-        assert!(sc.noise.abs() < 1e-9);
+        assert_eq!(sc.recall, Some(0.0));
+        assert_eq!(sc.noise, None);
         assert_eq!(sc.staleness, Some(0.0));
     }
 
@@ -343,7 +339,7 @@ mod tests {
             items: vec![it(&s, "live1", true), it(&s, "other1", false)],
         };
         let sc = score_probe(&s, &probe(), &r, 1500, true, None);
-        assert!(sc.noise < 1.0 && sc.noise > 0.0);
+        assert!(sc.noise.is_some_and(|n| n < 1.0 && n > 0.0));
         assert_eq!(sc.false_flags, 1);
     }
 
@@ -375,13 +371,14 @@ mod tests {
         let sc = score_probe(&s, &probe(), &r, 1500, true, None);
         let dump = dump_tokens(&s) as f64;
         let expect = (1.0 - sc.tokens as f64 / dump) * 1.0;
-        assert!((sc.efficiency - expect).abs() < 1e-9);
+        assert!((sc.efficiency.unwrap() - expect).abs() < 1e-9);
         let all = Recall {
             items: s.facts.iter().map(|f| it(&s, &f.id, false)).collect(),
         };
         assert!(
             score_probe(&s, &probe(), &all, 1500, true, None)
                 .efficiency
+                .unwrap()
                 .abs()
                 < 1e-9
         );
