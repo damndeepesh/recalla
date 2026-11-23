@@ -75,7 +75,7 @@ export function icon(name, size = 18) {
     "stroke-linejoin": "round",
     "aria-hidden": "true",
     focusable: "false",
-    class: "icon",
+    class: name === "chev" ? "icon chev" : "icon",
   }))
     s.setAttribute(k, v);
   const p = document.createElementNS(SVG_NS, "path");

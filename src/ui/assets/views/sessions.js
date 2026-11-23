@@ -154,8 +154,8 @@ function toolArg(input, project) {
   const v =
     input.command ??
     input.file_path ??
-    input.path ??
     input.pattern ??
+    input.path ??
     input.url ??
     input.query ??
     input.description ??
@@ -164,7 +164,7 @@ function toolArg(input, project) {
       ? `${input.todos.length} items`
       : Object.values(input).find((x) => typeof x === "string"));
   if (typeof v !== "string") return "";
-  const s = project && v.startsWith(`${project}/`) ? v.slice(project.length + 1) : v;
+  const s = project && v === project ? "." : project && v.startsWith(`${project}/`) ? v.slice(project.length + 1) : v;
   return s.split("\n")[0];
 }
 function parse(text) {
@@ -288,7 +288,7 @@ function conversation(harness, id, project, signal) {
         class: "turn-body",
         css: { padding: "var(--sp-2) 0 0" },
       });
-      const det = h("details", { class: "sub" }, h("summary", null, icon("chev", 14), "Subagent work"), inner);
+      const det = h("details", { class: "subagent" }, h("summary", null, icon("chev", 14), "Subagent work"), inner);
       det.inner = inner;
       turn.body.append(det);
       turn.sub = det;
@@ -494,7 +494,7 @@ function mountDetail(ctx) {
           { class: "page-head" },
           h(
             "div",
-            { class: "stack", css: { gap: "var(--sp-2)" } },
+            { class: "stack gap-2" },
             h("h1", { tabindex: "-1" }, name),
             h(
               "div",
@@ -502,6 +502,10 @@ function mountDetail(ctx) {
               flag(AGENT_LABEL[s.harness] ?? s.harness),
               s.last_ts ? h("span", null, "Last active ", time(s.last_ts)) : null,
               h("span", { class: "num" }, plural(s.event_count, "event", "events")),
+              d.memories.length || d.injections.length
+                ? h("button", { type: "button", class: "link-btn jump-aside", onclick: () => el.querySelector("aside")?.scrollIntoView({ block: "start" }) },
+                    `${plural(d.memories.length, "memory", "memories")} learned, ${plural(d.injections.length, "pack", "packs")} received`)
+                : null,
             ),
           ),
         ),

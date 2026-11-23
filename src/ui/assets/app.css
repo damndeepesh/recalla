@@ -1352,7 +1352,7 @@ dialog::backdrop {
 }
 .proof {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   gap: var(--sp-3) var(--sp-5);
   margin: var(--sp-2) 0 0;
   padding-top: var(--sp-4);
@@ -1627,7 +1627,7 @@ dialog::backdrop {
   }
   .split > aside {
     position: static;
-    order: -1;
+    
   }
 }
 .sess-meta {
@@ -1741,11 +1741,11 @@ dialog::backdrop {
   display: grid;
   gap: 2px;
 }
-.sub {
+.subagent {
   border-left: 2px dashed var(--line-2);
   padding-left: var(--sp-3);
 }
-.sub > summary {
+.subagent > summary {
   display: flex;
   gap: var(--sp-2);
   align-items: center;
@@ -1789,7 +1789,7 @@ dialog::backdrop {
 }
 .pack-cols {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 1fr);
   gap: var(--sp-5);
   align-items: start;
   margin-top: var(--sp-5);
@@ -1817,56 +1817,6 @@ dialog::backdrop {
   margin: 0;
   padding: 0;
   list-style: none;
-}
-.pack-line {
-  display: flex;
-  gap: var(--sp-3);
-  padding: var(--sp-1) var(--sp-4);
-  font-size: var(--fs-md);
-}
-.pack-line::before {
-  content: "";
-  flex: none;
-  width: 0.35rem;
-  height: 0.35rem;
-  margin-top: 0.55rem;
-  border-radius: 50%;
-  background: var(--line-2);
-}
-.pack-line code {
-  margin-left: auto;
-  padding-left: var(--sp-2);
-  color: var(--muted);
-  font-size: var(--fs-xs);
-  white-space: nowrap;
-}
-.pack-line.hl,
-.why.hl {
-  background: var(--accent-wash);
-}
-.why {
-  display: grid;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4);
-}
-.why-title {
-  font-size: var(--fs-md);
-  font-weight: 500;
-  text-decoration: none;
-}
-.why-facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1) var(--sp-3);
-  color: var(--muted);
-  font-size: var(--fs-sm);
-}
-.why-facts .icon {
-  margin-right: 2px;
-}
-.why-rank {
-  color: var(--muted);
-  font-size: var(--fs-xs);
 }
 
 /* Setup: a numbered checklist (a real sequence). */
@@ -2018,3 +1968,36 @@ dialog::backdrop {
 [tabindex="-1"]:focus {
   outline: none;
 }
+.select.sm { min-height: 1.875rem; padding-block: 0.15rem; font-size: var(--fs-sm); }
+.list-head label { font-weight: 500; }
+
+.gap-2 { gap: var(--sp-2); }
+.pack-line {
+  display: flex; gap: var(--sp-3); width: 100%;
+  padding: var(--sp-1) var(--sp-4); border: 0; background: none;
+  font-size: var(--fs-md); text-align: left; cursor: pointer;
+}
+.pack-line::before { content: ""; flex: none; width: 0.35rem; height: 0.35rem; margin-top: 0.55rem; border-radius: 50%; background: var(--line-2); }
+.pack-line code { margin-left: auto; padding-left: var(--sp-2); color: var(--muted); font-size: var(--fs-xs); white-space: nowrap; }
+.pack-line:hover { background: var(--hover); }
+.pack-line[aria-pressed="true"] { background: var(--selected); box-shadow: inset 3px 0 var(--ink); }
+.pack-line[aria-pressed="true"]::before { background: var(--ink); }
+.pack-line:focus-visible { outline-offset: -2px; border-radius: 0; }
+.why-side { position: sticky; top: var(--sp-4); display: grid; gap: var(--sp-5); }
+@media (max-width: 71.99rem) { .why-side { position: static; } }
+@media (max-width: 63.99rem) { .why-side { top: calc(var(--top-h) + 3rem); } }
+.why-text { font-size: var(--fs-body); font-weight: 550; line-height: 1.45; overflow-wrap: anywhere; }
+.reasons { display: grid; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; font-size: var(--fs-md); color: var(--ink-2); }
+.reasons li { display: flex; gap: var(--sp-2); align-items: start; }
+.reasons .icon { margin-top: 0.2rem; color: var(--muted); }
+.pack-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-4); margin: 0; }
+.pack-stats dt { color: var(--muted); font-size: var(--fs-sm); }
+.pack-stats dd { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
+.turn-body > *, .tool-detail > *, .split > * { min-width: 0; }
+.status:empty { min-height: 0; }
+@media (max-width: 40rem) {
+  .hero { grid-template-columns: minmax(0, 1fr); padding: var(--sp-4); }
+  .hero-mark { width: 2rem; height: 2rem; }
+  .view { padding-inline: var(--sp-4); }
+}
+@media (min-width: 72rem) { .jump-aside { display: none; } }

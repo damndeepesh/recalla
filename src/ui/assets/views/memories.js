@@ -74,7 +74,8 @@ function toolbar(state) {
     })
     .catch(() => {});
   proj.addEventListener("change", () => state.set({ project: proj.value }));
-  const sort = select("sort", SORTS, q.get("sort") ?? "updated", "Sort");
+  const sort = select("sort", SORTS, q.get("sort") ?? "updated");
+  sort.classList.add("sm");
   sort.addEventListener("change", () => state.set({ sort: sort.value === "updated" ? "" : sort.value }));
 
   const nActive =
@@ -101,9 +102,10 @@ function toolbar(state) {
     toggle.setAttribute("aria-expanded", String(state.filtersOpen));
   });
   return [
-    h("div", { class: "toolbar", role: "search", "aria-label": "Find memories" }, search, proj, toggle, sort),
+    h("div", { class: "toolbar", role: "search", "aria-label": "Find memories" }, search, proj, toggle),
     panel,
     activeChips(state),
+    sort,
   ];
 }
 
@@ -327,7 +329,7 @@ function detail(d, { onChange, closeHref, wide }) {
               "span",
               null,
               h("strong", null, "Needs review. "),
-              d.stale_reason ? `${d.stale_reason}. ` : "",
+              d.stale_reason ? `${d.stale_reason[0].toUpperCase()}${d.stale_reason.slice(1)}. ` : "",
               "The code this memory points to has changed. Confirm it if it's still true, or forget it.",
             ),
           )
@@ -425,6 +427,7 @@ export function mount(ctx) {
   const listHolder = h("div", { class: "md-list" });
   const pane = h("div", { class: "pane", "aria-live": "off" });
   const md = h("div", { class: "md" }, listHolder, pane);
+  let head = null;
   const sub = h(
     "p",
     { class: "sub" },
@@ -433,7 +436,6 @@ export function mount(ctx) {
   const el = h(
     "div",
     { class: "view wide" },
-    h("header", { class: "page-head" }, h("div", null, h("h1", { tabindex: "-1" }, "Memories"), sub)),
     md,
   );
   let paneAbort = null;
@@ -448,11 +450,17 @@ export function mount(ctx) {
   };
   const rowHref = (uid) => memoryHref(uid, listQuery(state.query));
 
+  head = h("header", { class: "page-head" }, h("div", null, h("h1", { tabindex: "-1" }, "Memories"), sub));
+
   function drawList() {
     const q = state.query;
+    const [bar, panel, chips, sort] = toolbar(state);
+    const shown = h("span", { class: "num" });
     const filtered = FILTER_KEYS.some((k) => q.get(k) && k !== "sort");
     const list = pagedList({
       label: "Memories",
+      head: () => h("div", { class: "list-head" }, shown, h("label", { class: "cluster" }, h("span", null, "Sort"), sort)),
+      onPage: (n, more) => (shown.textContent = more ? `First ${num(n)} shown` : `${num(n)} ${n === 1 ? "memory" : "memories"}`),
       render: (m) =>
         memoryRow(m, {
           link: rowHref(m.uid),
@@ -493,7 +501,7 @@ export function mount(ctx) {
         ),
     });
     const hadSearchFocus = document.activeElement?.name === "q";
-    listHolder.replaceChildren(...toolbar(state).filter(Boolean), list.el);
+    listHolder.replaceChildren(...[head, bar, panel, chips, list.el].filter(Boolean));
     if (hadSearchFocus) {
       const i = listHolder.querySelector("[name=q]");
       i.focus();
