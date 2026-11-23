@@ -9,6 +9,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Changed
 - Extractor precision: a decision needs at least 5 words and an object ("Decided upfront, not bolted on later." is dropped) (closes #15); test-run procedures collapse to the base command, so `cargo test --test x name` and `go test ./pkg/...` become `cargo test` / `go test` (closes #16); a gotcha's explanation must share a word with the failing command or output (closes #17).
+- `recalla pack --query` (and the MCP `recall` query) now lifts memories sharing any word with the query, BM25-ranked, instead of requiring every word, so a task description actually finds related memories. `recalla search` still requires all words.
 
 ## [0.3.0] - 2026-11-23
 

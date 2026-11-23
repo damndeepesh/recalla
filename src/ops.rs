@@ -103,7 +103,7 @@ fn build_pack(store: &Store, args: &PackArgs) -> Result<(pack::Pack, Baseline), 
     let boosts = match args.query.as_deref() {
         Some(q) => {
             let hits = store
-                .search(q, &Filter::default(), SEARCH_LIMIT)
+                .search_any(q, &Filter::default(), SEARCH_LIMIT)
                 .map_err(|e| e.to_string())?;
             let scored: Vec<_> = hits.into_iter().map(|h| (h.memory.uid, h.score)).collect();
             pack::query_boosts(&scored)
