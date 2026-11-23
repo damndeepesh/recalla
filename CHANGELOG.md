@@ -4,8 +4,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-23
+
 ### Changed
 - Landing page redesigned: new layout, self-hosted fonts (Instrument Sans, JetBrains Mono; no third-party requests), refreshed dark theme and social preview image. The page guard now also checks fonts and multi-line third-party tags.
+
+### Fixed
+- `recalla ui`: the browser showed "Unauthorized" right after login. The session cookie was `SameSite=Strict`, which browsers withhold when the navigation started from the local `file://` redirect page. It is now `SameSite=Lax` (still `HttpOnly`, per-port, 12 h idle); mutating requests keep their `Host`, `Origin` and CSRF checks. Guarded by a real-browser check, `scripts/ui-browser-check.sh` (D-024)
 
 ## [0.2.0] - 2026-11-23
 
@@ -55,6 +60,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - `redact_path` for cwd/branch (no entropy layer) so project keys survive random path components
 - Claude Code hooks: `recalla hook session-start|capture`, `recalla hooks install|uninstall|status` (never block; settings backed up, atomic, order-preserving)
 
-[Unreleased]: https://github.com/damndeepesh/recalla/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/damndeepesh/recalla/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/damndeepesh/recalla/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/damndeepesh/recalla/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/damndeepesh/recalla/releases/tag/v0.1.0

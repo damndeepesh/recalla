@@ -284,7 +284,11 @@ grep -q 'works once, for 60 seconds' "$W/ui.out"; ok "ui explains the link works
 CJ=$W/cj.txt
 code() { curl -s -o "${2:-/dev/null}" -w '%{http_code}' "${@:3}" "$1"; }
 [ "$(code "$BASE/api/overview")" = 401 ]; ok "API without login: 401" $?
-[ "$(code "$URL" /dev/null -c "$CJ")" = 302 ]; ok "login via the one-time code: 302" $?
+[ "$(code "$URL" /dev/null -c "$CJ" -D "$W/login.hdr")" = 302 ]; ok "login via the one-time code: 302" $?
+grep -qi '^set-cookie: recalla_[0-9]*=.*; SameSite=Lax;' "$W/login.hdr"; ok "login cookie is SameSite=Lax (Strict breaks the file:// redirect page)" $?
+! grep -qi 'SameSite=Strict' "$W/login.hdr"; ok "login cookie is not SameSite=Strict" $?
+LOC=$(tr -d '\r' <"$W/login.hdr" | sed -n 's/^[Ll]ocation: //p')
+[ "$(code "$BASE$LOC" /dev/null -b "$CJ")" = 200 ]; ok "following the 302 with the cookie reaches the dashboard: 200" $?
 grep -q HttpOnly "$CJ"; ok "session cookie is HttpOnly" $?
 ! grep -q "$(awk -v p="${HP##*:}" '$6=="recalla_" p {print $7}' "$CJ")" "$W/ui.out"; ok "session token never printed" $?
 [ "$(code "$BASE/api/overview" "$W/ov.json" -b "$CJ")" = 200 ]; ok "/api/overview: 200" $?

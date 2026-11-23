@@ -207,7 +207,7 @@ impl Guard {
     #[must_use]
     pub fn set_cookie_value(&self) -> String {
         format!(
-            "{}={}; HttpOnly; SameSite=Strict; Path=/",
+            "{}={}; HttpOnly; SameSite=Lax; Path=/",
             cookie_name(self.port),
             self.token.as_str()
         )
@@ -341,6 +341,9 @@ mod tests {
         assert_eq!(cookie_name(7), "recalla_7");
         assert!(g.set_cookie_value().starts_with("recalla_7="));
         assert!(!g.set_cookie_value().contains("Secure"));
+        let c = g.set_cookie_value();
+        assert!(c.contains("; HttpOnly") && c.contains("; SameSite=Lax") && c.contains("; Path=/"));
+        assert!(!c.contains("Strict") && !c.contains("None"));
         let t = g.token.as_str().to_owned();
         let mut other = req(&[], Some(&t));
         other.cookies = vec![(cookie_name(8), t.clone()), ("recalla_session".into(), t)];

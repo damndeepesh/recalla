@@ -163,7 +163,7 @@ fn happy_path_code_cookie_page_assets_api() {
     assert!(
         cookie.starts_with(&f.cookie())
             && cookie.contains("HttpOnly")
-            && cookie.contains("SameSite=Strict")
+            && cookie.contains("SameSite=Lax")
     );
     let ck = [("Cookie", f.cookie())];
     let ck: Vec<(&str, &str)> = ck.iter().map(|(k, v)| (*k, v.as_str())).collect();
