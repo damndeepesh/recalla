@@ -21,7 +21,7 @@ pub const DEFAULT_SESSION_IDLE: Duration = Duration::from_secs(12 * 60 * 60);
 /// Header that must carry the per-run CSRF value on POST.
 pub const CSRF_HEADER: &str = "x-recalla-csrf";
 
-const CSP: &str = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+const CSP: &str = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
 
 /// 32 random bytes from the OS, hex-encoded (64 chars).
 ///

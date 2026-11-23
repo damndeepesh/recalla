@@ -1,14 +1,16 @@
 updated: 2026-11-23
-milestone: v0.2.0
-branch: chore/release-0.2.0
-task: "Release v0.2.0 (recalla ui dashboard)"
+milestone: v0.3.0
+branch: feature/ui-redesign
+task: "Dashboard redesign (recalla ui): final polish before PR"
 status: review
 plan: null
 done:
-  - dashboard merged (#36); release PR with version bump, changelog, landing section
+  - released v0.2.1; redesign committed with fixes: no stray null, bars-only chart, backtick code, sidebar footer, Home rows fill full width (626f45c); make check green
 next:
-  - merge release PR, cargo publish, tag v0.2.0, verify release + crates.io + landing page
-  - then issues: #27 recalla forget, extractor #13-#17 (v0.3.0), redaction #4-#8 (v0.3.0, Opus review), #32 Windows
+  - make secrets, make e2e (2 hooks checks fail on main too: test copies real ~/.claude/settings.json; fix on fix/ branch), ARCHITECTURE + CHANGELOG, then push + PR as damndeepesh
+  - docs/landing-v2 (web/) is stacked on this branch and has its own PR
 blockers: []
 notes:
-  - Cloudflare serves deepeshgupta.dev; portfolio carries a copy of web/ in public/recalla (see web/README.md to refresh after a page change)
+  - this worktree (../recalla-ui) holds this branch; remove with `git worktree remove ../recalla-ui` when done
+  - Playwright MCP Chrome is missing; use playwright-core + Brave for browser checks
+  - no publish/tag/push without the owner's go

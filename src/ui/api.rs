@@ -25,6 +25,8 @@ use crate::store::{
 const MAX_QUERY: usize = 200;
 /// Longest filter value, path parameter or list item accepted.
 const MAX_FILTER: usize = 500;
+/// Days of activity in the overview's chart series.
+const ACTIVITY_DAYS: usize = 30;
 /// Page size when `limit` is absent.
 const DEFAULT_LIMIT: usize = 50;
 
@@ -278,6 +280,11 @@ fn projects(ctx: &Ctx, _: &Request, _: &Params) -> ApiResult {
 fn overview(ctx: &Ctx, _: &Request, _: &Params) -> ApiResult {
     let store = read_store(ctx)?;
     let o = store.ui_overview()?;
+    let activity: Vec<Value> = store
+        .ui_activity(now_ms(), ACTIVITY_DAYS)?
+        .iter()
+        .map(|d| json!({ "day": d.day, "sessions": d.sessions, "memories": d.memories, "packs": d.packs, "tokens": d.tokens }))
+        .collect();
     let (mut by_kind, mut by_status) = (Map::new(), Map::new());
     let mut total = 0u64;
     for (kind, status, n) in &o.memories {
@@ -316,6 +323,7 @@ fn overview(ctx: &Ctx, _: &Request, _: &Params) -> ApiResult {
             "last_via": o.last_injection_via,
         },
         "last_event_ts": o.last_event_ts,
+        "activity": activity,
         "db_bytes": file_len(&paths::db_path(&ctx.data_dir)),
         "archive_bytes": archive_bytes,
         "data_dir": tilde(&ctx.data_dir),
@@ -438,7 +446,7 @@ fn injection_detail(ctx: &Ctx, _: &Request, p: &Params) -> ApiResult {
         injection_row_json(&d.row),
         json!({
             "pack_text": d.pack_text,
-            "memories": d.memories.iter().map(memory_brief_json).collect::<Vec<_>>(),
+            "memories": d.memories.iter().map(memory_row_json).collect::<Vec<_>>(),
         }),
     ))
 }

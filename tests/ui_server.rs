@@ -557,7 +557,7 @@ fn every_response_has_security_headers() {
         f.get("/api/panic", &[("Cookie", &ck)]),
     ];
     for r in &responses {
-        assert!(r.header("content-security-policy").unwrap().contains("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"));
+        assert!(r.header("content-security-policy").unwrap().contains("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"));
         assert_eq!(r.header("x-content-type-options"), Some("nosniff"));
         assert_eq!(r.header("referrer-policy"), Some("no-referrer"));
         assert_eq!(r.header("x-frame-options"), Some("DENY"));

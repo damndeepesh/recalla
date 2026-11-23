@@ -1,53 +1,126 @@
-// Shared components: badges, states, paged lists, dialogs, copy, token bars.
-import { h, icon, copyText } from "./dom.js";
+// Shared components. One of each: row, flag, kind dot, path chip, token ruler,
+// states, paged list, dialogs, copy. Everything renders through dom.h().
+import { h, icon, copyText, num, baseName, midPath, time, inline } from "./dom.js";
+import { memoryHref, packHref } from "./router.js";
+import { illustration } from "./charts.js";
 
 // ---- messages ----
-export function toast(text, tone = "ok") {
+/** Toast with an optional action ({label, run}); errors stay longer. */
+export function toast(text, tone = "ok", action = null) {
   const box = document.getElementById("toasts");
-  const el = h("div", { class: `toast ${tone}` }, text);
+  const el = h("div", { class: `toast ${tone}` }, h("span", null, text));
+  const close = () => el.remove();
+  if (action) {
+    el.append(
+      h(
+        "button",
+        {
+          type: "button",
+          class: "btn sm",
+          onclick: () => {
+            close();
+            action.run();
+          },
+        },
+        icon(action.icon ?? "undo", 14),
+        action.label,
+      ),
+    );
+  }
+  while (box.childElementCount >= 3) box.firstElementChild.remove();
   box.append(el);
-  setTimeout(() => el.remove(), tone === "err" ? 9000 : 4000);
+  setTimeout(close, action ? 10000 : tone === "err" ? 9000 : 4000);
 }
 
 /** Inline polite live region: `.set(text, "ok"|"err")`, `.clear()`. */
 export function statusLine() {
   const el = h("p", { class: "status", role: "status", "aria-live": "polite" });
-  el.set = (text, tone = "ok") => {
+  el.set = (text, tone = "") => {
     el.className = `status ${tone}`;
     el.textContent = text;
   };
-  el.clear = () => {
-    el.className = "status";
-    el.textContent = "";
-  };
+  el.clear = () => el.set("");
   return el;
 }
 
-// ---- small pieces ----
-export const badge = (text, tone = "neutral") => h("span", { class: `badge ${tone}` }, text);
-
-const STATUS = {
-  active: ["Active", "ok"],
-  needs_reverify: ["Needs review", "warn"],
-  superseded: ["Superseded", "neutral"],
-  archived: ["Archived", "neutral"],
-};
-export const statusBadge = (s) => badge(...(STATUS[s] ?? [s, "neutral"]));
+// ---- vocabulary ----
 export const KINDS = ["decision", "fact", "procedure", "gotcha", "preference", "task"];
-export const STATUSES = Object.keys(STATUS);
-export const STATUS_LABEL = Object.fromEntries(Object.entries(STATUS).map(([k, v]) => [k, v[0]]));
-export const kindBadge = (k) => h("span", { class: `kind kind-${k}` }, k);
+export const KIND_LABEL = {
+  decision: "Decision",
+  fact: "Fact",
+  procedure: "Procedure",
+  gotcha: "Gotcha",
+  preference: "Preference",
+  task: "Task",
+};
+export const KIND_PLURAL = {
+  decision: "Decisions",
+  fact: "Facts",
+  procedure: "Procedures",
+  gotcha: "Gotchas",
+  preference: "Preferences",
+  task: "Tasks",
+};
+export const STATUS_LABEL = {
+  active: "Active",
+  needs_reverify: "Needs review",
+  superseded: "Replaced",
+  archived: "Forgotten",
+};
+export const STATUSES = Object.keys(STATUS_LABEL);
+export const AGENT_LABEL = {
+  "claude-code": "Claude Code",
+  codex: "Codex",
+  mcp: "Agent (MCP)",
+};
+export const VIA_LABEL = {
+  hook: "Session start",
+  mcp: "Agent asked",
+  cli: "Command line",
+};
 
-export function confidence(c) {
-  const pct = Math.round((c ?? 0) * 100);
-  return h("span", { class: "conf", title: `Confidence ${c?.toFixed?.(2)}` },
-    h("span", { class: "conf-bar", "aria-hidden": "true" }, h("span", { css: { "--w": `${pct}%` } })),
-    h("span", { class: "num" }, `${pct}%`),
-    h("span", { class: "sr" }, " confidence"));
+// ---- small pieces ----
+export const flag = (text, tone = "") => h("span", { class: `flag ${tone}` }, text);
+export const kindDot = (k) => h("span", { class: `kind kind-${k}` }, KIND_LABEL[k] ?? k);
+
+/** Status only when it needs a look: active memories show nothing. */
+export function statusFlag(status) {
+  if (status === "active") return null;
+  return flag(STATUS_LABEL[status] ?? status, status === "needs_reverify" ? "attn" : "");
 }
 
-export function kv(pairs, cls = "") {
-  const dl = h("dl", { class: `kv ${cls}` });
+/** A project as people know it: its folder name, full path on hover. */
+export const projectChip = (p) =>
+  p
+    ? h("span", { class: "chip", title: p }, icon("folder", 12), h("span", null, baseName(p)))
+    : h("span", { class: "chip" }, icon("globe", 12), h("span", null, "All projects"));
+
+/** Short middle-truncated path with a copy button; full path in the title. */
+export function pathChip(path, label = "path") {
+  if (!path) return h("span", { class: "muted" }, "not set");
+  return h(
+    "span",
+    { class: "path", title: path },
+    h("code", null, midPath(path)),
+    h("span", { class: "sr" }, ` (full ${label}: ${path})`),
+    copyIcon(() => path, `Copy ${label}`),
+  );
+}
+
+export function pageHead(title, sub, ...actions) {
+  return h(
+    "header",
+    { class: "page-head" },
+    h("div", null, h("h1", { tabindex: "-1" }, title), sub ? h("p", { class: "sub" }, sub) : null),
+    actions.length ? h("div", { class: "cluster" }, ...actions) : null,
+  );
+}
+
+export const section = (title, body, aside) =>
+  h("section", { class: "section" }, h("div", { class: "section-head" }, h("h2", null, title), aside), body);
+
+export function facts(pairs) {
+  const dl = h("dl", { class: "facts" });
   for (const [k, v] of pairs) {
     if (v == null || v === "") continue;
     dl.append(h("dt", null, k), h("dd", null, v));
@@ -55,42 +128,112 @@ export function kv(pairs, cls = "") {
   return dl;
 }
 
-export const pageHead = (title, sub, ...actions) =>
-  h("header", { class: "page-head" },
-    h("div", null, h("h1", { tabindex: "-1" }, title), sub ? h("p", { class: "sub" }, sub) : null),
-    actions.length ? h("div", { class: "head-actions" }, ...actions) : null);
-
-export const panel = (title, body, extra) =>
-  h("section", { class: "panel" },
-    title ? h("div", { class: "panel-head" }, h("h2", null, title), extra) : null, body);
-
-export const link = (href, ...c) => h("a", { href }, ...c);
-
-// ---- states ----
-export function skeleton(rows = 6) {
-  return h("div", { class: "skel-list", "aria-hidden": "true" },
-    Array.from({ length: rows }, () => h("div", { class: "skel" })));
+export function meter(v) {
+  const pct = Math.round((v ?? 0) * 100);
+  return h(
+    "span",
+    { class: "meter" },
+    h("i", { "aria-hidden": "true", css: { "--w": `${pct}%` } }),
+    h("span", { class: "num" }, `${pct}%`),
+  );
 }
 
-export function emptyState(title, body, action) {
-  return h("div", { class: "empty" }, h("h3", null, title), body ? h("p", null, body) : null, action);
+// ---- states ----
+/** Skeleton rows shaped like real list rows (title bar + meta bar). */
+export function skeleton(rows = 6) {
+  return h("div", { class: "skel-list", "aria-hidden": "true" },
+    Array.from({ length: rows }, (_, i) => h("div", { class: "skel" }, h("span", { class: "skel-t", css: { "--w": `${55 + ((i * 17) % 35)}%` } }), h("span", { class: "skel-m" }))));
+}
+
+export function loading(label = "Loading") {
+  return h("div", { role: "status", "aria-label": label, class: "card" }, skeleton(5));
+}
+
+/** Empty state with a small illustration and one action. */
+export function emptyState(title, body, action, art = "empty") {
+  return h("div", { class: "empty" }, illustration(art), h("h2", null, title), body ? h("p", null, body) : null, action);
+}
+
+/** A bento block: icon + title header, body, optional aside link. */
+export function block(title, ic, body, { span = 12, aside = null } = {}) {
+  return h("section", { class: `block span-${span}` },
+    h("header", { class: "block-head" }, h("span", { class: "block-icon", "aria-hidden": "true" }, icon(ic, 15)), h("h2", null, title), aside),
+    body);
 }
 
 export function errorState(err, retry) {
-  return h("div", { class: "error-box", role: "alert" },
+  return h(
+    "div",
+    { class: "error-box", role: "alert" },
     icon("alert"),
-    h("div", null, h("strong", null, "Couldn't load this."), h("p", null, err.message),
-      retry ? h("button", { type: "button", class: "btn", onclick: retry }, "Try again") : null));
+    h(
+      "div",
+      null,
+      h("strong", null, "Couldn't load this."),
+      h("p", null, err.message),
+      retry ? h("button", { type: "button", class: "btn sm", onclick: retry }, "Try again") : null,
+    ),
+  );
 }
 
-// ---- paged list with a Load more button ----
+// ---- token ruler: what was sent vs everything that could have been ----
+/** Saved share as words. Positive pct = smaller than sending every candidate. */
+export function savedWords(pct) {
+  if (pct == null) return "not recorded";
+  if (pct >= 0) return `${Math.round(pct)}% smaller`;
+  return `${Math.round(-pct)}% larger`;
+}
+
+export function ruler(pack, candidates, { mini = false, labels = true } = {}) {
+  if (pack == null || candidates == null) {
+    return mini
+      ? h("span", { class: "muted small" }, "no baseline")
+      : h("p", { class: "muted" }, "Candidate totals weren't recorded for this pack.");
+  }
+  const max = Math.max(pack, candidates, 1);
+  const over = pack > candidates;
+  const track = h(
+    "span",
+    { class: "ruler-track", "aria-hidden": "true" },
+    h("span", {
+      class: `ruler-fill${over ? " over" : ""}`,
+      css: { "--w": `${(pack / max) * 100}%` },
+    }),
+  );
+  const sr = h("span", { class: "sr" }, `${num(pack)} tokens sent of ${num(candidates)} tokens in all candidates`);
+  if (mini)
+    return h(
+      "span",
+      {
+        class: "ruler mini",
+        title: `${num(pack)} of ${num(candidates)} tokens`,
+      },
+      track,
+      sr,
+    );
+  return h(
+    "div",
+    { class: "ruler" },
+    track,
+    labels
+      ? h(
+          "div",
+          { class: "ruler-legend", "aria-hidden": "true" },
+          h("span", null, h("b", { class: "num" }, num(pack)), " tokens sent"),
+          h("span", null, h("b", { class: "num" }, num(candidates)), " tokens if every candidate memory were sent"),
+        )
+      : null,
+    sr,
+  );
+}
+
+// ---- paged list (cursor + Load more) ----
 /**
- * fetchPage(cursor) -> {items, next}. render(item) -> <li>. Returns
- * {el, reload(), count()}. New items get focus on "Load more" so keyboard users
- * continue where they were.
+ * fetchPage(cursor) -> {items, next}; render(item) -> <li>. Returns
+ * {el, reload()}. After "Load more", focus moves to the first new row.
  */
-export function pagedList({ fetchPage, render, empty, label, tag = "ul", rowClass = "rows" }) {
-  const root = h("div", { class: "paged" });
+export function pagedList({ fetchPage, render, empty, label, head, onPage }) {
+  const root = h("div", { class: "card list-card" });
   const status = h("p", { class: "sr", role: "status", "aria-live": "polite" });
   let cursor = null;
   let total = 0;
@@ -103,7 +246,8 @@ export function pagedList({ fetchPage, render, empty, label, tag = "ul", rowClas
     if (!append) {
       total = 0;
       cursor = null;
-      root.replaceChildren(skeleton(), status);
+      root.className = "list-card";
+      root.replaceChildren(skeleton(6), status);
     } else {
       more.disabled = true;
       more.textContent = "Loading…";
@@ -113,11 +257,14 @@ export function pagedList({ fetchPage, render, empty, label, tag = "ul", rowClas
       if (my !== gen) return;
       if (!append) {
         if (!page.items.length) {
-          root.replaceChildren(empty ?? emptyState("Nothing here yet"), status);
+          root.className = "list-card";
+          root.replaceChildren(empty, status);
+          onPage?.(0, false);
           return;
         }
-        list = h(tag, { class: rowClass, "aria-label": label });
-        root.replaceChildren(list, status);
+        root.className = "card list-card";
+        list = h("ul", { class: "rows", "aria-label": label, "data-rows": "" });
+        root.replaceChildren(...[head?.(), list, status].filter(Boolean));
       }
       const firstNew = list.children.length;
       for (const it of page.items) list.append(render(it));
@@ -126,90 +273,199 @@ export function pagedList({ fetchPage, render, empty, label, tag = "ul", rowClas
       more?.remove();
       more = null;
       if (cursor != null) {
-        more = h("button", { type: "button", class: "btn load-more", onclick: () => load(true) }, "Load more");
+        more = h("button", { type: "button", class: "load-more", onclick: () => load(true) }, "Load more");
         root.insertBefore(more, status);
       }
+      onPage?.(total, cursor != null);
       status.textContent = append ? `Loaded ${page.items.length} more. ${total} shown.` : "";
-      if (append) list.children[firstNew]?.querySelector("a, button")?.focus();
+      if (append) list.children[firstNew]?.querySelector("a")?.focus();
     } catch (e) {
-      if (my !== gen || e.name === "AbortError") return;
+      if (my !== gen || e.name === "AbortError" || e.status === 401) return;
       const box = errorState(e, () => load(append));
       if (append) {
         more.disabled = false;
         more.textContent = "Load more";
         root.insertBefore(box, status);
-      } else root.replaceChildren(box, status);
+      } else {
+        root.className = "list-card";
+        root.replaceChildren(box, status);
+      }
     }
   }
   load(false);
-  return { el: root, reload: () => load(false), count: () => total };
+  return { el: root, reload: () => load(false) };
 }
 
 // ---- clipboard ----
+async function doCopy(text, btn, labelEl) {
+  const ok = await copyText(text);
+  toast(ok ? "Copied to clipboard." : "Couldn't copy. Select the text and copy it manually.", ok ? "ok" : "err");
+  if (ok && labelEl) {
+    labelEl.textContent = "Copied";
+    setTimeout(() => (labelEl.textContent = "Copy"), 1800);
+  }
+}
+
 export function copyButton(getText, label = "Copy") {
-  const btn = h("button", { type: "button", class: "btn small", "aria-label": label },
-    icon("copy", 15), h("span", null, "Copy"));
-  btn.addEventListener("click", async () => {
-    const ok = await copyText(getText());
-    toast(ok ? "Copied to clipboard." : "Couldn't copy. Select the text and copy it manually.", ok ? "ok" : "err");
-    if (ok) {
-      btn.querySelector("span").textContent = "Copied";
-      setTimeout(() => (btn.querySelector("span").textContent = "Copy"), 1800);
-    }
+  const text = h("span", null, "Copy");
+  const btn = h("button", { type: "button", class: "btn sm", "aria-label": label }, icon("copy", 14), text);
+  btn.addEventListener("click", () => doCopy(getText(), btn, text));
+  return btn;
+}
+
+export function copyIcon(getText, label) {
+  const btn = h("button", { type: "button", class: "icon-btn", "aria-label": label, title: label }, icon("copy", 13));
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    doCopy(getText(), btn);
   });
   return btn;
 }
 
 export function codeBlock(text, label, { copy = true, tall = false } = {}) {
-  return h("div", { class: "code" },
-    copy ? h("div", { class: "code-bar" }, h("span", null, label), copyButton(() => text, `Copy ${label}`)) : null,
-    h("pre", { class: tall ? "tall" : null, tabindex: "0", "aria-label": label }, text));
+  return h(
+    "div",
+    { class: "code" },
+    copy
+      ? h(
+          "div",
+          { class: "code-bar" },
+          h("span", null, label),
+          copyButton(() => text, `Copy ${label}`),
+        )
+      : null,
+    h("pre", { class: tall ? "tall" : null, tabindex: "0", "aria-label": label }, text),
+  );
 }
 
-// ---- token bar: this pack vs all candidates ----
-export function tokenBar(pack, candidates) {
-  if (candidates == null || pack == null) {
-    return h("p", { class: "muted" }, "Candidate tokens weren't recorded for this injection.");
-  }
-  const max = Math.max(pack, candidates, 1);
-  const row = (name, v, cls) =>
-    h("div", { class: "tb-row" }, h("span", { class: "tb-name" }, name),
-      h("span", { class: "tb-track", "aria-hidden": "true" },
-        h("span", { class: `tb-fill ${cls}`, css: { "--w": `${(v / max) * 100}%` } })),
-      h("span", { class: "num tb-val" }, `${v.toLocaleString("en-US")} tokens`));
-  return h("div", { class: "tokenbar" }, row("This pack", pack, "pack"), row("All candidates", candidates, "cand"));
-}
-
-// ---- confirmation dialog ----
+// ---- dialogs ----
+/** Modal confirm. Resolves true on confirm. Focus returns to the opener natively. */
 export function confirmDialog({ title, body, confirm, danger = false }) {
-  const opener = document.activeElement;
   return new Promise((resolve) => {
-    const dlg = h("dialog", { class: "dlg", "aria-labelledby": "dlg-title" },
-      h("form", { method: "dialog" },
-        h("h2", { id: "dlg-title" }, title), h("p", null, body),
-        h("div", { class: "dlg-actions" },
-          h("button", { type: "submit", value: "cancel", class: "btn ghost", autofocus: true }, "Cancel"),
-          h("button", { type: "submit", value: "ok", class: `btn ${danger ? "danger" : ""}` }, confirm))));
+    const dlg = h(
+      "dialog",
+      { "aria-labelledby": "dlg-title", closedby: "any" },
+      h(
+        "form",
+        { method: "dialog", class: "dlg" },
+        h("h2", { id: "dlg-title" }, title),
+        h("p", null, body),
+        h(
+          "div",
+          { class: "dlg-actions" },
+          h("button", { type: "submit", value: "cancel", class: "btn", autofocus: true }, "Cancel"),
+          h(
+            "button",
+            {
+              type: "submit",
+              value: "ok",
+              class: `btn ${danger ? "solid-danger" : "primary"}`,
+            },
+            confirm,
+          ),
+        ),
+      ),
+    );
     dlg.addEventListener("close", () => {
       resolve(dlg.returnValue === "ok");
+      dlg.returnValue = "";
       dlg.remove();
-      opener?.isConnected && opener.focus();
     });
     document.body.append(dlg);
     dlg.showModal();
   });
 }
 
-// ---- filter controls ----
-export function field(labelText, control, cls = "") {
-  return h("label", { class: `field ${cls}` }, h("span", null, labelText), control);
+// ---- form controls ----
+export function field(labelText, control, hint) {
+  return h(
+    "label",
+    { class: "field" },
+    h("span", null, labelText, hint ? h("span", { class: "hint" }, ` ${hint}`) : null),
+    control,
+  );
 }
-export function select(name, options, value = "") {
-  return h("select", { name }, options.map(([v, t]) => h("option", { value: v, selected: v === value }, t)));
+export function select(name, options, value = "", label) {
+  return h(
+    "select",
+    { name, class: "select", "aria-label": label },
+    options.map(([v, t]) => h("option", { value: v, selected: v === value }, t)),
+  );
 }
-export function checkGroup(name, legend, options, selected) {
-  return h("fieldset", { class: "chips" }, h("legend", null, legend),
-    options.map(([v, t]) =>
-      h("label", { class: "chip" },
-        h("input", { type: "checkbox", name, value: v, checked: selected.includes(v) }), h("span", null, t))));
+export function searchInput(name, placeholder, value = "") {
+  return h(
+    "div",
+    { class: "search-field" },
+    icon("search", 16),
+    h("input", {
+      type: "search",
+      name,
+      class: "input",
+      placeholder,
+      "aria-label": placeholder,
+      value,
+      autocomplete: "off",
+      "data-search": "",
+    }),
+  );
+}
+
+/** Projects for pickers, fetched once per page load. */
+let projectsPromise = null;
+export function projects(get) {
+  projectsPromise ??= get("/api/projects")
+    .then((r) => r.items)
+    .catch((e) => {
+      projectsPromise = null;
+      throw e;
+    });
+  return projectsPromise;
+}
+export const resetProjects = () => (projectsPromise = null);
+
+// ---- rows (one pattern for every list) ----
+/** A memory: text first; kind as a dot; status only when it needs a look. */
+export function memoryRow(m, { link, selected = false, showProject = true } = {}) {
+  return h(
+    "li",
+    { class: "row", "aria-current": selected ? "true" : null, "data-uid": m.uid },
+    h("a", { class: "row-title clamp", href: link ?? memoryHref(m.uid) }, inline(m.text)),
+    h(
+      "div",
+      { class: "row-meta" },
+      kindDot(m.kind),
+      statusFlag(m.status),
+      showProject && "scope_project" in m ? projectChip(m.scope_project) : null,
+    ),
+    m.updated_at ? h("div", { class: "row-side" }, time(m.updated_at)) : null,
+  );
+}
+
+/** A context pack: where it went, how big it was against everything. */
+export function packRow(p) {
+  return h(
+    "li",
+    { class: "row" },
+    h(
+      "a",
+      { class: "row-title", href: packHref(p.id) },
+      p.project ? baseName(p.project) : "No project",
+      h("span", { class: "sr" }, `, pack ${p.id}`),
+    ),
+    h(
+      "div",
+      { class: "row-meta" },
+      h("span", null, VIA_LABEL[p.via] ?? p.via),
+      h("span", { class: "num" }, `${num(p.memory_count)} ${p.memory_count === 1 ? "memory" : "memories"}`),
+      h("span", { class: "num" }, `${num(p.est_tokens)} tokens`),
+      time(p.at),
+    ),
+    h(
+      "div",
+      { class: "row-side" },
+      ruler(p.est_tokens, p.candidate_tokens, { mini: true }),
+      h("div", { class: "small num" }, savedWords(p.saved_pct)),
+    ),
+  );
 }
