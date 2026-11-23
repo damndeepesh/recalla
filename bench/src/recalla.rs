@@ -121,6 +121,10 @@ impl Adapter for Recalla {
         Ok(Recall { items })
     }
 
+    fn has_provenance(&self) -> bool {
+        true
+    }
+
     fn source(&mut self, item: &Item) -> Option<String> {
         let id = item.id.as_deref()?;
         self.run(&["why", id, "--json"]).ok()

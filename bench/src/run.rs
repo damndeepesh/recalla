@@ -63,12 +63,15 @@ pub fn one(
         for budget in BUDGETS {
             for with_files in [false, true] {
                 let r = adapter.recall(&p.query(with_files), budget)?;
-                // Provenance is measured once per probe, at the middle budget.
+                // Provenance is measured once per probe, at the middle budget with hints.
                 let measure = budget == BUDGETS[1] && with_files;
-                let mut ask = |i: &crate::adapter::Item| adapter_source(i);
-                let _ = &mut ask;
-                probes.push(score::score_probe(suite, p, &r, budget, with_files, None));
-                let _ = measure;
+                let mut score = if measure && adapter.has_provenance() {
+                    let mut ask = |i: &crate::adapter::Item| adapter.source(i);
+                    score::score_probe(suite, p, &r, budget, with_files, Some(&mut ask))
+                } else {
+                    score::score_probe(suite, p, &r, budget, with_files, None)
+                };
+                probes.push(score);
             }
         }
     }
@@ -83,13 +86,6 @@ pub fn one(
     })
 }
 
-fn adapter_source(_: &crate::adapter::Item) -> Option<String> {
-    None
-}
-
-/// Fresh scratch dir under `base`. Names come from suite files and the command
-/// line, so anything outside `[A-Za-z0-9._-]` (or `..`) is rejected before a
-/// path is built or removed.
 pub fn scratch(base: &Path, suite: &str, adapter: &str) -> std::result::Result<PathBuf, String> {
     if !crate::sessions::safe_name(suite) || !crate::sessions::safe_name(adapter) {
         return Err(format!(
@@ -111,7 +107,7 @@ fn mean(xs: impl Iterator<Item = f64>) -> Option<f64> {
 /// Markdown table: mean per adapter at each budget (with file hints).
 pub fn table(results: &[Result]) -> String {
     let mut out = String::from(
-        "| adapter | budget | recall | noise | staleness | tokens | efficiency |\n|---|---|---|---|---|---|---|\n",
+        "| adapter | budget | recall | noise | staleness | provenance | tokens | efficiency |\n|---|---|---|---|---|---|---|---|\n",
     );
     let mut names: Vec<&str> = results.iter().map(|r| r.adapter.as_str()).collect();
     names.dedup();
@@ -132,10 +128,11 @@ pub fn table(results: &[Result]) -> String {
             let tok =
                 mean(s.iter().map(|p| p.tokens as f64)).map_or("n/a".into(), |v| format!("{v:.0}"));
             out.push_str(&format!(
-                "| {a} | {b} | {} | {} | {} | {tok} | {} |\n",
+                "| {a} | {b} | {} | {} | {} | {} | {tok} | {} |\n",
                 f(|p| p.recall),
                 f(|p| p.noise),
                 f(|p| p.staleness),
+                f(|p| p.provenance),
                 f(|p| p.efficiency),
             ));
         }

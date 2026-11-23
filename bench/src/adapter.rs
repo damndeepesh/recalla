@@ -65,6 +65,12 @@ pub trait Adapter {
 
     fn recall(&mut self, query: &str, budget: usize) -> Result<Recall, String>;
 
+    /// Whether the tool has any way to say where an item came from. Tools
+    /// without one are n/a for provenance, not zero.
+    fn has_provenance(&self) -> bool {
+        false
+    }
+
     /// Where the tool says an item came from, if it can say.
     fn source(&mut self, _item: &Item) -> Option<String> {
         None
