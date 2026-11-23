@@ -593,8 +593,8 @@ function projectsBlock(signal) {
   });
 }
 
-function timeline(signal) {
-  return loadBlock("Recent activity", "clock", { span: 7 }, async () => {
+function timeline(signal, span = 7) {
+  return loadBlock("Recent activity", "clock", { span }, async () => {
     const [ses, packs] = await Promise.all([
       get("/api/sessions", { limit: 6 }, signal),
       get("/api/injections", { limit: 6 }, signal),
@@ -643,11 +643,11 @@ function timeline(signal) {
   });
 }
 
-function recent(signal) {
+function recent(signal, span = 5) {
   return loadBlock(
     "Recently learned",
     "memories",
-    { span: 5, aside: h("a", { href: "#/memories" }, "All memories") },
+    { span, aside: h("a", { href: "#/memories" }, "All memories") },
     async () => {
       const r = await get(
         "/api/memories",
@@ -713,9 +713,9 @@ export function mount(ctx) {
             savings(o),
             o.injections.count ? perPack(ctx.signal) : null,
             kinds(o),
-            o.memories.stale ? needsReview(o, ctx.signal) : recent(ctx.signal),
+            o.memories.stale ? needsReview(o, ctx.signal) : recent(ctx.signal, 7),
             projectsBlock(ctx.signal),
-            timeline(ctx.signal),
+            timeline(ctx.signal, o.memories.stale ? 7 : 12),
             o.memories.stale ? recent(ctx.signal) : null,
             ].filter(Boolean),
           );
