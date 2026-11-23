@@ -10,7 +10,7 @@ use std::io::Cursor;
 use common::Env;
 use recalla::mcp::{McpCtx, serve};
 use recalla::model::{Anchor, Kind, NewMemory, Origin, Provenance, Scope};
-use recalla::store::Via;
+use recalla::store::{NewInjection, Via};
 use serde_json::{Value, json};
 
 const PROJECT: &str = "/work/demo";
@@ -52,8 +52,14 @@ fn seed(env: &Env) -> String {
     )
     .unwrap();
     let key = format!("/work/{HOSTILE}");
-    s.record_injection(Some(&key), 100, 10, std::slice::from_ref(&uid), Via::Cli)
-        .unwrap();
+    s.record_injection(&NewInjection::new(
+        Some(&key),
+        100,
+        10,
+        std::slice::from_ref(&uid),
+        Via::Cli,
+    ))
+    .unwrap();
     uid[..8].to_owned()
 }
 

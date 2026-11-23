@@ -190,6 +190,9 @@ pub fn budget_from(var: Option<&str>) -> usize {
         .unwrap_or(DEFAULT_BUDGET)
 }
 
+/// Longest `session_id` stored with an injection, in chars.
+const MAX_SESSION_ID: usize = 200;
+
 fn session_start(payload: &Value, out: &mut impl Write, data_dir: &Path) -> Result<(), HookError> {
     let project = project_key(str_field(payload, "cwd")?);
     let db = paths::db_path(data_dir);
@@ -203,6 +206,11 @@ fn session_start(payload: &Value, out: &mut impl Write, data_dir: &Path) -> Resu
         query: None,
         no_log: false,
         via: Via::Hook,
+        session_id: payload
+            .get("session_id")
+            .and_then(Value::as_str)
+            .filter(|s| !s.is_empty())
+            .map(|s| s.chars().take(MAX_SESSION_ID).collect()),
     };
     let pack = ops::pack_with(&mut store, &args).map_err(|e| HookError::store(&e))?;
     if pack.markdown.is_empty() {

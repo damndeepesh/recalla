@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Recalla</title>
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/app.css">
+<script src="/assets/theme.js"></script>
+</head>
+<body>
+<a class="skip" href="#main" id="skip">Skip to content</a>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="#/"><img src="/assets/favicon.svg" alt="" width="24" height="24"><span>Recalla</span></a>
+    <div class="top-actions">
+      <button type="button" class="icon-btn" id="help-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)"></button>
+      <button type="button" class="icon-btn" id="theme-btn"></button>
+    </div>
+  </header>
+  <nav class="nav" aria-label="Main">
+    <ul>
+      <li><a href="#/" data-nav="overview">Overview</a></li>
+      <li><a href="#/sessions" data-nav="sessions">Sessions</a></li>
+      <li><a href="#/memories" data-nav="memories">Memories</a></li>
+      <li><a href="#/injections" data-nav="injections">What Claude got</a></li>
+      <li><a href="#/connect" data-nav="connect">Connect</a></li>
+    </ul>
+  </nav>
+  <main id="main" tabindex="-1"></main>
+  <footer class="foot">
+    <span>Local only: nothing leaves this machine.</span>
+    <span id="version">Recalla</span>
+  </footer>
+</div>
+<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+<noscript><p class="noscript">The Recalla dashboard needs JavaScript.</p></noscript>
+<script type="module" src="/assets/app.js"></script>
+</body>
+</html>

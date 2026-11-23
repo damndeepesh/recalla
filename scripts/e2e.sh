@@ -270,6 +270,44 @@ GL=$(gitleaks dir "$W/dump.txt" --no-banner --redact 2>&1 | tail -1)
 echo "$GL" | grep -q 'no leaks'
 ok "gitleaks over stored text: no leaks" $?
 
+echo "== 10. dashboard (recalla ui)"
+UD=$W/uidata
+mkdir -p "$UD"
+$B ui --no-open --port 0 --data-dir "$UD" >"$W/ui.out" 2>"$W/ui.err" &
+UI_PID=$!
+for _ in $(seq 1 50); do grep -q 'Recalla is running' "$W/ui.out" 2>/dev/null && break; sleep 0.1; done
+URL=$(sed -n 's/^Recalla is running at //p' "$W/ui.out")
+BASE=${URL%%/\?*}
+HP=${BASE#http://}
+[ -n "$URL" ] && echo "$URL" | grep -Eq '^http://127\.0\.0\.1:[0-9]+/\?c=[0-9a-f]{64}$'; ok "ui prints a one-time code URL" $?
+grep -q 'works once, for 60 seconds' "$W/ui.out"; ok "ui explains the link works once" $?
+CJ=$W/cj.txt
+code() { curl -s -o "${2:-/dev/null}" -w '%{http_code}' "${@:3}" "$1"; }
+[ "$(code "$BASE/api/overview")" = 401 ]; ok "API without login: 401" $?
+[ "$(code "$URL" /dev/null -c "$CJ")" = 302 ]; ok "login via the one-time code: 302" $?
+grep -q HttpOnly "$CJ"; ok "session cookie is HttpOnly" $?
+! grep -q "$(awk -v p="${HP##*:}" '$6=="recalla_" p {print $7}' "$CJ")" "$W/ui.out"; ok "session token never printed" $?
+[ "$(code "$BASE/api/overview" "$W/ov.json" -b "$CJ")" = 200 ]; ok "/api/overview: 200" $?
+python3 -c "import json,sys;d=json.load(open(sys.argv[1]));assert d['memories']['total']==0 and 'version' in d" "$W/ov.json"; ok "/api/overview is valid JSON" $?
+[ "$(code "$URL")" = 401 ]; ok "the code URL a second time: 401" $?
+[ "$(code "$BASE/api/overview" /dev/null -b "$CJ" -H 'Host: evil.example')" = 403 ]; ok "wrong Host header: 403" $?
+[ "$(code "$BASE/api/test-recall" /dev/null -b "$CJ" -X POST -H "Origin: $BASE" -d '{}')" = 403 ]; ok "POST without CSRF header: 403" $?
+code "$BASE/api/session" "$W/sess.json" -b "$CJ" >/dev/null
+CSRF=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['csrf'])" "$W/sess.json")
+[ "$(code "$BASE/api/test-recall" "$W/tr.json" -b "$CJ" -X POST -H "Origin: $BASE" -H "X-Recalla-Csrf: $CSRF" -d '{}')" = 200 ]; ok "/api/test-recall: 200" $?
+python3 -c "import json,sys;d=json.load(open(sys.argv[1]));assert 'markdown' in d and 'memories' in d" "$W/tr.json"; ok "test-recall returns a pack" $?
+[ "$(code "$BASE/api/sync" "$W/sync.json" -b "$CJ" -X POST -H "Origin: $BASE" -H "X-Recalla-Csrf: $CSRF" -d '{}')" = 202 ]; ok "/api/sync starts a job: 202" $?
+ST=running
+for _ in $(seq 1 100); do
+	code "$BASE/api/sync/status" "$W/st.json" -b "$CJ" >/dev/null
+	ST=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['state'])" "$W/st.json")
+	[ "$ST" != running ] && break
+	sleep 0.2
+done
+[ "$ST" = done ] || [ "$ST" = failed ]; ok "sync job finished (state $ST)" $?
+kill "$UI_PID" 2>/dev/null
+wait "$UI_PID" 2>/dev/null
 echo
+
 echo "RESULT: $P passed, $F failed"
 [ "$F" = 0 ]

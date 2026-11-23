@@ -7,6 +7,7 @@ mod mirror;
 mod pack;
 mod schema;
 mod search;
+mod ui;
 
 use std::error::Error;
 use std::path::Path;
@@ -14,7 +15,9 @@ use std::str::FromStr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rusqlite::types::Type;
-use rusqlite::{Connection, OptionalExtension, Row, Transaction, TransactionBehavior, params};
+use rusqlite::{
+    Connection, OpenFlags, OptionalExtension, Row, Transaction, TransactionBehavior, params,
+};
 use thiserror::Error;
 
 use crate::model::{self, Anchor, Memory, NewMemory, Origin, Provenance, Scope, Status};
@@ -22,9 +25,14 @@ use crate::model::{self, Anchor, Memory, NewMemory, Origin, Provenance, Scope, S
 pub use extract::EventRow;
 pub use ingest::{Checkpoint, SegmentRow, SourceRow, StoredEvent, StoredKind};
 pub use mirror::FullMemory;
-pub use pack::{InjectionStats, ProjectInjections, Via};
+pub use pack::{InjectionStats, NewInjection, ProjectInjections, Via};
 pub use schema::version as schema_version;
 pub use search::{Filter, Hit};
+pub use ui::{
+    AnchorView, Cursor, InjectionBrief, InjectionDetail, InjectionFilter, InjectionRow,
+    MemoryBrief, MemoryDetail, MemoryFilter, MemoryRow, MemorySort, Overview, Page, ProvenanceView,
+    SessionDetail, SessionEvent, SessionFilter, SessionRow, SourceRef, saved_pct,
+};
 
 /// Store failures.
 #[derive(Debug, Error)]
@@ -35,6 +43,28 @@ pub enum StoreError {
     NotFound(String),
     #[error("invalid: {0}")]
     Invalid(String),
+    /// An id prefix matches more than one memory.
+    #[error("ambiguous: {0}")]
+    Ambiguous(String),
+    /// A read-only open of a database whose schema differs from this build's
+    /// (which a read-only connection must not migrate).
+    #[error("database schema v{found} does not match this build (v{expected})")]
+    Schema { found: u32, expected: u32 },
+}
+
+impl StoreError {
+    /// Another connection holds a lock past the busy timeout.
+    #[must_use]
+    pub fn is_busy(&self) -> bool {
+        matches!(
+            self,
+            Self::Sqlite(rusqlite::Error::SqliteFailure(e, _))
+                if matches!(
+                    e.code,
+                    rusqlite::ErrorCode::DatabaseBusy | rusqlite::ErrorCode::DatabaseLocked
+                )
+        )
+    }
 }
 
 /// Source of unix-millisecond timestamps. Injectable so tests are deterministic.
@@ -207,6 +237,29 @@ impl Store {
     /// Fails if the file can't be opened or migrated.
     pub fn open_with_busy(path: impl AsRef<Path>, busy: Duration) -> Result<Self, StoreError> {
         Self::init(Connection::open(path)?, true, busy)
+    }
+
+    /// Opens an existing database read-only (SQLite refuses every write) and
+    /// never migrates it.
+    ///
+    /// # Errors
+    /// `Sqlite` if the file is missing or can't be opened; `Schema` if its
+    /// `user_version` differs from this build's.
+    pub fn open_read_only(path: impl AsRef<Path>, busy: Duration) -> Result<Self, StoreError> {
+        let conn = Connection::open_with_flags(
+            path,
+            OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        )?;
+        conn.busy_timeout(busy)?;
+        let store = Self {
+            conn,
+            clock: Box::new(system_clock),
+        };
+        let (found, expected) = (store.user_version()?, schema::version());
+        if found != expected {
+            return Err(StoreError::Schema { found, expected });
+        }
+        Ok(store)
     }
 
     /// Opens a private in-memory database (tests, dry runs).

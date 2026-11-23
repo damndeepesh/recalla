@@ -98,7 +98,7 @@ Measured on an Apple M2, reproducible from a checkout:
 | Binary size | 10 MB (each language grammar is a cargo feature) | `cargo build --release` |
 | Extraction quality | precision 1.00, recall 0.92 on a hand-labeled **synthetic** eval (53 labels). Treat this as a regression gate, not a claim about your logs. | `cargo test --test extract_eval` |
 
-`make e2e` runs 64 end-to-end checks on the release binary: planted secrets never reach the database, hooks never touch your other settings, MCP works in both protocol versions, anchors flag the right function, and the mirror rebuilds identically.
+`make e2e` runs 79 end-to-end checks on the release binary: planted secrets never reach the database, hooks never touch your other settings, MCP works in both protocol versions, anchors flag the right function, and the mirror rebuilds identically.
 
 ## Known limits
 
@@ -122,6 +122,7 @@ recalla stats                 # what was injected, and its token cost
 recalla check                 # flag memories whose anchored code changed
 recalla confirm <id>          # re-verify a flagged memory
 recalla hooks uninstall       # remove only Recalla's hook entries
+recalla ui                    # local dashboard on 127.0.0.1 (Ctrl-C to stop; --port, --no-open)
 
 recalla mirror [--full]       # sync the markdown mirror now (it also updates after backfill, hooks and edits)
 recalla rebuild --from-mirror # restore memories from the mirror; dry run first, --yes to apply (a backup is made)
@@ -134,6 +135,33 @@ Every memory is also written as a plain markdown file under `<data dir>/mirror/`
 If the database is lost or damaged, `recalla rebuild --from-mirror` restores the memory layer from these files. Events and sources are kept. It is safe to run while Claude Code or `recalla mcp` are running: it takes a `VACUUM INTO` backup (`recalla.db.bak-<time>`) and then replaces the memory layer in one transaction, never swapping the database file.
 
 It checks before touching anything and refuses the whole rebuild if any file is malformed, was edited (its id no longer matches its text), contains unredacted secrets, control or invisible characters, or has out-of-range values. The dry run shows how many memories are global, how many belong to each project, and which memories in the database are missing from the mirror; removing those needs `--yes --allow-drop`. Format: [ARCHITECTURE.md](ARCHITECTURE.md#mirror-mirror-recalla-mirrorrebuild).
+
+## Dashboard
+
+`recalla ui` opens a local dashboard in your browser, served by the same single binary. Nothing to install and no build step.
+
+```bash
+recalla ui                  # random free port, opens your browser
+recalla ui --port 7777      # fixed port
+recalla ui --no-open        # just print the login link
+recalla ui --data-dir DIR   # use another data directory
+```
+
+Stop it with Ctrl-C. What you can do in it:
+
+- **Sessions and memories:** browse every imported session and every memory, search, and see where a memory came from and whether its anchored code changed.
+- **What Claude got:** the exact pack each session received, its token cost, and (once there is enough data) how much that saved versus dumping every memory.
+- **Act on memories:** confirm, forget (archive) or restore, which is also the standalone way to drop a wrong one.
+- **Connect:** install or remove the Claude Code hooks, check MCP setup, test recall for a project and import history, all from the browser.
+
+Privacy model:
+
+- **Localhost only.** Binds `127.0.0.1`, serves no third-party content and sends nothing out.
+- **One-time login.** The link works once and for 60 seconds. It is handed to your browser through a private (0600) page, never as a command-line argument. The session cookie is per port and expires after 12 hours idle.
+- **Request checks.** `Host`, `Origin` and a CSRF header are verified, and a strict CSP is set on every response. Reads use a read-only database connection.
+- **Same redaction as everywhere else.** The dashboard shows what is already in the database; the raw archive is never served.
+
+Limits: it runs only while the command is running, it is local only (no remote or team access), there is no native Windows build yet (use WSL), and the token-savings figure only appears once there is enough data. Details: [ARCHITECTURE.md](ARCHITECTURE.md#dashboard-server-ui).
 
 ## Privacy and security
 

@@ -108,6 +108,21 @@ fn session_start_injects_pack_and_records_hook_injection() {
         .map(Result::unwrap)
         .collect();
     assert_eq!(vias, ["hook"]);
+    let (session, pack, tokens): (String, String, i64) = conn
+        .query_row(
+            "SELECT session_id, pack_text, candidate_tokens FROM injections",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .unwrap();
+    assert_eq!(session, "s");
+    assert_eq!(
+        pack,
+        v["hookSpecificOutput"]["additionalContext"]
+            .as_str()
+            .unwrap()
+    );
+    assert!(tokens > 0);
 }
 
 #[test]

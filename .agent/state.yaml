@@ -1,13 +1,16 @@
-updated: 2026-11-22
-milestone: MVP
-branch: main
-task: "v0.1.0 release: waiting on user (repo public, then cargo publish + tag)"
-status: blocked
-plan: null
+updated: 2026-11-23
+milestone: v1.0
+branch: feature/ui
+task: "recalla ui: local dashboard with connector status"
+status: review
+plan: .agent/plans/ui.md
 done:
-  - all 12 MVP items built; make check 457 tests; make e2e 64/64 on the release binary
-  - final Opus security review: NO-GO on rebuild corrupting a live DB; fixed (VACUUM INTO + in-place txn, dirty-set mirror, redact-on-load, sanitized why/stats); repro verified
+  - dashboard built (server, API, frontend, schema v8); security review fixes (D-023)
+  - docs: CHANGELOG, README, ADR D-022/D-023, ARCHITECTURE
 next:
-  - landing page PR (web/ + pages workflow); user must enable Pages once (Settings -> Pages -> Source: GitHub Actions)
-  - portfolio PR: rewrite /recalla -> damndeepesh.github.io/recalla (user merges)
-  - recalla ui: see .agent/plans/ui.md on branch feature/ui (server core in progress)
+  - open PR for feature/ui
+  - release v0.2.0 on the user's go (bump, CHANGELOG, publish, tag; then update web/ landing page)
+blockers: []
+notes:
+  - v0.1.0 release and landing page items from main are tracked in git history; Pages must be enabled once by the user
+  - version stays 0.1.0 until the release step

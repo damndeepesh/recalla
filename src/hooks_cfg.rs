@@ -5,6 +5,7 @@
 //! before every write, write atomically, and touch nothing but our own
 //! entries. Key order is kept (`serde_json` feature `preserve_order`).
 
+use std::fmt::Write as _;
 use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
@@ -44,24 +45,29 @@ pub struct Outcome {
     pub backup: Option<PathBuf>,
 }
 
+/// `exe` as one shell word: bare when it only has safe characters, else
+/// double-quoted with `\`, `"`, `$` and backtick escaped.
+#[must_use]
+pub fn quote_path(exe: &Path) -> String {
+    let p = exe.to_string_lossy();
+    let safe = |c: char| c.is_ascii_alphanumeric() || "_./-+:@%=,~".contains(c);
+    if !p.is_empty() && p.chars().all(safe) {
+        return p.into_owned();
+    }
+    let mut q = String::from("\"");
+    for c in p.chars() {
+        if matches!(c, '"' | '\\' | '$' | '`') {
+            q.push('\\');
+        }
+        q.push(c);
+    }
+    q + "\""
+}
+
 /// Shell-safe form of `exe` + subcommand; quotes the path when needed.
 #[must_use]
 pub fn command_for(exe: &Path, sub: &str) -> String {
-    let p = exe.to_string_lossy();
-    let safe = |c: char| c.is_ascii_alphanumeric() || "_./-+:@%=,~".contains(c);
-    let p = if !p.is_empty() && p.chars().all(safe) {
-        p.into_owned()
-    } else {
-        let mut q = String::from("\"");
-        for c in p.chars() {
-            if matches!(c, '"' | '\\' | '$' | '`') {
-                q.push('\\');
-            }
-            q.push(c);
-        }
-        q + "\""
-    };
-    format!("{p} hook {sub}")
+    format!("{} hook {sub}", quote_path(exe))
 }
 
 /// True only for a command exactly as `command_for` writes it: one path token
@@ -392,12 +398,42 @@ fn write_atomic(path: &Path, text: &str) -> io::Result<()> {
     result
 }
 
-/// MCP registration hints; printed, never run.
+/// The command that registers Recalla's MCP server with Claude Code.
+#[must_use]
+pub fn mcp_claude_command(exe: &Path) -> String {
+    format!(
+        "claude mcp add --scope user recalla -- {} mcp",
+        quote_path(exe)
+    )
+}
+
+/// The `config.toml` snippet that registers it with Codex (TOML basic string).
+#[must_use]
+pub fn mcp_codex_toml(exe: &Path) -> String {
+    let mut path = String::new();
+    for c in exe.to_string_lossy().chars() {
+        match c {
+            '"' | '\\' => {
+                path.push('\\');
+                path.push(c);
+            }
+            c if c.is_control() => {
+                let _ = write!(path, "\\u{:04X}", u32::from(c));
+            }
+            c => path.push(c),
+        }
+    }
+    format!("[mcp_servers.recalla]\ncommand = \"{path}\"\nargs = [\"mcp\"]\n")
+}
+
+/// Printed after `hooks install`: how to register the MCP server (not run).
 #[must_use]
 pub fn mcp_hints(exe: &Path) -> String {
-    let e = exe.display();
+    let toml = mcp_codex_toml(exe).replace('\n', "\n    ");
     format!(
-        "Optional MCP registration (not run):\n  claude mcp add --scope user recalla -- {e} mcp\n  Codex, in ~/.codex/config.toml:\n    [mcp_servers.recalla]\n    command = \"{e}\"\n    args = [\"mcp\"]\n"
+        "Optional MCP registration (not run):\n  {}\n  Codex, in ~/.codex/config.toml:\n    {}\n",
+        mcp_claude_command(exe),
+        toml.trim_end()
     )
 }
 
@@ -419,6 +455,26 @@ mod tests {
             command_for(Path::new("/a\"b$/recalla"), "capture"),
             "\"/a\\\"b\\$/recalla\" hook capture"
         );
+    }
+
+    #[test]
+    fn mcp_registration_text_quotes_each_format_its_own_way() {
+        let plain = Path::new("/a/recalla");
+        assert_eq!(
+            mcp_claude_command(plain),
+            "claude mcp add --scope user recalla -- /a/recalla mcp"
+        );
+        assert_eq!(
+            mcp_codex_toml(plain),
+            "[mcp_servers.recalla]\ncommand = \"/a/recalla\"\nargs = [\"mcp\"]\n"
+        );
+        let odd = Path::new("/my dir/a\"b\\c$/recalla");
+        assert_eq!(
+            mcp_claude_command(odd),
+            "claude mcp add --scope user recalla -- \"/my dir/a\\\"b\\\\c\\$/recalla\" mcp"
+        );
+        assert!(mcp_codex_toml(odd).contains("command = \"/my dir/a\\\"b\\\\c$/recalla\""));
+        assert!(mcp_codex_toml(Path::new("/a\nb")).contains("\\u000A"));
     }
 
     #[test]

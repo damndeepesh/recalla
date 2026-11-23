@@ -132,6 +132,8 @@ impl FileError {
             Self::Store(StoreError::Sqlite(_)) => "sqlite".to_owned(),
             Self::Store(StoreError::NotFound(_)) => "store-not-found".to_owned(),
             Self::Store(StoreError::Invalid(_)) => "store-invalid".to_owned(),
+            Self::Store(StoreError::Ambiguous(_)) => "store-ambiguous".to_owned(),
+            Self::Store(StoreError::Schema { .. }) => "store-schema".to_owned(),
         }
     }
 }
