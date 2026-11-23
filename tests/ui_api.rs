@@ -1171,7 +1171,9 @@ fn connect_reports_state_and_exact_commands() {
     );
     assert_eq!(
         c["mcp"]["codex_toml"],
-        format!("[mcp_servers.recalla]\ncommand = \"{FAKE_EXE}\"\nargs = [\"mcp\"]\n")
+        format!(
+            "[mcp_servers.recalla]\ncommand = \"{FAKE_EXE}\"\nargs = [\"mcp\"]\n[mcp_servers.recalla.tools.recall]\napproval_mode = \"approve\"\n\n[mcp_servers.recalla.tools.why]\napproval_mode = \"approve\"\n"
+        )
     );
     assert_eq!(c["binary_path"], FAKE_EXE);
     assert_eq!(c["db"]["exists"], true);

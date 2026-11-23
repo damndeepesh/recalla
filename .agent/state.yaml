@@ -1,14 +1,15 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: feature/extract-because
-task: "Gotchas from plain because-explanations (PR into dev)"
-status: review
+branch: fix/codex-mcp-approval
+task: "Codex MCP snippet: auto-approve recall tools (live-tested Claude + Codex round trip OK)"
+status: ready
 done:
   - "dev has forget (#45), extractor recall/precision (#46, #47), pack --query any-word (#48) and task focus (#49)"
   - "#50 membench merged into dev: miner, 18 suites, adapters (incl. generic MCP), report, make bench, CI job, membench real (local-only)"
-  - "#51 (open, CI pending): gotchas from plain because-explanations; bench extraction recall 0.05->0.08, extract_eval 52/0/0"
+  - "#51 merged into dev: gotchas from plain because-explanations; bench extraction recall 0.05->0.08, extract_eval 52/0/0"
 next:
-  - merge #51 into dev when CI is green (never main for now)
+  - extractor recall gap: imperative gotchas in user prompts ("Decision for this project: ...", "never call X in Y") are missed; add to extract_eval + bench
+  - check whether assistant text is intentionally not ingested (live test showed only user_text/tool events)
   - per-file PreToolUse recall hook (needs its own plan, measure with bench)
   - owner decision: memorybench (supermemory, LongMemEval/LoCoMo) needs paid judge keys; offer to read its provider interface first
   - later: separate repo for bench/, agent-run tier, claude-mem tier, real session logs in membench real
