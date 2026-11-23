@@ -119,7 +119,7 @@
     },
     {
      "kind": "procedure",
-     "contains": "cargo test -p api"
+     "contains": "`cargo test`"
     }
    ]
   },
@@ -315,7 +315,7 @@
     },
     {
      "kind": "procedure",
-     "contains": "pytest -q tests/jobs"
+     "contains": "`pytest`"
     }
    ]
   },
@@ -570,11 +570,7 @@
     },
     {
      "kind": "procedure",
-     "contains": "go test -race ./..."
-    },
-    {
-     "kind": "procedure",
-     "contains": "go test ./..."
+     "contains": "`go test`"
     },
     {
      "kind": "procedure",
@@ -760,7 +756,7 @@
     },
     {
      "kind": "procedure",
-     "contains": "pytest -x tests/"
+     "contains": "`pytest`"
     }
    ]
   },

@@ -86,6 +86,7 @@ pub fn extract(ctx: &EventCtx<'_>, project: Option<&str>) -> Vec<Candidate> {
     let Some(command) = bash_command(call)
         .and_then(|c| normalize_command(&c))
         .filter(|c| is_procedure(c))
+        .map(|c| collapse_test_args(&c))
     else {
         return Vec::new();
     };
@@ -184,6 +185,21 @@ fn is_procedure(command: &str) -> bool {
     words.iter().any(has_verb)
 }
 
+/// Test runs keep only the command through the test verb: the filter, test
+/// name and flags that follow (`cargo test --test extract_eval foo`) differ
+/// per run and would each become their own memory. `make check` and
+/// `cargo clippy ...` have no filters and are kept whole.
+fn collapse_test_args(command: &str) -> String {
+    let tokens: Vec<&str> = command.split_whitespace().collect();
+    let runner = tokens
+        .iter()
+        .position(|t| matches!(base(t), "test" | "pytest" | "rspec"));
+    match runner {
+        Some(i) if i + 1 < tokens.len() => tokens[..=i].join(" "),
+        _ => command.to_owned(),
+    }
+}
+
 /// `test:unit` is the verb `test`.
 fn base(token: &str) -> &str {
     token.split(':').next().unwrap_or(token)
@@ -237,9 +253,9 @@ mod tests {
             "yarn lint",
             "make check",
             "go vet ./...",
-            "go test ./pkg/...",
-            "pytest -x tests/",
-            "python -m pytest tests/unit",
+            "go test",
+            "pytest",
+            "python -m pytest",
             "uv run pytest",
             "terraform plan",
             "npx tsc --noEmit",
@@ -253,6 +269,30 @@ mod tests {
             assert_eq!(got[0].text, format!("`{c}`"));
             assert!((got[0].confidence - 0.6).abs() < 1e-6);
             assert_eq!(got[0].scope, Scope::Project("/work/app".into()));
+        }
+    }
+
+    #[test]
+    fn test_filters_collapse_to_the_base_command() {
+        for (raw, want) in [
+            (
+                "cargo test --test extract_eval eval_precision -- --nocapture",
+                "cargo test",
+            ),
+            ("cargo test --lib adversarial", "cargo test"),
+            ("go test ./pkg/...", "go test"),
+            ("pytest -x tests/", "pytest"),
+            ("python -m pytest tests/unit", "python -m pytest"),
+            ("uv run pytest -k slow", "uv run pytest"),
+            ("npm run test:unit -- --watch", "npm run test:unit"),
+            (
+                "cargo clippy --all-targets -- -D warnings",
+                "cargo clippy --all-targets -- -D warnings",
+            ),
+        ] {
+            let got = run_pair(raw);
+            assert_eq!(got.len(), 1, "{raw}");
+            assert_eq!(got[0].text, format!("`{want}`"), "{raw}");
         }
     }
 

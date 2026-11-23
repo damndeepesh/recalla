@@ -7,9 +7,15 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 ### Added
 - `recalla forget <id>`: archive a wrong memory from the CLI (undo with `recalla confirm`). Closes #27.
 
+### Changed
+- Extractor precision: a decision needs at least 5 words and an object ("Decided upfront, not bolted on later." is dropped) (closes #15); test-run procedures collapse to the base command, so `cargo test --test x name` and `go test ./pkg/...` become `cargo test` / `go test` (closes #16); a gotcha's explanation must share a word with the failing command or output (closes #17).
+- `recalla pack --query` (and the MCP `recall` query) now lifts memories sharing any word with the query, BM25-ranked, instead of requiring every word, so a task description actually finds related memories. `recalla search` still requires all words.
+- `recalla pack --query` now focuses the pack on the task: memories anchored to a file the query names rank first, weak matches (under a quarter of the best score) and near-duplicates are dropped, and preferences are always kept. A query that matches nothing leaves the pack unchanged. On the benchmark's holdout probes this cut the pack from 869 to 518 tokens while recall went from 0.91 to 0.95.
+
 ## [0.3.0] - 2026-11-23
 
 ### Added
+- Extractor: bare imperatives with a scope or limit word ("Use terraform plan before any apply", "Keep the binary under 5 MB") are now preferences, and "Switched X to Y" (up to 6 words between) is a decision. Closes #13, #14. Eval on the synthetic corpus: recall 0.92 to 1.00, precision unchanged at 1.00.
 - `recalla backfill --dir PATH`, `--session ID|FILE` (both repeatable), `--list` and `--pick`: import one project or a few sessions instead of the whole history. `--pick` asks for Claude Code or Codex, lists that tool's sessions, and imports the numbers you choose. A selector that matches nothing is an error and writes nothing.
 
 ### Changed
