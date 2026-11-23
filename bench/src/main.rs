@@ -103,7 +103,8 @@ fn run(cli: Cli) -> Result<(), String> {
                 Some("tune") => Some(suite::Split::Tune),
                 Some(o) => return Err(format!("unknown split {o}")),
             };
-            let base = std::env::temp_dir().join(format!("membench-{}", std::process::id()));
+            let tmp = tempfile::TempDir::new().map_err(|e| e.to_string())?;
+            let base = tmp.path().to_path_buf();
             let mut results = Vec::new();
             for path in &suite {
                 let text = std::fs::read_to_string(path)
@@ -111,7 +112,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 let s: suite::Suite =
                     serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
                 for name in &adapters {
-                    let dir = run::scratch(&base, &s.name, name);
+                    let dir = run::scratch(&base, &s.name, name)?;
                     let mut a = run::make(name, recalla.as_deref(), &dir)?;
                     results.push(run::one(&s, a.as_mut(), split, &dir)?);
                 }
@@ -121,7 +122,6 @@ fn run(cli: Cli) -> Result<(), String> {
                 let json = serde_json::to_string_pretty(&results).map_err(|e| e.to_string())?;
                 std::fs::write(&p, json).map_err(|e| e.to_string())?;
             }
-            let _ = std::fs::remove_dir_all(&base);
             Ok(())
         }
         Command::Mine {

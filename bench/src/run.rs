@@ -86,11 +86,25 @@ fn adapter_source(_: &crate::adapter::Item) -> Option<String> {
     None
 }
 
-pub fn scratch(base: &Path, suite: &str, adapter: &str) -> PathBuf {
+/// Fresh scratch dir under `base`. Names come from suite files and the command
+/// line, so anything outside `[A-Za-z0-9._-]` (or `..`) is rejected before a
+/// path is built or removed.
+pub fn scratch(base: &Path, suite: &str, adapter: &str) -> std::result::Result<PathBuf, String> {
+    let ok = |s: &str| {
+        !s.is_empty()
+            && s != ".."
+            && s.chars()
+                .all(|c| c.is_ascii_alphanumeric() || "._-".contains(c))
+    };
+    if !ok(suite) || !ok(adapter) {
+        return Err(format!(
+            "unsafe suite or adapter name: {suite:?} / {adapter:?}"
+        ));
+    }
     let p = scratch_for(base, suite, adapter);
     let _ = std::fs::remove_dir_all(&p);
-    std::fs::create_dir_all(&p).ok();
-    p
+    std::fs::create_dir_all(&p).map_err(|e| e.to_string())?;
+    Ok(p)
 }
 
 fn mean(xs: impl Iterator<Item = f64>) -> Option<f64> {
