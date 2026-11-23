@@ -8,6 +8,7 @@ mod mine;
 mod recalla;
 mod run;
 mod score;
+mod sessions;
 mod suite;
 mod tokens;
 
@@ -43,6 +44,13 @@ enum Command {
         /// Raw per-probe results as JSON.
         #[arg(long)]
         out: Option<PathBuf>,
+    },
+    /// Write a suite's facts as Claude Code session logs (for transcript-ingesting tools).
+    Sessions {
+        #[arg(long)]
+        suite: PathBuf,
+        #[arg(long)]
+        out: PathBuf,
     },
     /// Mine a suite (facts and probes) from a pinned public repo checkout.
     Mine {
@@ -123,6 +131,11 @@ fn run(cli: Cli) -> Result<(), String> {
                 std::fs::write(&p, json).map_err(|e| e.to_string())?;
             }
             Ok(())
+        }
+        Command::Sessions { suite, out } => {
+            let text = std::fs::read_to_string(&suite).map_err(|e| e.to_string())?;
+            let s: suite::Suite = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+            sessions::write(&s, &out)
         }
         Command::Mine {
             repo,

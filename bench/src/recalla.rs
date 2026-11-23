@@ -11,16 +11,19 @@ use crate::mcp::Client;
 use crate::suite::Fact;
 
 pub struct Recalla {
+    /// Feed through transcript backfill instead of `remember`.
+    backfill: bool,
     bin: PathBuf,
     data: PathBuf,
     project: String,
 }
 
 impl Recalla {
-    pub fn new(bin: &Path, scratch: &Path) -> Result<Self, String> {
+    pub fn new(bin: &Path, scratch: &Path, backfill: bool) -> Result<Self, String> {
         let data = scratch.join("recalla-data");
         std::fs::create_dir_all(&data).map_err(|e| e.to_string())?;
         Ok(Self {
+            backfill,
             bin: bin.to_path_buf(),
             data,
             project: "bench".into(),
@@ -44,10 +47,29 @@ impl Recalla {
 
 impl Adapter for Recalla {
     fn name(&self) -> String {
-        "recalla".into()
+        if self.backfill {
+            "recalla-backfill"
+        } else {
+            "recalla"
+        }
+        .into()
     }
 
     fn feed_facts(&mut self, ctx: &Ctx<'_>) -> Result<Support, String> {
+        if self.backfill {
+            let root = ctx.scratch.join("claude-root");
+            crate::sessions::write(ctx.suite, &root)?;
+            self.project = ctx.suite.name.clone();
+            self.run(&[
+                "backfill",
+                "--root",
+                &root.display().to_string(),
+                "--harness",
+                "claude",
+                "--no-archive",
+            ])?;
+            return Ok(Support::Done);
+        }
         let args = vec![
             "mcp".to_owned(),
             "--data-dir".into(),

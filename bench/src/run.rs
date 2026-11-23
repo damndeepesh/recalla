@@ -29,9 +29,10 @@ pub fn make(
         "dump" => Box::new(Dump::default()),
         "file" => Box::new(File::default()),
         "grep" => Box::new(Grep::default()),
-        "recalla" => Box::new(Recalla::new(
+        "recalla" | "recalla-backfill" => Box::new(Recalla::new(
             recalla.ok_or("--recalla PATH is required")?,
             scratch,
+            name == "recalla-backfill",
         )?),
         other => return Err(format!("unknown adapter {other}")),
     })

@@ -1,0 +1,60 @@
+//! Turns a suite's facts into Claude Code session logs, one short session per
+//! fact in commit order, so tools that ingest transcripts get the same
+//! knowledge a developer would have left behind.
+
+use std::fs;
+use std::path::Path;
+
+use serde_json::json;
+
+use crate::suite::{Fact, Suite};
+
+/// Working directory recorded in the sessions.
+#[must_use]
+pub fn cwd(suite: &Suite) -> String {
+    format!("/bench/{}", suite.name)
+}
+
+/// Writes `<root>/projects/<enc>/<fact id>.jsonl` for every fact.
+pub fn write(suite: &Suite, root: &Path) -> Result<(), String> {
+    let cwd = cwd(suite);
+    let dir = root.join("projects").join(cwd.replace('/', "-"));
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    for (n, f) in suite.facts.iter().enumerate() {
+        let lines = session(f, &cwd, n);
+        fs::write(dir.join(format!("{}.jsonl", f.id)), lines).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+fn rec(kind: &str, sid: &str, n: usize, cwd: &str, msg: &serde_json::Value) -> String {
+    json!({
+        "type": kind, "uuid": format!("{sid}-{n}"), "sessionId": sid,
+        "timestamp": format!("2025-01-01T00:{:02}:{:02}Z", n / 60 % 60, n % 60),
+        "cwd": cwd, "gitBranch": "main", "message": msg,
+    })
+    .to_string()
+}
+
+fn session(f: &Fact, cwd: &str, n: usize) -> String {
+    let sid = f.id.clone();
+    let file = f.files.first().cloned().unwrap_or_default();
+    let path = format!("{cwd}/{file}");
+    let user = json!({"role": "user", "content": format!("Let's work on {file}.")});
+    let said = json!({"role": "assistant", "content": [{"type": "text", "text": f.text}]});
+    let edit = json!({"role": "assistant", "content": [{
+        "type": "tool_use", "id": format!("t{n}"), "name": "Edit",
+        "input": {"file_path": path, "old_string": "a", "new_string": "b"},
+    }]});
+    let done = json!({"role": "user", "content": [{
+        "type": "tool_result", "tool_use_id": format!("t{n}"), "content": format!("error: edit of {file} failed"), "is_error": true,
+    }]});
+    [
+        rec("user", &sid, 0, cwd, &user),
+        rec("assistant", &sid, 1, cwd, &edit),
+        rec("user", &sid, 2, cwd, &done),
+        rec("assistant", &sid, 3, cwd, &said),
+    ]
+    .join("\n")
+        + "\n"
+}
