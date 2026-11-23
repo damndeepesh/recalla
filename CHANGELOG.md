@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Changed
+- Landing page redesigned: new layout, self-hosted fonts (Instrument Sans, JetBrains Mono; no third-party requests), refreshed dark theme and social preview image. The page guard now also checks fonts and multi-line third-party tags.
+
 ## [0.2.0] - 2026-11-23
 
 ### Security
