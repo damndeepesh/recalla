@@ -87,6 +87,81 @@ pub fn query_boosts(hits: &[(String, f64)]) -> HashMap<String, f64> {
         .collect()
 }
 
+/// Hits scoring under this share of the best hit are too weak to spend budget on.
+const HIT_CUTOFF: f64 = 0.25;
+/// Word overlap at which two memories count as the same statement.
+const NEAR_DUPLICATE: f64 = 0.85;
+
+fn word_set(text: &str) -> std::collections::HashSet<String> {
+    text.split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.chars().count() >= 3)
+        .map(str::to_lowercase)
+        .collect()
+}
+
+fn overlap(a: &std::collections::HashSet<String>, b: &std::collections::HashSet<String>) -> f64 {
+    let union = a.union(b).count();
+    if union == 0 {
+        return 0.0;
+    }
+    #[allow(clippy::cast_precision_loss)]
+    {
+        a.intersection(b).count() as f64 / union as f64
+    }
+}
+
+/// Narrows a pack to what a task needs. `hits` are the memories matching the
+/// task text (BM25 score, higher better) and `file_uids` those anchored to a
+/// file the task names. Keeps file matches and hits scoring at least
+/// `HIT_CUTOFF` of the best, drops near-duplicates, and always keeps
+/// preferences (cheap and always relevant). File matches get the top boost.
+/// With no usable hit the memories come back unchanged and unboosted, so a
+/// vague query never empties a pack.
+#[must_use]
+#[allow(clippy::implicit_hasher)] // callers always use the default hasher
+pub fn focus(
+    memories: &[Memory],
+    hits: &[(String, f64)],
+    file_uids: &std::collections::HashSet<String>,
+) -> (Vec<Memory>, HashMap<String, f64>) {
+    let best = hits.iter().map(|h| h.1).fold(f64::NEG_INFINITY, f64::max);
+    let strong: Vec<(String, f64)> = hits
+        .iter()
+        .filter(|h| h.1 >= best * HIT_CUTOFF)
+        .cloned()
+        .collect();
+    if strong.is_empty() && file_uids.is_empty() {
+        return (memories.to_vec(), HashMap::new());
+    }
+    let mut boosts = query_boosts(&strong);
+    for uid in file_uids {
+        boosts.insert(uid.clone(), 1.0);
+    }
+    let mut relevant: Vec<&Memory> = memories
+        .iter()
+        .filter(|m| boosts.contains_key(&m.uid))
+        .collect();
+    relevant.sort_by(|a, b| {
+        boosts[&b.uid]
+            .total_cmp(&boosts[&a.uid])
+            .then_with(|| a.uid.cmp(&b.uid))
+    });
+    let mut kept: Vec<(&Memory, std::collections::HashSet<String>)> = Vec::new();
+    for m in relevant {
+        let w = word_set(&m.text);
+        if kept.iter().all(|(_, k)| overlap(&w, k) < NEAR_DUPLICATE) {
+            kept.push((m, w));
+        }
+    }
+    let keep: std::collections::HashSet<&str> = kept.iter().map(|(m, _)| m.uid.as_str()).collect();
+    let focused = memories
+        .iter()
+        .filter(|m| keep.contains(m.uid.as_str()) || m.kind == Kind::Preference)
+        .cloned()
+        .collect();
+    (focused, boosts)
+}
+
 /// Whitespace collapsed to single spaces, cut to `max` chars with `…`.
 /// Collapse `text` to one line of at most `max` chars, for packs and terminal
 /// output. Whitespace runs become one space and control chars (ESC, C0/C1) are
@@ -591,5 +666,42 @@ mod tests {
             NOW,
         );
         assert!(p.markdown.starts_with("# Recalla memory · project a b · "));
+    }
+
+    #[test]
+    fn focus_drops_weak_hits_duplicates_and_non_hits_but_keeps_preferences() {
+        use std::collections::HashSet;
+        let ms = vec![
+            mem(
+                "a",
+                Kind::Gotcha,
+                "glob builder drops separators when empty",
+            ),
+            mem(
+                "b",
+                Kind::Gotcha,
+                "glob builder drops separators when empty!",
+            ),
+            mem("c", Kind::Gotcha, "weak partial match about glob"),
+            mem("d", Kind::Gotcha, "tokio runtime shutdown ordering"),
+            mem("e", Kind::Preference, "use tabs"),
+            mem("f", Kind::Fact, "anchored to the named file only"),
+        ];
+        let id = |c: &str| format!("{c:0<32}");
+        let hits = vec![(id("a"), 10.0), (id("b"), 9.0), (id("c"), 1.0)];
+        let files: HashSet<String> = [id("f")].into();
+        let (kept, boosts) = focus(&ms, &hits, &files);
+        let uids: Vec<String> = kept.iter().map(|m| m.uid.clone()).collect();
+        // c is under the cutoff, b duplicates a, d never matched.
+        assert_eq!(uids, vec![id("a"), id("e"), id("f")]);
+        assert!((boosts[&id("f")] - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn focus_with_no_signal_returns_everything_unboosted() {
+        let ms = vec![mem("a", Kind::Fact, "one"), mem("d", Kind::Fact, "two")];
+        let (kept, boosts) = focus(&ms, &[], &std::collections::HashSet::new());
+        assert_eq!(kept.len(), 2);
+        assert!(boosts.is_empty());
     }
 }

@@ -100,15 +100,16 @@ fn build_pack(store: &Store, args: &PackArgs) -> Result<(pack::Pack, Baseline), 
     let memories = store
         .memories_for_project(project, &[Status::Active, Status::NeedsReverify])
         .map_err(|e| e.to_string())?;
-    let boosts = match args.query.as_deref() {
+    let (memories, boosts) = match args.query.as_deref() {
         Some(q) => {
             let hits = store
                 .search_any(q, &Filter::default(), SEARCH_LIMIT)
                 .map_err(|e| e.to_string())?;
             let scored: Vec<_> = hits.into_iter().map(|h| (h.memory.uid, h.score)).collect();
-            pack::query_boosts(&scored)
+            let files = files_anchored(store, project, q)?;
+            pack::focus(&memories, &scored, &files)
         }
-        None => HashMap::new(),
+        None => (memories, HashMap::new()),
     };
     let label = project.map_or("global", |p| {
         Path::new(p)
@@ -177,6 +178,26 @@ pub fn confirm(store: &mut Store, uid: &str) -> Result<usize, String> {
 
 /// Best-matching memories considered for a `--query` boost.
 const SEARCH_LIMIT: usize = 50;
+
+/// Uids of memories anchored to a file the query names (`src/a.rs`, ...).
+fn files_anchored(
+    store: &Store,
+    project: Option<&str>,
+    query: &str,
+) -> Result<std::collections::HashSet<String>, String> {
+    let paths = crate::extract::text::path_tokens(query);
+    let Some(project) = project.filter(|_| !paths.is_empty()) else {
+        return Ok(std::collections::HashSet::new());
+    };
+    let rows = store
+        .anchors_for_project(project)
+        .map_err(|e| e.to_string())?;
+    Ok(rows
+        .into_iter()
+        .filter(|(_, _, a, _)| paths.iter().any(|p| p == &a.path))
+        .map(|(uid, ..)| uid)
+        .collect())
+}
 
 /// Outcome of [`why`].
 pub enum Why {
