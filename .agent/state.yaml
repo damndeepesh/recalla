@@ -1,7 +1,7 @@
 updated: 2026-11-23
 milestone: v0.4 (dev)
-branch: feature/pack-ranking
-task: "Task-focused pack --query (PR #49 into dev)"
+branch: feature/extract-because
+task: "Gotchas from plain because-explanations (PR into dev)"
 status: review
 plan: .agent/plans/bench.md
 done:
