@@ -8,6 +8,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - `recalla ui`: redesigned dashboard (new visual system with self-hosted Bricolage Grotesque and Geist, bento Home with activity and token charts, memory browser, sessions, context packs, setup). Memory text renders `code` spans.
 
 ### Fixed
+- Landing page: the "Watch a memory go stale" steps no longer split inline code and emphasis into separate columns.
 - `recalla ui`: a stray "null" on Home, charts whose legends did not match what was drawn, and Home rows that left empty columns.
 
 ## [0.2.1] - 2026-11-23
