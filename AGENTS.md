@@ -16,7 +16,7 @@ Local-first memory engine for coding agents. It backfills session history into a
 - `make perf`: SPEC perf targets on synthetic data (release, ignored tests in `tests/perf.rs`, ~1 min; results in ARCHITECTURE.md)
 - `make secrets`: gitleaks over full history (also a CI job)
 - `make e2e`: end-to-end functional checklist on the release binary (82 checks)
-- `recalla backfill [--harness claude|codex|all] [--root R] [--codex-root C] [--data-dir D] [--no-archive] [--no-extract] [--dry-run] [--json]`: import + extract
+- `recalla backfill [--dir P]... [--session ID|FILE]... [--list] [--pick] [--harness claude|codex|all] [--root R] [--codex-root C] [--data-dir D] [--no-archive] [--no-extract] [--dry-run] [--json]`: import + extract
 - `recalla extract [--rebuild]` / `recalla search <q> [--kind K] [--project P]`: re-extract / inspect memories
 - `recalla pack [--budget N] [--query Q] [--format md|json]` / `recalla stats` / `recalla why <id>`: context pack, ledger, provenance
 - `recalla check [--project P] [--json]` / `recalla confirm <id>`: flag memories whose anchored code changed / re-anchor one

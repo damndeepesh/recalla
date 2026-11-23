@@ -23,6 +23,7 @@ use crate::harness::{Event, EventKind, Harness, MAX_EVENT_BYTES, count_newlines,
 use crate::ops::{self, OpenError};
 use crate::paths;
 use crate::redact::{Redacted, redact, redact_path};
+use crate::select::{self, Candidate, Selection};
 use crate::store::{Checkpoint, SegmentRow, Store, StoreError, StoredEvent, StoredKind};
 
 /// Bytes hashed from the start of a file to detect rewrites and rotation.
@@ -114,6 +115,8 @@ pub enum IngestError {
     Open(#[from] OpenError),
     #[error("cannot open store: {0}")]
     Store(#[from] StoreError),
+    #[error("nothing matched: {}", .0.join(", "))]
+    NoMatch(Vec<String>),
 }
 
 /// A per-file error; recorded in the report, the run continues.
@@ -169,8 +172,40 @@ impl Agent {
 /// Setup failures only (listing sessions, creating the data dir, opening the
 /// store). Per-file failures are reported in [`Report::failed`].
 pub fn run(opts: &Options) -> Result<Report, IngestError> {
+    run_selected(opts, &Selection::default())
+}
+
+/// Like [`run`], limited to the sessions `sel` picks (all when it is empty).
+/// A selector that matches nothing fails the run before anything is written,
+/// so a typo never silently imports nothing.
+///
+/// # Errors
+/// As [`run`], plus [`IngestError::NoMatch`].
+pub fn run_selected(opts: &Options, sel: &Selection) -> Result<Report, IngestError> {
     let started = Instant::now();
-    let mut files: Vec<(Agent, PathBuf)> = Vec::new();
+    let found = discover_selected(opts, sel, !sel.dirs.is_empty())?;
+    let files: Vec<(Agent, PathBuf)> = found.into_iter().map(|(a, c)| (a, c.path)).collect();
+    let mut store = open_store(opts)?;
+    Ok(ingest_paths(&mut store, opts, &files, started))
+}
+
+/// The sessions `sel` picks, without importing anything (`backfill --list`).
+///
+/// # Errors
+/// As [`run_selected`].
+pub fn list(opts: &Options, sel: &Selection) -> Result<Vec<Candidate>, IngestError> {
+    Ok(discover_selected(opts, sel, true)?
+        .into_iter()
+        .map(|(_, c)| c)
+        .collect())
+}
+
+fn discover_selected(
+    opts: &Options,
+    sel: &Selection,
+    want_cwd: bool,
+) -> Result<Vec<(Agent, Candidate)>, IngestError> {
+    let mut all: Vec<(Agent, Candidate)> = Vec::new();
     for (agent, root) in [
         (Agent::Claude, &opts.claude_root),
         (Agent::Codex, &opts.codex_root),
@@ -189,10 +224,31 @@ pub fn run(opts: &Options) -> Result<Report, IngestError> {
             Err(e) => return Err(discover_err(e)),
         };
         let found = agent.harness().discover(&canonical).map_err(discover_err)?;
-        files.extend(found.into_iter().map(|f| (agent, f.path)));
+        all.extend(found.into_iter().map(|f| {
+            // Only a directory filter or a listing needs the session's cwd.
+            let cwd = want_cwd.then(|| select::peek_cwd(&f.path)).flatten();
+            (
+                agent,
+                Candidate {
+                    agent: agent.harness().name(),
+                    path: f.path,
+                    cwd,
+                },
+            )
+        }));
     }
-    let mut store = open_store(opts)?;
-    Ok(ingest_paths(&mut store, opts, &files, started))
+    let cands: Vec<Candidate> = all.iter().map(|(_, c)| c.clone()).collect();
+    let m = select::select(&cands, sel);
+    if !m.unmatched.is_empty() {
+        return Err(IngestError::NoMatch(m.unmatched));
+    }
+    let mut keep = m.keep.into_iter().peekable();
+    Ok(all
+        .into_iter()
+        .enumerate()
+        .filter(|(i, _)| keep.next_if_eq(i).is_some())
+        .map(|(_, x)| x)
+        .collect())
 }
 
 /// Imports just the Claude Code `files` into an already-open `store`, through

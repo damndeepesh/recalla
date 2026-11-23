@@ -113,6 +113,9 @@ Measured on an Apple M2, reproducible from a checkout:
 
 ```bash
 recalla backfill              # import Claude Code + Codex history and extract memories
+recalla backfill --pick       # choose Claude Code or Codex, then which sessions
+recalla backfill --dir ~/code/app   # only that project (and sub-directories)
+recalla backfill --session 0a1b2c3d # only one session (8+ characters of its id, or a .jsonl path)
 recalla hooks install         # inject memory at session start, capture new turns (backs up settings.json)
 # optional: expose recall/remember/review/why as MCP tools
 claude mcp add --scope user recalla -- "$(command -v recalla)" mcp
