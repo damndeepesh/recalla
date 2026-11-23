@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-23
+
 ### Changed
 - Landing page redesigned: new layout, self-hosted fonts (Instrument Sans, JetBrains Mono; no third-party requests), refreshed dark theme and social preview image. The page guard now also checks fonts and multi-line third-party tags.
 
@@ -58,6 +60,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - `redact_path` for cwd/branch (no entropy layer) so project keys survive random path components
 - Claude Code hooks: `recalla hook session-start|capture`, `recalla hooks install|uninstall|status` (never block; settings backed up, atomic, order-preserving)
 
-[Unreleased]: https://github.com/damndeepesh/recalla/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/damndeepesh/recalla/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/damndeepesh/recalla/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/damndeepesh/recalla/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/damndeepesh/recalla/releases/tag/v0.1.0
