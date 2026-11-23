@@ -54,7 +54,8 @@ async function request(method, path, { params, body, signal } = {}) {
     throw new ApiError(401, "Session ended.");
   }
   if (!res.ok) {
-    const msg = typeof data?.error === "string" ? data.error : GENERIC[res.status] ?? `Request failed (${res.status}).`;
+    const msg =
+      typeof data?.error === "string" ? data.error : (GENERIC[res.status] ?? `Request failed (${res.status}).`);
     const err = new ApiError(res.status, msg);
     err.data = data;
     throw err;

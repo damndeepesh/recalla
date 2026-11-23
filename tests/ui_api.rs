@@ -914,6 +914,24 @@ fn injections_filters_pagination_and_detail() {
     let d = api.ok(&format!("/api/injections/{id}"));
     assert_eq!(d["pack_text"], "# Recalla memory\n- a thing [abcd1234]");
     assert_eq!(d["memories"].as_array().unwrap().len(), 3);
+    // Included memories are full Memory rows, so the page can say why each was picked.
+    for m in d["memories"].as_array().unwrap() {
+        for field in [
+            "uid",
+            "kind",
+            "text",
+            "status",
+            "scope_project",
+            "confidence",
+            "seen_count",
+            "anchor_count",
+            "stale_reason",
+            "first_source",
+            "updated_at",
+        ] {
+            assert!(m.get(field).is_some(), "{field}");
+        }
+    }
     assert_eq!(d["est_tokens"], 100);
     let old_id = old["id"].as_i64().unwrap();
     let d = api.ok(&format!("/api/injections/{old_id}"));

@@ -368,8 +368,10 @@ pub struct InjectionDetail {
     pub row: InjectionRow,
     /// Exact pack text, newlines kept (`None` for rows from before v8).
     pub pack_text: Option<String>,
-    /// Injected memories that still exist.
-    pub memories: Vec<MemoryBrief>,
+    /// Injected memories that still exist, in pack order, as full list rows
+    /// (scope, confidence, seen count, freshness, first source) so the
+    /// dashboard can explain why each was included.
+    pub memories: Vec<MemoryRow>,
 }
 
 /// Injection columns. The last one is the harness of the injection's session,
@@ -1067,15 +1069,21 @@ impl Store {
         else {
             return Ok(None);
         };
-        let memories = self
+        let sql = format!(
+            "SELECT {} FROM injections i, json_each(i.memory_uids) j
+             JOIN memories m ON m.uid = j.value WHERE i.id = ?1 ORDER BY j.key",
+            memory_row_sql()
+        );
+        let rows = self
             .conn
-            .prepare_cached(
-                "SELECT m.uid, m.kind, substr(m.text, 1, ?2), m.status
-                 FROM injections i, json_each(i.memory_uids) j JOIN memories m ON m.uid = j.value
-                 WHERE i.id = ?1 ORDER BY j.key",
-            )?
-            .query_map(params![id, RAW_TEXT], memory_brief)?
-            .collect::<Result<_, _>>()?;
+            .prepare_cached(&sql)?
+            .query_map([id], memory_row)?
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut memories = Vec::with_capacity(rows.len());
+        for (memory_id, mut row) in rows {
+            row.first_source = self.first_source(memory_id)?;
+            memories.push(row);
+        }
         Ok(Some(InjectionDetail {
             row,
             pack_text: pack_text.map(|t| sanitize_multiline(&t)),

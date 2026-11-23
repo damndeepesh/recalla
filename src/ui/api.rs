@@ -438,7 +438,7 @@ fn injection_detail(ctx: &Ctx, _: &Request, p: &Params) -> ApiResult {
         injection_row_json(&d.row),
         json!({
             "pack_text": d.pack_text,
-            "memories": d.memories.iter().map(memory_brief_json).collect::<Vec<_>>(),
+            "memories": d.memories.iter().map(memory_row_json).collect::<Vec<_>>(),
         }),
     ))
 }

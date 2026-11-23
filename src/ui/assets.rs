@@ -16,6 +16,9 @@ const HTML: &str = "text/html; charset=utf-8";
 const CSS: &str = "text/css; charset=utf-8";
 const JS: &str = "text/javascript; charset=utf-8";
 const SVG: &str = "image/svg+xml";
+const WOFF2: &str = "font/woff2";
+/// Font licences (OFL-1.1), served next to the fonts they cover.
+const TXT: &str = "text/plain; charset=utf-8";
 
 /// Every embedded file, keyed by its request path.
 pub const TABLE: &[(&str, Asset)] = &[
@@ -69,24 +72,17 @@ pub const TABLE: &[(&str, Asset)] = &[
         },
     ),
     (
-        "/assets/filters.js",
+        "/assets/palette.js",
         Asset {
             content_type: JS,
-            body: include_bytes!("assets/filters.js"),
+            body: include_bytes!("assets/palette.js"),
         },
     ),
     (
-        "/assets/views/overview.js",
+        "/assets/views/home.js",
         Asset {
             content_type: JS,
-            body: include_bytes!("assets/views/overview.js"),
-        },
-    ),
-    (
-        "/assets/views/sessions.js",
-        Asset {
-            content_type: JS,
-            body: include_bytes!("assets/views/sessions.js"),
+            body: include_bytes!("assets/views/home.js"),
         },
     ),
     (
@@ -97,17 +93,24 @@ pub const TABLE: &[(&str, Asset)] = &[
         },
     ),
     (
-        "/assets/views/injections.js",
+        "/assets/views/sessions.js",
         Asset {
             content_type: JS,
-            body: include_bytes!("assets/views/injections.js"),
+            body: include_bytes!("assets/views/sessions.js"),
         },
     ),
     (
-        "/assets/views/connect.js",
+        "/assets/views/packs.js",
         Asset {
             content_type: JS,
-            body: include_bytes!("assets/views/connect.js"),
+            body: include_bytes!("assets/views/packs.js"),
+        },
+    ),
+    (
+        "/assets/views/setup.js",
+        Asset {
+            content_type: JS,
+            body: include_bytes!("assets/views/setup.js"),
         },
     ),
     (
@@ -115,6 +118,34 @@ pub const TABLE: &[(&str, Asset)] = &[
         Asset {
             content_type: SVG,
             body: include_bytes!("assets/favicon.svg"),
+        },
+    ),
+    (
+        "/assets/fonts/instrument-sans.woff2",
+        Asset {
+            content_type: WOFF2,
+            body: include_bytes!("assets/fonts/instrument-sans.woff2"),
+        },
+    ),
+    (
+        "/assets/fonts/jetbrains-mono.woff2",
+        Asset {
+            content_type: WOFF2,
+            body: include_bytes!("assets/fonts/jetbrains-mono.woff2"),
+        },
+    ),
+    (
+        "/assets/fonts/OFL-InstrumentSans.txt",
+        Asset {
+            content_type: TXT,
+            body: include_bytes!("assets/fonts/OFL-InstrumentSans.txt"),
+        },
+    ),
+    (
+        "/assets/fonts/OFL-JetBrainsMono.txt",
+        Asset {
+            content_type: TXT,
+            body: include_bytes!("assets/fonts/OFL-JetBrainsMono.txt"),
         },
     ),
 ];
@@ -166,6 +197,11 @@ mod tests {
             .chain(std::iter::once(("/", index())))
     }
 
+    /// The code and markup (fonts are binary; licences are plain text).
+    fn code() -> impl Iterator<Item = (&'static str, &'static Asset)> {
+        all().filter(|(_, a)| [HTML, CSS, JS, SVG].contains(&a.content_type))
+    }
+
     #[test]
     fn every_asset_exists_with_the_right_content_type() {
         for (path, a) in all() {
@@ -174,12 +210,14 @@ mod tests {
                 "css" => CSS,
                 "js" => JS,
                 "svg" => SVG,
+                "woff2" => WOFF2,
+                "txt" => TXT,
                 _ => HTML,
             };
             assert_eq!(a.content_type, want, "{path}");
         }
         let total: usize = all().map(|(_, a)| a.body.len()).sum();
-        assert!(total < 150 * 1024, "assets are {total} bytes");
+        assert!(total < 250 * 1024, "assets are {total} bytes");
     }
 
     /// Guard like `scripts/web-check.sh`: the dashboard renders untrusted text
@@ -198,7 +236,7 @@ mod tests {
             "srcdoc",
             "createContextualFragment",
         ];
-        for (path, a) in all() {
+        for (path, a) in code() {
             let src = text(a);
             for b in BANNED {
                 assert!(!src.contains(b), "{path} contains {b}");
@@ -262,6 +300,58 @@ mod tests {
                 let target = parts.join("/");
                 assert!(known(&target), "{path} imports missing {target}");
             }
+        }
+        let css = text(lookup("/assets/app.css").unwrap());
+        let urls: Vec<&str> = css
+            .split("url(\"")
+            .skip(1)
+            .map(|c| c.split('"').next().unwrap())
+            .collect();
+        assert!(!urls.is_empty(), "app.css loads the fonts");
+        for u in urls {
+            assert!(
+                known(&format!("/assets/{u}")),
+                "app.css references missing {u}"
+            );
+        }
+    }
+
+    /// Every file in `assets/` is embedded (a new file must be added to TABLE),
+    /// and each font ships with its licence.
+    #[test]
+    fn every_file_on_disk_is_embedded() {
+        fn walk(dir: &std::path::Path, out: &mut Vec<String>) {
+            for e in std::fs::read_dir(dir).unwrap().flatten() {
+                let p = e.path();
+                if p.is_dir() {
+                    walk(&p, out);
+                } else {
+                    out.push(p.to_string_lossy().replace('\\', "/"));
+                }
+            }
+        }
+        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/src/ui/assets");
+        let mut files = Vec::new();
+        walk(std::path::Path::new(root), &mut files);
+        for f in files {
+            let rel = &f[root.len()..];
+            // index.html is served at `/`; dotfiles (formatter config) are not assets.
+            if rel == "/index.html" || rel.rsplit('/').next().is_some_and(|n| n.starts_with('.')) {
+                continue;
+            }
+            assert!(
+                lookup(&format!("/assets{rel}")).is_some(),
+                "{rel} is not in TABLE"
+            );
+        }
+        for (font, licence) in [
+            ("instrument-sans.woff2", "OFL-InstrumentSans.txt"),
+            ("jetbrains-mono.woff2", "OFL-JetBrainsMono.txt"),
+        ] {
+            let f = lookup(&format!("/assets/fonts/{font}")).unwrap();
+            assert!(f.body.starts_with(b"wOF2"), "{font} is woff2");
+            let l = text(lookup(&format!("/assets/fonts/{licence}")).unwrap());
+            assert!(l.contains("SIL OPEN FONT LICENSE"), "{licence}");
         }
     }
 }

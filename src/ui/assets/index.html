@@ -1,41 +1,76 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
-<title>Recalla</title>
-<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/app.css">
-<script src="/assets/theme.js"></script>
-</head>
-<body>
-<a class="skip" href="#main" id="skip">Skip to content</a>
-<div class="app">
-  <header class="topbar">
-    <a class="brand" href="#/"><img src="/assets/favicon.svg" alt="" width="24" height="24"><span>Recalla</span></a>
-    <div class="top-actions">
-      <button type="button" class="icon-btn" id="help-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)"></button>
-      <button type="button" class="icon-btn" id="theme-btn"></button>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Recalla</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href="/assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/assets/app.css" />
+    <script src="/assets/theme.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main" id="skip">Skip to content</a>
+    <div class="app">
+      <header class="side">
+        <a class="brand" href="#/"
+          ><img src="/assets/favicon.svg" alt="" width="24" height="24" /><span>Recalla</span></a
+        >
+        <button
+          type="button"
+          class="search-btn"
+          id="search-btn"
+          aria-haspopup="dialog"
+          aria-label="Search or jump to"
+          aria-keyshortcuts="/ Control+K Meta+K"
+        >
+          <span>Search or jump to</span><kbd>/</kbd>
+        </button>
+        <nav class="nav" aria-label="Main">
+          <ul>
+            <li>
+              <a href="#/" data-nav="home"><span class="long">Home</span><span class="short">Home</span></a>
+            </li>
+            <li>
+              <a href="#/memories" data-nav="memories"
+                ><span class="long">Memories</span><span class="short">Memories</span></a
+              >
+            </li>
+            <li>
+              <a href="#/sessions" data-nav="sessions"
+                ><span class="long">Sessions</span><span class="short">Sessions</span></a
+              >
+            </li>
+            <li>
+              <a href="#/packs" data-nav="packs"
+                ><span class="long">Context packs</span><span class="short">Packs</span></a
+              >
+            </li>
+            <li>
+              <a href="#/setup" data-nav="setup"><span class="long">Setup</span><span class="short">Setup</span></a>
+            </li>
+          </ul>
+        </nav>
+        <div class="side-foot">
+          <div class="side-tools">
+            <button
+              type="button"
+              class="icon-btn"
+              id="help-btn"
+              aria-label="Keyboard shortcuts"
+              title="Keyboard shortcuts (?)"
+            ></button>
+            <button type="button" class="icon-btn" id="theme-btn"></button>
+          </div>
+          <span class="local">Local only: nothing leaves this machine</span>
+          <span class="ver" id="version">Recalla</span>
+        </div>
+      </header>
+      <main id="main" tabindex="-1"></main>
     </div>
-  </header>
-  <nav class="nav" aria-label="Main">
-    <ul>
-      <li><a href="#/" data-nav="overview">Overview</a></li>
-      <li><a href="#/sessions" data-nav="sessions">Sessions</a></li>
-      <li><a href="#/memories" data-nav="memories">Memories</a></li>
-      <li><a href="#/injections" data-nav="injections">What Claude got</a></li>
-      <li><a href="#/connect" data-nav="connect">Connect</a></li>
-    </ul>
-  </nav>
-  <main id="main" tabindex="-1"></main>
-  <footer class="foot">
-    <span>Local only: nothing leaves this machine.</span>
-    <span id="version">Recalla</span>
-  </footer>
-</div>
-<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
-<noscript><p class="noscript">The Recalla dashboard needs JavaScript.</p></noscript>
-<script type="module" src="/assets/app.js"></script>
-</body>
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+    <noscript><p class="noscript">The Recalla dashboard needs JavaScript.</p></noscript>
+    <script type="module" src="/assets/app.js"></script>
+  </body>
 </html>

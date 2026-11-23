@@ -584,6 +584,11 @@ fn injections_paginate_and_report_savings() {
         Some("# Recalla memory\n- a thing [abcd1234]")
     );
     assert_eq!(d.memories.len(), 3);
+    assert!(
+        d.memories
+            .iter()
+            .all(|m| m.confidence > 0.0 && !m.uid.is_empty())
+    );
     assert!(fx.store.ui_injection_detail(9999).unwrap().is_none());
 
     let hook = fx
