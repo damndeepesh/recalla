@@ -3,6 +3,7 @@
 //! Assistant text only, and only when a failed tool result sits in the
 //! current exchange (after the last user message in the session window).
 
+use std::collections::HashSet;
 use std::sync::LazyLock;
 
 use regex::Regex;
@@ -30,16 +31,63 @@ static CAUSE: LazyLock<Regex> = LazyLock::new(|| {
 static NOT_A_FINDING: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?i)^(?:if|whether|should)\b").expect("valid regex"));
 
+/// Words too generic to tie a sentence to a failure.
+const STOP: &[&str] = &[
+    "error", "errors", "failed", "failure", "fails", "command", "output", "result", "with", "that",
+    "this", "from", "have", "been", "when", "then", "there", "were", "which", "into", "file",
+    "files", "code", "line", "true", "false", "null", "none", "stdout", "stderr", "input", "cause",
+    "issue", "turns", "root", "fixed", "because", "happens",
+];
+
+/// Lowercased alphanumeric words (4+ chars) that can name a failure: tool and
+/// command words, file names, error codes.
+fn tokens(text: &str) -> HashSet<String> {
+    text.split(|c: char| !(c.is_alphanumeric() || c == '_'))
+        .filter(|w| w.chars().count() >= 4)
+        .map(str::to_lowercase)
+        .filter(|w| !STOP.contains(&w.as_str()))
+        .collect()
+}
+
+/// Tokens of the failed results in the current exchange, plus the tool calls
+/// that ran just before them (the command, the file).
+fn failure_tokens(prev: &[EventRow]) -> HashSet<String> {
+    let start = prev
+        .iter()
+        .rposition(|e| e.kind == StoredKind::UserText)
+        .map_or(0, |i| i + 1);
+    let window = &prev[start..];
+    let mut out = HashSet::new();
+    for (i, e) in window.iter().enumerate() {
+        if e.kind == StoredKind::ToolResult && e.is_error {
+            out.extend(tokens(&e.text));
+            if let Some(call) = window[..i]
+                .iter()
+                .rev()
+                .find(|c| c.kind == StoredKind::ToolCall)
+            {
+                out.extend(tokens(&call.text));
+                out.extend(call.tool_name.iter().flat_map(|n| tokens(n)));
+            }
+        }
+    }
+    out
+}
+
 /// Gotcha candidates from one assistant-text event.
 #[must_use]
 pub fn extract(ctx: &EventCtx<'_>, project: Option<&str>) -> Vec<Candidate> {
     if ctx.event.kind != StoredKind::AssistantText || !error_in_current_exchange(ctx.prev) {
         return Vec::new();
     }
+    let failure = failure_tokens(ctx.prev);
     let clean = strip_code(&ctx.event.text);
     sentences(&clean)
         .into_iter()
         .filter(|s| CAUSE.is_match(s) && !NOT_A_FINDING.is_match(s))
+        // The explanation must be about this failure, not any stray error
+        // that happens to sit in the window.
+        .filter(|s| !tokens(s).is_disjoint(&failure))
         .take(MAX_PER_EVENT)
         .map(|s| Candidate {
             kind: Kind::Gotcha,
@@ -69,8 +117,14 @@ mod tests {
     use crate::extract::testutil::event;
     use crate::model::Scope;
 
+    /// A failed build whose output mentions the vocabulary the sample
+    /// explanations below talk about (a gotcha must be about the failure).
     fn err() -> EventRow {
-        let mut e = event(StoredKind::ToolResult, "error[E0308]: mismatched types");
+        let mut e = event(
+            StoredKind::ToolResult,
+            "error[E0308]: mismatched types; lockfile cache config path migration schema \
+             clock dependency init buffer target column index store import lock stale crash feature flag cargo toml",
+        );
         e.is_error = true;
         e
     }
@@ -147,6 +201,31 @@ mod tests {
         ] {
             assert!(run(s).is_empty(), "{s}");
         }
+    }
+
+    #[test]
+    fn explanation_must_be_about_the_failure() {
+        let mut bad = event(StoredKind::ToolResult, "command not found: terraform");
+        bad.is_error = true;
+        // A stray password sentence next to an unrelated tool error.
+        let s = "It turns out the password rotation job changes the credentials nightly.";
+        assert!(run_with(&[bad.clone()], s).is_empty());
+        // The same error does anchor an explanation that names the tool.
+        let s = "Turns out terraform is not installed in this container.";
+        assert_eq!(run_with(&[bad.clone()], s).len(), 1);
+        // The command that failed counts, not only the output.
+        let mut call = event(
+            StoredKind::ToolCall,
+            r#"{"command":"pnpm install --frozen-lockfile"}"#,
+        );
+        call.tool_name = Some("Bash".into());
+        let mut res = event(StoredKind::ToolResult, "exit 1");
+        res.is_error = true;
+        let s = "Turns out pnpm wants a lockfile update first.";
+        assert_eq!(run_with(&[call, res], s).len(), 1);
+        // Generic words alone do not link a sentence to a failure.
+        let s = "Turns out the error output was just noisy this time.";
+        assert!(run_with(&[bad], s).is_empty());
     }
 
     #[test]

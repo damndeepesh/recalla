@@ -98,7 +98,7 @@ Measured on an Apple M2, reproducible from a checkout:
 | Session-start hook with 100k memories | p95 13 ms | `make perf` |
 | MCP tool descriptions | about 430 tokens for all 4 tools | `make e2e` |
 | Binary size | 10 MB (each language grammar is a cargo feature) | `cargo build --release` |
-| Extraction quality | precision 1.00, recall 0.92 on a hand-labeled **synthetic** eval (53 labels). Treat this as a regression gate, not a claim about your logs. | `cargo test --test extract_eval` |
+| Extraction quality | precision 1.00, recall 1.00 on a hand-labeled **synthetic** eval (52 labels). Treat this as a regression gate, not a claim about your logs. | `cargo test --test extract_eval` |
 
 `make e2e` runs 79 end-to-end checks on the release binary: planted secrets never reach the database, hooks never touch your other settings, MCP works in both protocol versions, anchors flag the right function, and the mirror rebuilds identically.
 

@@ -1,12 +1,13 @@
 updated: 2026-11-23
 milestone: v0.3.0
-branch: feature/extractor-recall
+branch: feature/extractor-precision
 task: "release v0.3.0: bump, e2e, PR, tag"
 status: review
 plan: null
 done:
   - #42 scoped backfill and #43 landing fix merged; version bumped to 0.3.0
 next:
+  - extractor-precision (#15 #16 #17) done: push, PR into dev; merge #45 #46 into dev when CI green
   - make e2e, PR + merge, then cargo publish (owner go) and tag v0.3.0
 blockers: []
 notes:
