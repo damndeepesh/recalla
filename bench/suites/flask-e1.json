@@ -1,0 +1,103 @@
+{
+  "name": "flask-e1",
+  "repo": {
+    "url": "https://github.com/pallets/flask",
+    "license": "BSD-3-Clause",
+    "t0": "a61347b902961d36d932bab56794fc39fab0d210",
+    "t1": "4d8cba917e600bbec9aef823f861cebe29959c5f",
+    "head": "f3d661de6676125bc765e286c5dd89e3e10ad82d"
+  },
+  "facts": [
+    {
+      "id": "fc4f2075f-0",
+      "kind": "decision",
+      "text": "tojson no longer escapes script blocks in HTML5 parsers.",
+      "files": [
+        "flask/helpers.py",
+        "flask/testsuite/helpers.py"
+      ],
+      "commit": "c4f2075f4c4c27856fe0af77250fb75c61c0d86b",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f82b29c09-0",
+      "kind": "decision",
+      "text": "As pointed out in issue #588 sqlite3.Row should be used instead of using casting to dict().",
+      "files": [
+        "examples/flaskr/flaskr.py"
+      ],
+      "commit": "82b29c09ac898042d589d852f1ef6f107fec9f71",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.25
+    },
+    {
+      "id": "fb6116c1d-0",
+      "kind": "gotcha",
+      "text": "According to the note in the comment, you had to check to make sure that the defaults were not an empty dictionary because of a bug in Werkzeug pre-0.7.",
+      "files": [
+        "flask/app.py"
+      ],
+      "commit": "b6116c1de3f3556f6ae18d87348355d2545ce314",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f5e8dd8b2-0",
+      "kind": "gotcha",
+      "text": "Tests when simplejson was installed were failing because of a change in how it sorted in v3.0.0.",
+      "files": [
+        "flask/testsuite/helpers.py"
+      ],
+      "commit": "5e8dd8b2872584483e7fb7506337a7d940ea8cc0",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.92
+    },
+    {
+      "id": "f3d67736e-0",
+      "kind": "gotcha",
+      "text": "the idea being, that a flask extension might want to raise an exception, with the default behaviour of creating a HTTP error page, but still allowing the user to add a view/handler specific to that exception (e.g., \"Forbidden because you are not in the right group\").",
+      "files": [
+        "flask/app.py",
+        "flask/testsuite/basic.py"
+      ],
+      "commit": "3d67736e090f55fcdc476452ac89a79fdd14cc23",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.05
+    }
+  ],
+  "probes": [
+    {
+      "id": "p98b155c6",
+      "task": "Fixed #1288: app.add_url_rule() should look for OPTIONS methods in a case-insensitive manner",
+      "files": [
+        "flask/app.py",
+        "tests/test_basic.py"
+      ],
+      "commit": "98b155c65da62077dc5f277a3ec15d3af78333af",
+      "required": [],
+      "stale": [
+        "f3d67736e-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pd60e1343",
+      "task": "Fixed minor docstring typo for teardown_request()",
+      "files": [
+        "flask/app.py"
+      ],
+      "commit": "d60e13436dbe144b603eed686adcdbfb0788ac9c",
+      "required": [],
+      "stale": [
+        "f3d67736e-0"
+      ],
+      "split": "holdout"
+    }
+  ]
+}

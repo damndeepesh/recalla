@@ -1,0 +1,270 @@
+{
+  "name": "requests-e1",
+  "repo": {
+    "url": "https://github.com/psf/requests",
+    "license": "Apache-2.0",
+    "t0": "be364e13d381f96d24f6bfaa608254583f3ea1b6",
+    "t1": "87d9d9643c73d6fc7f701263e5c4e93217db022f",
+    "head": "aae7e39a56d9116c19d51eb086d655892c5adce3"
+  },
+  "facts": [
+    {
+      "id": "f06e4971f-0",
+      "kind": "decision",
+      "text": "It now deals with invalid %encodings rather than exploding, and the code is somewhat simpler.",
+      "files": [
+        "requests/utils.py"
+      ],
+      "commit": "06e4971fe72c377692ba9e37638431ed0582a028",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fb2867336-0",
+      "kind": "decision",
+      "text": "Issue #505: Changed the store_cookie configuration to be part of the config dict, instead of being a new argument",
+      "files": [
+        "requests/api.py",
+        "requests/defaults.py",
+        "requests/models.py",
+        "requests/sessions.py",
+        "tests/test_cookies.py"
+      ],
+      "commit": "b28673368b0a4236b3cfbb50fb15f846793a1c40",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f62a23bfb-0",
+      "kind": "decision",
+      "text": "Auto-detect CA Cert path instead of requiring users to hack setup.py",
+      "files": [
+        "setup.py"
+      ],
+      "commit": "62a23bfbdecf54e13e571237df5a175e53d539cb",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.14
+    },
+    {
+      "id": "f488a51d6-0",
+      "kind": "decision",
+      "text": "Revert \"Auto-detect CA Cert path instead of requiring users to hack setup.py\"",
+      "files": [
+        "setup.py"
+      ],
+      "commit": "488a51d619c7175248fba1f904a834224c009966",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f98b8316c-0",
+      "kind": "decision",
+      "text": "Send the original response url to `urlparse` rather than the `Response` object.",
+      "files": [
+        "requests/cookies.py"
+      ],
+      "commit": "98b8316c0c1343f94749c3dde785ffaf7e70a04b",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f4e568c18-0",
+      "kind": "decision",
+      "text": "By passing in r.full_url instead of r.url, oauthlib can parse out the correct parameters and sign them properly.",
+      "files": [
+        "requests/auth.py"
+      ],
+      "commit": "4e568c18991fb033290375f467b74384da10a60b",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fc485928a-0",
+      "kind": "decision",
+      "text": "Include reason rather than content in raised HTTPErrors",
+      "files": [
+        "requests/models.py"
+      ],
+      "commit": "c485928a9f964632cd9556607889aeb1379846b8",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f2110f7d1-0",
+      "kind": "decision",
+      "text": "Fixed test for issue #747 to check for '' instead of 'text/plain'",
+      "files": [
+        "tests/test_requests.py"
+      ],
+      "commit": "2110f7d18c67ce42073b440df0853447df842e99",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fc73646da-0",
+      "kind": "decision",
+      "text": "After #831, the tests added in #764 (which relied on iter_content() crashing if the response was prefetched) no longer tested what they were intended to test.",
+      "files": [
+        "tests/test_requests.py"
+      ],
+      "commit": "c73646da0018063f7ddd03514e6cde55e82bb640",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f5cd116d0-0",
+      "kind": "decision",
+      "text": "Use __iter__ rather than the inefficient nested for loops",
+      "files": [
+        "requests/utils.py"
+      ],
+      "commit": "5cd116d078ca885f81c89390d1e5ebe8cd7f5068",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f4f9e5521-0",
+      "kind": "decision",
+      "text": "Use __iter__ rather than the inefficient nested for loops",
+      "files": [
+        "requests/utils.py"
+      ],
+      "commit": "4f9e5521480e5b9fa760e0f19274441c363aca5e",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fc03553ed-0",
+      "kind": "decision",
+      "text": "This replaces the sys.path hack with a slightly less objectionable sys.modules hack.",
+      "files": [
+        "requests/_oauth.py"
+      ],
+      "commit": "c03553ed4ae856d1732ea7ce084549758dc5007f",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fe26ccb34-0",
+      "kind": "gotcha",
+      "text": "If the random data starts with a UTF-16 BOM *and* the next two bytes are for a character in the `\\ud800`-`\\udfff` range decoding would fail.",
+      "files": [
+        "tests/test_utils.py"
+      ],
+      "commit": "e26ccb34eb1c0d3948bfd9e50ffe333605ae554d",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fc02520ed-0",
+      "kind": "gotcha",
+      "text": "Turns out nose runs all the tests in one process, so changing the os.environ dictionary makes everything go horribly wrong.",
+      "files": [
+        "tests/test_utils.py"
+      ],
+      "commit": "c02520ed99d5aead74d70bcae70d3d1fa6424012",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "pbe62645d",
+      "task": "Revert \"If Content-Length is already set..\"[1]",
+      "files": [
+        "requests/models.py"
+      ],
+      "commit": "be62645dd56580dd7576032b348cf79d880851d8",
+      "required": [],
+      "stale": [
+        "fc485928a-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p796d3225",
+      "task": "[kennethreitz/requests#1208] adding a max_retries argument",
+      "files": [
+        "requests/adapters.py",
+        "requests/api.py",
+        "requests/sessions.py"
+      ],
+      "commit": "796d3225ddf08a9ebaa429209b9d077c3a8f99b8",
+      "required": [],
+      "stale": [
+        "fb2867336-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p23d85222",
+      "task": "Revert \"[kennethreitz/requests#1208] adding a max_retries argument\"",
+      "files": [
+        "requests/adapters.py",
+        "requests/api.py",
+        "requests/sessions.py"
+      ],
+      "commit": "23d8522285bd7d7b4a1da46325aeac8814d87076",
+      "required": [],
+      "stale": [
+        "fb2867336-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p17ecb689",
+      "task": "* Documented the logging, requested in #1297 * Added build directory and *.egg to .gitignore * Added sphinx as setup requirement in order to be able to build documentation with `pyhton setup.py build_sphinx`",
+      "files": [
+        "setup.py"
+      ],
+      "commit": "17ecb6891c515511ce33250a3f39f752a9c59b55",
+      "required": [],
+      "stale": [
+        "f488a51d6-0",
+        "f62a23bfb-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p7e825acd",
+      "task": "Remove Python 3.1 and 3.2 from the trove classifiers in setup.py",
+      "files": [
+        "setup.py"
+      ],
+      "commit": "7e825acd9b730632623984f14cd0f3f2c0cbf45f",
+      "required": [],
+      "stale": [
+        "f488a51d6-0",
+        "f62a23bfb-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pbea20601",
+      "task": "'or content' does us no good.",
+      "files": [
+        "requests/models.py"
+      ],
+      "commit": "bea206018211ef77955dfeb1e982bd3530b1fe60",
+      "required": [],
+      "stale": [
+        "fc485928a-0"
+      ],
+      "split": "holdout"
+    }
+  ]
+}

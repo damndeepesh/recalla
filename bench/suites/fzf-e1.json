@@ -1,0 +1,460 @@
+{
+  "name": "fzf-e1",
+  "repo": {
+    "url": "https://github.com/junegunn/fzf",
+    "license": "MIT",
+    "t0": "ca42e5e00a6ce53cf91aa2cbe946f437052b5fd1",
+    "t1": "52154153150d0014a76ef8b429b73c590cb7f755",
+    "head": "0d06c28b1943e820440cff9182a0ae3bdd5e3c59"
+  },
+  "facts": [
+    {
+      "id": "f63dbf485-0",
+      "kind": "decision",
+      "text": "Use internal bash globbing instead of external grep binary (adapter from Gentoo's `/etc/bash/bashrc` TERM checking).",
+      "files": [
+        "shell/key-bindings.bash"
+      ],
+      "commit": "63dbf4854632b52d21757f9a7675726bdd840c16",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f27444d6b-0",
+      "kind": "decision",
+      "text": "`termopen` no longer accepts a `name` option, instead we should suffix the command with `;#NAME`.",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "27444d6b1e17112e9241e85db07154f10d79cef8",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "faeb957a2-0",
+      "kind": "gotcha",
+      "text": "It is almost impossible to predict which entries will be filtered out due to a fuzzy inverse term.",
+      "files": [
+        "src/pattern.go",
+        "src/pattern_test.go"
+      ],
+      "commit": "aeb957a2852555b2fce037aac4c3cb2b9d2f5c39",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f0541c0db-0",
+      "kind": "decision",
+      "text": "Use relative position instead of absolute distance for --tiebreak=end",
+      "files": [
+        "src/result.go",
+        "test/test_go.rb"
+      ],
+      "commit": "0541c0dbcf96ff40bd80cb8359191dc0fa01d83d",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.67
+    },
+    {
+      "id": "f0508e70f-0",
+      "kind": "decision",
+      "text": "Replace the \"temp file\" workaround with the \"read\" function: it's simpler and faster.",
+      "files": [
+        "shell/key-bindings.fish"
+      ],
+      "commit": "0508e70f9bf941e3429668fcef955919a71e03c2",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.47
+    },
+    {
+      "id": "f4ecb7f3a-0",
+      "kind": "decision",
+      "text": "Replace --normalize with --literal and enable normalization by default",
+      "files": [
+        "man/man1/fzf.1",
+        "shell/completion.bash",
+        "src/options.go"
+      ],
+      "commit": "4ecb7f3a162186fd7758f3bdedb3a0b4bb32f9d0",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "ffcf63c74-0",
+      "kind": "gotcha",
+      "text": "Due to performance consideration, FuzzyMatchV2 does not return the exact positions of the matching characters by default.",
+      "files": [
+        "src/result.go"
+      ],
+      "commit": "fcf63c74f1de52e4b0038a50154ee1732ef84af5",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f5bb18b64-0",
+      "kind": "gotcha",
+      "text": "Due to the recent removal of ncurses dependency, we can cross-compile binaries for different platforms without virtual machines.",
+      "files": [
+        "src/Dockerfile.android",
+        "src/Dockerfile.arch",
+        "src/Dockerfile.centos",
+        "src/Dockerfile.ubuntu"
+      ],
+      "commit": "5bb18b644178c4075d81eb6b85af2ecc5104d55a",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fa847fe87-0",
+      "kind": "decision",
+      "text": "Use \"type\" instead of \"cat\" on windows (#836)",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "a847fe875413ac0d35815d67fea3e03a6c0cb2ff",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fce43ea9f-0",
+      "kind": "decision",
+      "text": "[shell] Replace `sed` with `-mindepth 1` and `cut` (#844)",
+      "files": [
+        "shell/key-bindings.bash",
+        "shell/key-bindings.fish",
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "ce43ea9f4273ef2b4c67cb02dc55ed883f6c0fd9",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.38
+    },
+    {
+      "id": "ffc274c2b-0",
+      "kind": "decision",
+      "text": "[vim] Do not escape % when using system() instead of !",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "fc274c2ba4682198aca68d0334a5445f269aba92",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f3d74d277-0",
+      "kind": "decision",
+      "text": "Use cut instead of sed in the default command",
+      "files": [
+        "src/constants_unix.go"
+      ],
+      "commit": "3d74d277aa0446264240308e52df6f223cc2a8ed",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f337cdbb3-0",
+      "kind": "decision",
+      "text": "[zsh] Use setopt noposixbuiltins instead of emulate -L zsh",
+      "files": [
+        "shell/completion.zsh",
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "337cdbb37c1efc49b09b4cacc6e9ee1369c7d76d",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.5
+    },
+    {
+      "id": "fa5862d4b-0",
+      "kind": "decision",
+      "text": "[bash-completion] Use -o dirnames instead of -o plusdirs",
+      "files": [
+        "shell/completion.bash"
+      ],
+      "commit": "a5862d4b9cc5f57ef83174c0d714bfb485094a4f",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f8aab0fc1-0",
+      "kind": "decision",
+      "text": "[vim] Replace s:fzf_shellescape and s:shellesc with fzf#shellescape (#916)",
+      "files": [
+        "plugin/fzf.vim",
+        "test/fzf.vader"
+      ],
+      "commit": "8aab0fc1894facf9ac51132ff8a832b18bc115ac",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f2e3dc754-0",
+      "kind": "decision",
+      "text": "However, if we calculate length tiebreak only on the matched components instead of the entire line, the result can be very confusing when multiple --nth components are specified, so let's keep it simple and consistent.",
+      "files": [
+        "src/core.go",
+        "src/item.go",
+        "src/pattern.go",
+        "src/result.go",
+        "src/result_test.go",
+        "src/tokenizer.go",
+        "src/tokenizer_test.go",
+        "test/test_go.rb"
+      ],
+      "commit": "2e3dc75425d23b4d9e8e05a901395914cf8d3120",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.46
+    },
+    {
+      "id": "f39dbc8ac-0",
+      "kind": "decision",
+      "text": "Exit 2 instead of panic when failed to open /dev/tty",
+      "files": [
+        "src/tui/light.go"
+      ],
+      "commit": "39dbc8acdbb41a1010bc38474e0a308cd0fc25e9",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f487c8fe8-0",
+      "kind": "decision",
+      "text": "Instead of notifying the event coordinator (EventBox) whenever a new line is arrived, start a background goroutine that periodically does the task.",
+      "files": [
+        "src/constants.go",
+        "src/core.go",
+        "src/reader.go",
+        "src/reader_test.go"
+      ],
+      "commit": "487c8fe88f4cfcc55850b8aef73665b1d09b8fe0",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.76
+    },
+    {
+      "id": "ffd6bc730-0",
+      "kind": "gotcha",
+      "text": "cmd.exe prompt is broken on ConEmu because it natively supports ucs-2 only.",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "fd6bc7308f4109a96ff05715434f60574d1e7670",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f5edc3f75-0",
+      "kind": "decision",
+      "text": "Since :FZF does not enable preview window, we determine based on full &columns instead of &columns / 2.",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "5edc3f755ca5f1e5512679cc8e7f995de7e12c3b",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fe1582b83-0",
+      "kind": "decision",
+      "text": "Remove code that is no longer relevant after the removal of ncurses renderer.",
+      "files": [
+        "src/terminal.go",
+        "src/tui/dummy.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/tui/tui.go"
+      ],
+      "commit": "e1582b8323a70785d7ebefce993df7474a28e749",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.72
+    },
+    {
+      "id": "fc2614467-0",
+      "kind": "decision",
+      "text": "[neovim] Fix Neovim plugin to use terminal instead of --height",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "c2614467cf79dcfaca58da30df70d4e6dc6b3792",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f3af63bcf-0",
+      "kind": "decision",
+      "text": "[zsh] Use fc -r instead of fzf --tac to speed up loadtime (#1097)",
+      "files": [
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "3af63bcf1f203c9716a3f69e1264b8877e528941",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fc20954f0-0",
+      "kind": "decision",
+      "text": "replace-query action replaces the query string with the current selection.",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "test/test_go.rb"
+      ],
+      "commit": "c20954f020a16d6c013b59a894dead4cbfb52a83",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.93
+    },
+    {
+      "id": "fd6588fc8-0",
+      "kind": "decision",
+      "text": "After _completion_loader is called, instead of loading the entire completion.bash file, just restore the fzf completion for the current command.",
+      "files": [
+        "shell/completion.bash",
+        "test/test_go.rb"
+      ],
+      "commit": "d6588fc835aff6d952d86b1bdc5ed7378a846ab9",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.76
+    }
+  ],
+  "probes": [
+    {
+      "id": "p9c293bb8",
+      "task": "[bash] Put C-t items at point in vi mode (#1876)",
+      "files": [
+        "shell/key-bindings.bash",
+        "test/test_go.rb"
+      ],
+      "commit": "9c293bb82b6be333c857d288d10aab730220a0e7",
+      "required": [],
+      "stale": [
+        "fce43ea9f-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p1ccd8f6a",
+      "task": "[bash] Restore insertion point pre Bash 4 (#1881)",
+      "files": [
+        "shell/key-bindings.bash"
+      ],
+      "commit": "1ccd8f6a647a31f8cb1d683d25d9f21ab28b11cc",
+      "required": [],
+      "stale": [
+        "fce43ea9f-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p9f0626da",
+      "task": "Add backward-delete-char/eof action (#1891)",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "test/test_go.rb"
+      ],
+      "commit": "9f0626da643070455fb5d6bb11ff1f483a0c100f",
+      "required": [
+        "fc20954f0-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p7c447bbd",
+      "task": "[bash] Start C-r search with current command line (#1886)",
+      "files": [
+        "shell/key-bindings.bash",
+        "test/test_go.rb"
+      ],
+      "commit": "7c447bbdc7adb1fe0c848e171780f68cacf3e80e",
+      "required": [
+        "fc20954f0-0"
+      ],
+      "stale": [
+        "fce43ea9f-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pd9b12111",
+      "task": "Add more --border options; default changed to \"rounded\"",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/tui/tui.go"
+      ],
+      "commit": "d9b12111912a43e62f61051d40897a378a020cf5",
+      "required": [
+        "f4ecb7f3a-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p0f5c6e8f",
+      "task": "[vim] Fix issue with multiple popups (#1927)",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "0f5c6e8f040833ca632bb5ff345542879769225c",
+      "required": [],
+      "stale": [
+        "f27444d6b-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p71e573d0",
+      "task": "[vim] Add 'tmux' layout option to use fzf-tmux",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "71e573d082ee4f0ee3935517d34e0556d81435d7",
+      "required": [],
+      "stale": [
+        "f27444d6b-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pc3292793",
+      "task": "[completion] Make kill completion more consistent with the others",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh"
+      ],
+      "commit": "c329279339a5f49020f6cb43c714d54e68424700",
+      "required": [
+        "f4ecb7f3a-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    }
+  ]
+}

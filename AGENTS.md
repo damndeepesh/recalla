@@ -24,6 +24,7 @@ Local-first memory engine for coding agents. It backfills session history into a
 - `recalla mcp [--data-dir D] [--project P]`: MCP stdio server (tools: recall, remember, review, why)
 - `recalla hooks <install|uninstall|status> [--settings P] [--dry-run]` / `recalla hook <session-start|capture>`: Claude Code hooks (never block, log to `<data>/log/hook.log`)
 - `recalla ui [--port N] [--no-open] [--data-dir D]`: local dashboard server on 127.0.0.1 (prints a one-time, 60 s login link; Ctrl-C to stop)
+- `make bench` / `make bench-check`: benchmark crate in `bench/` (`REPOS=<clones>` for real worktrees, `RECALLA=1` to include Recalla); see `bench/README.md`, `bench/SCORING.md`
 - `cargo test --test extract_eval -- --nocapture`: extractor precision/recall table
 
 ## Layout

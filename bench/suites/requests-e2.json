@@ -1,0 +1,228 @@
+{
+  "name": "requests-e2",
+  "repo": {
+    "url": "https://github.com/psf/requests",
+    "license": "Apache-2.0",
+    "t0": "2a635ba87d7c7c3ef75e7f2013a2cd1a207a0e1a",
+    "t1": "a3ded28c5728775d3509649bd9ee981efe8f5b0b",
+    "head": "f2fe7358469cf844bce04bf04478b8f95fd634f9"
+  },
+  "facts": [
+    {
+      "id": "f3a9d9f22-0",
+      "kind": "gotcha",
+      "text": "However, when doing streaming uploads, it gets stuck because the body data (a file-like object) is already consumed at the initial request.",
+      "files": [
+        "requests/auth.py"
+      ],
+      "commit": "3a9d9f22791dfe8947d9b08ff83c80a5ed49bd95",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.43
+    },
+    {
+      "id": "f3b0fcb62-0",
+      "kind": "gotcha",
+      "text": "Importing simplejson on Python 3.2 results in a SyntaxError because simplejson uses the u'...' syntax (the syntax was not supported in Python 3.0 to 3.2).",
+      "files": [
+        "requests/compat.py"
+      ],
+      "commit": "3b0fcb620dd196acc20d03e259ba6fdb20b1a2c9",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.67
+    },
+    {
+      "id": "fc8916a08-0",
+      "kind": "gotcha",
+      "text": "The tests were broken because they used the u'...' Unicode literal syntax which disappeared in Python 3.0 to 3.2.",
+      "files": [
+        "test_requests.py"
+      ],
+      "commit": "c8916a08deb8be25d2be38c646fab9b2ab1fb8f7",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.18
+    },
+    {
+      "id": "fd505b94f-0",
+      "kind": "decision",
+      "text": "After a long discussion in IRC and on several issues, the developers of requests have decided to remove specific functions from requests.utils in version 3.0.0.",
+      "files": [
+        "requests/utils.py"
+      ],
+      "commit": "d505b94fa47dbce4eae4db09d0056b7808b71b01",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fe8d02ea0-0",
+      "kind": "gotcha",
+      "text": "a cherrypy uploaded file behave like a regular file, except that its name attribute is an int and passing it directly to requests fails because of that",
+      "files": [
+        "requests/utils.py",
+        "test_requests.py"
+      ],
+      "commit": "e8d02ea0bbc05042e618a7ca115f4fca7b2deeb9",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.71
+    },
+    {
+      "id": "feec44dbb-0",
+      "kind": "decision",
+      "text": "Instead of only checking one or another type of string-like object that we accept, let's be able to check both.",
+      "files": [
+        "requests/compat.py",
+        "requests/utils.py",
+        "test_requests.py"
+      ],
+      "commit": "eec44dbbb1a0ce0427bf5151aa32ad5fcd1898e5",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.15
+    },
+    {
+      "id": "f1887f32b-0",
+      "kind": "decision",
+      "text": "test_can_send_bytes_bytearray_objects_with_files test now uses string input, not float.",
+      "files": [
+        "test_requests.py"
+      ],
+      "commit": "1887f32b17326fdaced7b57da349dc5ad7873435",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fc4bd6ea1-0",
+      "kind": "decision",
+      "text": "Importing from urllib3's top-level location causes the namespace to be urllib3.util.retry.Retry instead of requests.packages.urllib3.util.retry.Retry.",
+      "files": [
+        "requests/adapters.py"
+      ],
+      "commit": "c4bd6ea1501ee24a7e45d3e888f11d2a52e41469",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f36093e69-0",
+      "kind": "decision",
+      "text": "By adding _copy_cookie_jar we can reliably copy cookie jars so that we have an actual copy instead of the same instance on different prepared requests.",
+      "files": [
+        "requests/cookies.py",
+        "requests/models.py"
+      ],
+      "commit": "36093e69c70b9b24dd1e007befa35ad891313f51",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.94
+    },
+    {
+      "id": "fe3c7b43f-0",
+      "kind": "gotcha",
+      "text": "#2532: Documented strange behaviour in \"PreparedRequest.prepare_cookies\", caused by cookielib.",
+      "files": [
+        "requests/models.py"
+      ],
+      "commit": "e3c7b43fc98aab11bd228498a775a528a06429f0",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "pf123f89d",
+      "task": "Added unit tests for utils module",
+      "files": [
+        "requests/utils.py",
+        "tests/test_utils.py"
+      ],
+      "commit": "f123f89d32d3258429cdecf33fbd20e68a746042",
+      "required": [
+        "fd505b94f-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pd8b36c17",
+      "task": "Override __contains__ method of RequestsCookieJar to catch CookieConflictError. Refs #3028",
+      "files": [
+        "requests/cookies.py"
+      ],
+      "commit": "d8b36c17185b61471eafa4f1b574a6995e8f38a8",
+      "required": [
+        "f36093e69-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pe034dd11",
+      "task": "Allow for exceptions from tell()",
+      "files": [
+        "requests/utils.py",
+        "tests/test_utils.py"
+      ],
+      "commit": "e034dd1140cb6b6862d5ebc633ba94d332fc2bb2",
+      "required": [
+        "fd505b94f-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pb8a57705",
+      "task": "Update docstring and API doc to document ability to add per-file headers in multipart POST",
+      "files": [
+        "requests/api.py",
+        "requests/models.py"
+      ],
+      "commit": "b8a577050dc4345b87afc0cd67193537fac41350",
+      "required": [
+        "f36093e69-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p92fe51c0",
+      "task": "adding asserted_encoding check on None type encoding to match text() behavior (#3362)",
+      "files": [
+        "requests/utils.py",
+        "tests/test_requests.py"
+      ],
+      "commit": "92fe51c0afd9239388d2c8bb17dc46babdf7881f",
+      "required": [
+        "fd505b94f-0"
+      ],
+      "stale": [
+        "feec44dbb-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p2669ab79",
+      "task": "check and test for headers containing return characters or leading whitespace",
+      "files": [
+        "requests/exceptions.py",
+        "requests/models.py",
+        "requests/utils.py",
+        "tests/test_requests.py"
+      ],
+      "commit": "2669ab797ce769ecedf5493b04cb976f33e37210",
+      "required": [
+        "f36093e69-0",
+        "fd505b94f-0"
+      ],
+      "stale": [
+        "feec44dbb-0"
+      ],
+      "split": "holdout"
+    }
+  ]
+}

@@ -1,0 +1,629 @@
+{
+  "name": "caddy-e3",
+  "repo": {
+    "url": "https://github.com/caddyserver/caddy",
+    "license": "Apache-2.0",
+    "t0": "f11c780fdc2e4e5298a64ef88d110dd392060a36",
+    "t1": "cb436f0a0ed62e0a5d4af158486bba39fc575fe1",
+    "head": "cffa6a0e8ad0a3c63ff15be224107563b0a51659"
+  },
+  "facts": [
+    {
+      "id": "f431adc09-0",
+      "kind": "gotcha",
+      "text": "Allowable during feature freeze because this is a simple, non-invasive bug fix only.",
+      "files": [
+        "modules/caddyhttp/server.go"
+      ],
+      "commit": "431adc09805972196314b2b188904942cbe5dfee",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f7c48b5fd-0",
+      "kind": "decision",
+      "text": "caddyfile: Switch to slices.Equal for better performance (#6061)",
+      "files": [
+        "caddyconfig/caddyfile/formatter.go"
+      ],
+      "commit": "7c48b5fdbbd1e4a71023328fdb33c48f3346046d",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fd1325842-0",
+      "kind": "decision",
+      "text": "vars: Make nil values act as empty string instead of `\"<nil>\"` (#6174)",
+      "files": [
+        "modules/caddyhttp/vars.go"
+      ],
+      "commit": "d13258423dda01fa48943b203ba8074428c776e4",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f74949fb0-0",
+      "kind": "decision",
+      "text": "reverseproxy: Use xxhash instead of fnv32 for LB (#6203)",
+      "files": [
+        "modules/caddyhttp/reverseproxy/selectionpolicies.go",
+        "modules/caddyhttp/reverseproxy/selectionpolicies_test.go"
+      ],
+      "commit": "74949fb0914d7d496efadf51ef2dd81e64b1b7d0",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f45132c5b-0",
+      "kind": "decision",
+      "text": "* Replaced returnType conditions with a switch statement",
+      "files": [
+        "modules/caddyhttp/fileserver/browse.go",
+        "modules/caddyhttp/fileserver/caddyfile.go"
+      ],
+      "commit": "45132c5b24b411afbf90e8f897a1598d4eca790f",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "ff4840cfe-0",
+      "kind": "decision",
+      "text": "caddyconfig: Use empty struct instead of bool in map (close #6224) (#6227)",
+      "files": [
+        "caddyconfig/caddyfile/importgraph.go",
+        "caddyconfig/caddyfile/parse.go"
+      ],
+      "commit": "f4840cfeb85ac33d29a1ab88d474750041a98733",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f613d544a-0",
+      "kind": "gotcha",
+      "text": "Before this change, a read of size (let's say) < 10, into a buffer of size 10, will return EOF because we're using CopyN to limit to the size of the buffer.",
+      "files": [
+        "modules/caddyhttp/reverseproxy/reverseproxy.go"
+      ],
+      "commit": "613d544a4775b831595f223028fee76b980aa003",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.67
+    },
+    {
+      "id": "fd129ae6a-0",
+      "kind": "gotcha",
+      "text": "If one config uses InternalIssuer and the other uses a public CA, this behavior is problematic / unintuitive, because there is a big difference between private/public CAs.",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "modules/caddytls/tls.go"
+      ],
+      "commit": "d129ae6aec6af2182217ee8a235f4df8cd2bbfde",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.82
+    },
+    {
+      "id": "fdb3e19b7-0",
+      "kind": "gotcha",
+      "text": "App.createAutomationPolicies ensures that this catch-all policy has an ACME issuer, and then calls its Provision method again because it may have changed.",
+      "files": [
+        "modules/caddytls/automation.go"
+      ],
+      "commit": "db3e19b7b5322fba59068ce9f5c3532aa0c90740",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fdb3e19b7-1",
+      "kind": "decision",
+      "text": "This second time Provision is called, ManagesRaw is no longer populated, and the permission check fails because it appears as though the policy has no explicit managers.",
+      "files": [
+        "modules/caddytls/automation.go"
+      ],
+      "commit": "db3e19b7b5322fba59068ce9f5c3532aa0c90740",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fb2492f85-0",
+      "kind": "decision",
+      "text": "* Use error rather than log for health_port override",
+      "files": [
+        "modules/caddyhttp/reverseproxy/caddyfile.go",
+        "modules/caddyhttp/reverseproxy/healthchecks.go",
+        "modules/caddyhttp/reverseproxy/hosts.go"
+      ],
+      "commit": "b2492f8567069c223eab2156d18904c03f9dc4f3",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f2bb2ecc5-0",
+      "kind": "gotcha",
+      "text": "Most of the errors that can be seen here are write errors due to clients aborting the request from their side.",
+      "files": [
+        "modules/caddyhttp/reverseproxy/reverseproxy.go"
+      ],
+      "commit": "2bb2ecc5498c99d535f5b8f56fb8a4732e818ad3",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f792f1c7e-0",
+      "kind": "decision",
+      "text": "* Switch to `ph` for the CEL shortcut (match it in templates cause why not)",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "modules/caddyhttp/celmatcher.go",
+        "modules/caddyhttp/celmatcher_test.go",
+        "modules/caddyhttp/fileserver/matcher.go",
+        "modules/caddyhttp/matchers.go",
+        "modules/caddyhttp/templates/templates.go",
+        "modules/caddyhttp/templates/tplcontext.go",
+        "modules/caddyhttp/vars.go"
+      ],
+      "commit": "792f1c7ed759b97ee6dc80246cf2de054c09a12f",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.96
+    },
+    {
+      "id": "f88fd5f34-0",
+      "kind": "gotcha",
+      "text": "We have to add a couple lines of code because CertMagic can no longer consider IPs as not qualifying for public certs, since there are public CAs that issue IP certs.",
+      "files": [
+        "modules/caddyhttp/autohttps.go"
+      ],
+      "commit": "88fd5f3491ab888f69f0be02cea68a49164298eb",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f88fd5f34-1",
+      "kind": "decision",
+      "text": "We have to add a couple lines of code because CertMagic can no longer consider IPs as not qualifying for public certs, since there are public CAs that issue IP certs.",
+      "files": [
+        "modules/caddyhttp/autohttps.go"
+      ],
+      "commit": "88fd5f3491ab888f69f0be02cea68a49164298eb",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fb129ed6b-0",
+      "kind": "gotcha",
+      "text": "The wildcard hosts need to be collected first, then considered after, because there's no guarantee that all non-wildcards will appear after all wildcards when looping.",
+      "files": [
+        "caddyconfig/httpcaddyfile/httptype.go",
+        "caddyconfig/httpcaddyfile/tlsapp.go",
+        "caddytest/integration/caddyfile_adapt/auto_https_prefer_wildcard.caddyfiletest",
+        "caddytest/integration/caddyfile_adapt/auto_https_prefer_wildcard_multi.caddyfiletest"
+      ],
+      "commit": "b129ed6be88e40667a843bfab74abb3e5239bc8f",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.45
+    },
+    {
+      "id": "f238f1108-0",
+      "kind": "gotcha",
+      "text": "Now, as of #6669, it seems like the original issue can no longer be replicated, so we are reverting that patch, because it was incorrect anyway.",
+      "files": [
+        "modules/caddyhttp/reverseproxy/reverseproxy.go"
+      ],
+      "commit": "238f1108e6600049d9041abc88db24526ee4f882",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f238f1108-1",
+      "kind": "decision",
+      "text": "Now, as of #6669, it seems like the original issue can no longer be replicated, so we are reverting that patch, because it was incorrect anyway.",
+      "files": [
+        "modules/caddyhttp/reverseproxy/reverseproxy.go"
+      ],
+      "commit": "238f1108e6600049d9041abc88db24526ee4f882",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f8c3dd3de-0",
+      "kind": "decision",
+      "text": "* fix: replace type assertion with errors.As() for MaxBytesError",
+      "files": [
+        "modules/caddyhttp/requestbody/requestbody.go"
+      ],
+      "commit": "8c3dd3de709040d72bd98a756a044c453d7e871e",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f9c0c71e5-0",
+      "kind": "decision",
+      "text": "* use WebSocket instead of Websocket in the headers",
+      "files": [
+        "modules/caddyhttp/reverseproxy/reverseproxy.go",
+        "modules/caddyhttp/reverseproxy/streaming.go"
+      ],
+      "commit": "9c0c71e5774593e15a555d5c88de0af011e46394",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.9
+    },
+    {
+      "id": "fd7764dfd-0",
+      "kind": "decision",
+      "text": "We no longer support older Go versions, for security benefits.",
+      "files": [
+        "caddyconfig/httpcaddyfile/builtins.go",
+        "caddyconfig/httpcaddyfile/httptype.go",
+        "caddyconfig/httpcaddyfile/options.go",
+        "caddyconfig/httpcaddyfile/tlsapp.go",
+        "context.go",
+        "go.mod",
+        "go.sum",
+        "modules/caddyhttp/autohttps.go",
+        "modules/caddytls/acmeissuer.go",
+        "modules/caddytls/connpolicy.go",
+        "modules/caddytls/ech.go",
+        "modules/caddytls/ech_test.go"
+      ],
+      "commit": "d7764dfdbbee04d2f63aa1b05150737dfddc0bcf",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.69
+    },
+    {
+      "id": "f5a6b2f8d-0",
+      "kind": "gotcha",
+      "text": "We can't have the caddy package import the caddyevents package, because caddyevents imports caddy.",
+      "files": [
+        "caddy.go",
+        "context.go",
+        "internal/filesystems/map.go",
+        "modules/caddyevents/app.go",
+        "modules/caddyfs/filesystem.go",
+        "modules/caddyhttp/fileserver/matcher.go",
+        "modules/caddyhttp/fileserver/matcher_test.go",
+        "modules/caddyhttp/fileserver/staticfiles.go"
+      ],
+      "commit": "5a6b2f8d1d4633622b551357f3cc9d27ec669d02",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.98
+    },
+    {
+      "id": "ff11c780f-0",
+      "kind": "gotcha",
+      "text": "* check for nil server due to failure to start",
+      "files": [
+        "modules/caddyhttp/app.go"
+      ],
+      "commit": "f11c780fdc2e4e5298a64ef88d110dd392060a36",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "p72eaf258",
+      "task": "chore: Enable modernize linter (#7519)",
+      "files": [
+        "caddyconfig/caddyfile/dispenser.go",
+        "caddyconfig/caddyfile/parse.go",
+        "caddyconfig/httploader.go",
+        "listeners.go",
+        "modules/caddyhttp/headers/headers.go",
+        "modules/caddyhttp/reverseproxy/fastcgi/fastcgi.go",
+        "modules/caddyhttp/reverseproxy/selectionpolicies.go",
+        "modules/caddyhttp/reverseproxy/streaming.go",
+        "modules/logging/filewriter.go"
+      ],
+      "commit": "72eaf2583ae70c352b6496598b0c3dc19820ace3",
+      "required": [
+        "f74949fb0-0",
+        "f9c0c71e5-0",
+        "ff4840cfe-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pf283062d",
+      "task": "cmd: Custom binary names through `CustomBinaryName` and `CustomLongDescription` (#7513)",
+      "files": [
+        "caddy.go",
+        "cmd/cobra.go"
+      ],
+      "commit": "f283062d37c50627d53ca682ebae2ce219b35515",
+      "required": [
+        "f5a6b2f8d-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p11b56c6c",
+      "task": "reverseproxy: Fix `health_port` being ignored in health checks (#7533)",
+      "files": [
+        "caddytest/integration/reverseproxy_test.go",
+        "modules/caddyhttp/reverseproxy/healthchecks.go"
+      ],
+      "commit": "11b56c6cfc25f8c814fa66cb02060548d12c4040",
+      "required": [
+        "fb2492f85-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p2dd38524",
+      "task": "fix(caddyfile): Prevent parser to panic when no token were added by empty {block} (#7543)",
+      "files": [
+        "caddyconfig/caddyfile/parse.go",
+        "caddytest/integration/caddyfile_adapt/import_block_snippet_non_replaced_block_from_separate_file.caddyfiletest",
+        "caddytest/integration/testdata/issue_7518_unused_block_panic_snippets.conf"
+      ],
+      "commit": "2dd3852416e2b04bc90b98643673ec9e131c32e6",
+      "required": [
+        "ff4840cfe-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pd935a695",
+      "task": "autohttps: Ensure CertMagic config is recreated after autohttps runs (#7510)",
+      "files": [
+        "modules/caddyhttp/autohttps.go",
+        "modules/caddytls/automation.go"
+      ],
+      "commit": "d935a6956c16902623b8e8f6d1aafec4f6124f46",
+      "required": [
+        "f88fd5f34-0",
+        "f88fd5f34-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p7b34e310",
+      "task": "core: Check whether @id is unique (#7002)",
+      "files": [
+        "caddy.go",
+        "caddytest/caddytest_test.go"
+      ],
+      "commit": "7b34e3107eb6071fea3a3f94a5c913c32a55afd0",
+      "required": [
+        "f5a6b2f8d-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pdf65455b",
+      "task": "caddyhttp: Sync placeholder expansion in `vars` and `vars_regexp` (#7573)",
+      "files": [
+        "modules/caddyhttp/vars.go"
+      ],
+      "commit": "df65455b1f0d230a34d4bd7111213fe6917abe98",
+      "required": [
+        "fd1325842-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pe98ed623",
+      "task": "chore: Resolve recent CI failures (#7593)",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "modules/caddyhttp/reverseproxy/hosts.go",
+        "modules/caddyhttp/reverseproxy/selectionpolicies.go"
+      ],
+      "commit": "e98ed6232d65790d27bacd13fb49fa5474b9ec93",
+      "required": [
+        "f74949fb0-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p5de1565f",
+      "task": "vars: Don't expand placeholders in values (#7629)",
+      "files": [
+        "modules/caddyhttp/vars.go"
+      ],
+      "commit": "5de1565ff6182fbb191b5a2d3949b977ed536d57",
+      "required": [
+        "fd1325842-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p355c1782",
+      "task": "chore: Use atomics where appropriate (#7648)",
+      "files": [
+        "caddy.go",
+        "listen.go",
+        "listen_unix.go",
+        "listeners.go",
+        "modules/caddyhttp/app.go",
+        "modules/caddyhttp/replacer.go",
+        "modules/caddyhttp/server.go",
+        "usagepool.go"
+      ],
+      "commit": "355c1782137f678897495503dcfe0b9e77997737",
+      "required": [
+        "f5a6b2f8d-0",
+        "ff11c780f-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p5e76b5ee",
+      "task": "tls: add alpn to managed HTTPS records (#7653)",
+      "files": [
+        "modules/caddyhttp/app.go",
+        "modules/caddyhttp/autohttps.go",
+        "modules/caddyhttp/autohttps_test.go",
+        "modules/caddyhttp/server.go",
+        "modules/caddytls/connpolicy.go",
+        "modules/caddytls/ech.go",
+        "modules/caddytls/ech_dns_test.go",
+        "modules/caddytls/tls.go"
+      ],
+      "commit": "5e76b5ee43e8ec9e78d07665cdd75515b4c07acd",
+      "required": [
+        "ff11c780f-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p761347aa",
+      "task": "templates: Explicitly warn about misconfigurations",
+      "files": [
+        "modules/caddyhttp/templates/templates.go"
+      ],
+      "commit": "761347aa635e14bf7a937e88d45a40e671d325c5",
+      "required": [
+        "f792f1c7e-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pe2eee6a7",
+      "task": "templates: Patch for GHSA-vcc4-2c75-vc9v (#7785)",
+      "files": [
+        "modules/caddyhttp/templates/tplcontext.go",
+        "modules/caddyhttp/templates/tplcontext_test.go"
+      ],
+      "commit": "e2eee6a7fce366321294c9c2a79f3146891dcbdf",
+      "required": [
+        "f792f1c7e-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pd2e0ad1e",
+      "task": "reverseproxy: log status 499 instead of 0 when client disconnects (#7827)",
+      "files": [
+        "modules/caddyhttp/reverseproxy/client_disconnect_test.go",
+        "modules/caddyhttp/reverseproxy/reverseproxy.go"
+      ],
+      "commit": "d2e0ad1e92329d841a3a12e9ec7935afb30ce246",
+      "required": [
+        "f9c0c71e5-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p945d1997",
+      "task": "reverseproxy: fix misleading handle_response error for extra matcher args (#7869)",
+      "files": [
+        "caddytest/integration/caddyfile_adapt/reverse_proxy_handle_response_too_many_args.caddyfiletest",
+        "modules/caddyhttp/reverseproxy/caddyfile.go"
+      ],
+      "commit": "945d199724f17f313c7fbc90eceba70fe37f47e6",
+      "required": [
+        "fb2492f85-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p81a0b6d8",
+      "task": "requestbody: replace only known placeholders in the set body (#8008)",
+      "files": [
+        "modules/caddyhttp/requestbody/requestbody.go",
+        "modules/caddyhttp/requestbody/requestbody_test.go"
+      ],
+      "commit": "81a0b6d838721c31283977c8f816a7fd1306051d",
+      "required": [
+        "f8c3dd3de-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p90ccea76",
+      "task": "build: bump all dependencies - (Go 1.26 floor) (#8056)",
+      "files": [
+        "cmd/main.go",
+        "cmd/storagefuncs.go",
+        "go.mod",
+        "go.sum",
+        "modules/caddyhttp/app.go",
+        "modules/caddyhttp/errors.go",
+        "modules/caddyhttp/fileserver/staticfiles.go",
+        "modules/caddyhttp/logging.go",
+        "modules/caddyhttp/metrics.go",
+        "modules/caddyhttp/requestbody/requestbody.go",
+        "modules/caddyhttp/reverseproxy/httptransport.go",
+        "modules/caddyhttp/templates/templates.go"
+      ],
+      "commit": "90ccea768fc192ba0feff7a8df4344916eb7331f",
+      "required": [
+        "f792f1c7e-0",
+        "f8c3dd3de-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p30d3bd2a",
+      "task": "caddyhttp: only bound HTTP/2 body reads in flight with the idle timeout (#8125)",
+      "files": [
+        "modules/caddyhttp/idletimeout.go",
+        "modules/caddyhttp/idletimeout_test.go",
+        "modules/caddyhttp/server.go",
+        "modules/caddyhttp/timeouts/timeouts.go"
+      ],
+      "commit": "30d3bd2a8959d4d00ca72446f23a59a09f02a83b",
+      "required": [],
+      "stale": [
+        "f431adc09-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pc4d8caa2",
+      "task": "caddyhttp: reject invalid and dots-only hosts on every protocol (#8328)",
+      "files": [
+        "modules/caddyhttp/server.go",
+        "modules/caddyhttp/server_test.go"
+      ],
+      "commit": "c4d8caa2e7dade974f3e8c0e7a351198e0b5a306",
+      "required": [],
+      "stale": [
+        "f431adc09-0"
+      ],
+      "split": "tune"
+    }
+  ]
+}

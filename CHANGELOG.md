@@ -7,6 +7,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 ### Added
 - `recalla forget <id>`: archive a wrong memory from the CLI (undo with `recalla confirm`). Closes #27.
 
+### Added
+- `bench/` (`membench`): a neutral benchmark for coding-agent memory tools. Ground truth is mined from the git history of six public repositories (18 suites, 240 probes), scored on right-fact recall at a token budget, noise, staleness against code changes, provenance, extraction and token savings, with a generic MCP adapter for any memory server, a written report (totals, tune vs holdout, where each tool loses) and raw per-probe JSON. `make bench`, `make bench-check`. `membench real` runs the same benchmark on your own repository's history, locally. See `bench/README.md` and `bench/SCORING.md`.
+
 ### Changed
 - Extractor precision: a decision needs at least 5 words and an object ("Decided upfront, not bolted on later." is dropped) (closes #15); test-run procedures collapse to the base command, so `cargo test --test x name` and `go test ./pkg/...` become `cargo test` / `go test` (closes #16); a gotcha's explanation must share a word with the failing command or output (closes #17).
 - `recalla pack --query` (and the MCP `recall` query) now lifts memories sharing any word with the query, BM25-ranked, instead of requiring every word, so a task description actually finds related memories. `recalla search` still requires all words.

@@ -1,0 +1,6 @@
+{"name":"fake-e1","repo":{"url":"https://example.invalid/fake","license":"MIT","t0":"","t1":"","head":""},
+"facts":[
+{"id":"f1","kind":"gotcha","text":"The parser drops the trailing newline when the buffer is empty","files":["src/parse.rs"],"commit":"aaaaaaa1","split":"holdout","state":"live","survival":1.0},
+{"id":"f2","kind":"decision","text":"Walker follows symlinks only when the follow flag is set","files":["src/walk.rs"],"commit":"bbbbbbb2","split":"holdout","state":"live","survival":1.0}],
+"probes":[
+{"id":"p1","task":"Fix parser trailing newline handling","files":["src/parse.rs"],"commit":"ccccccc3","required":["f1"],"stale":[],"split":"holdout"}]}
