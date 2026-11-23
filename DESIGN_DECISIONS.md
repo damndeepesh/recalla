@@ -187,3 +187,9 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Decision: a metric a tool has no interface for is n/a and excluded from its total; extraction is measured only for tools that ingest session transcripts; provenance only where a tool keeps a source (transcript sessions carry the commit as their id). Totals are an equal-weight mean of the pillars that apply, with `core` (usefulness + token savings) as the comparable column. The miner drops sentences that depend on their commit ("Because of this", "This change", conventional-commit subjects, bullets) after a hand spot-check found about a fifth of live facts weak (`bench/SPOTCHECK.md`). `bench/` depends on `tempfile` (private, auto-cleaned scratch directories; replaces hand-built `/tmp` paths flagged in security review).
 - Why: scoring a tool zero for a missing feature punishes honest interfaces and misleads; an echo is not extraction.
 - Rejected: scoring missing pillars as 0 (rewards tools that pretend); a hand-rolled temp directory (path traversal and clobbering risk).
+
+## D-027 SessionStart catches up recent transcripts (2026-11-24)
+- Context: a live `claude -p` run stored no assistant text. The Stop hook ran before the last records of the turn (the final reply) were written, and a finished session never fires it again.
+- Decision: `hook session-start` first re-ingests the project's 3 newest transcripts modified in the last 24 h (not the starting session; dir name = cwd with every non-alphanumeric char as `-`), extracts if anything changed, then builds the pack. Failures are logged and never cost the session its pack.
+- Why: ingest is incremental, so unchanged files are a cheap skip; the pack also gains memories from the previous session.
+- Rejected: sleeping in the Stop hook until the file settles (adds latency to every turn end, still racy); relying on `recalla backfill`.

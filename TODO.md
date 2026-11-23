@@ -19,3 +19,15 @@
 
 - [x] `recalla ui`: local dashboard with connector status (branch feature/ui)
 - [ ] PR for feature/ui, then release v0.2.0 (version bump, CHANGELOG, publish, tag) on the user's go
+
+## v0.4.0 (plan: .agent/plans/v0.4.0.md)
+
+- [x] 1 fix/capture-and-e2e: tail catch-up at SessionStart, e2e template fix, `make live`
+- [ ] 2 feature/doctor
+- [ ] 3 feature/extract-imperative
+- [ ] 4 feature/pack-explain
+- [ ] 5 feature/supersede-contradiction
+- [ ] 6 feature/promote-global
+- [ ] 7 feature/triage-ui
+- [ ] 8 feature/pretooluse-recall
+- [ ] 9 feature/ttl-decay
