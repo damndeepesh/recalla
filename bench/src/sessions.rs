@@ -61,7 +61,7 @@ fn session(f: &Fact, cwd: &str, n: usize) -> String {
     let file = f.files.first().cloned().unwrap_or_default();
     let path = format!("{cwd}/{file}");
     let user = json!({"role": "user", "content": format!("Let's work on {file}.")});
-    let said = json!({"role": "assistant", "content": [{"type": "text", "text": f.text}]});
+    let reply = json!({"role": "assistant", "content": [{"type": "text", "text": f.text}]});
     let edit = json!({"role": "assistant", "content": [{
         "type": "tool_use", "id": format!("t{n}"), "name": "Edit",
         "input": {"file_path": path, "old_string": "a", "new_string": "b"},
@@ -73,7 +73,7 @@ fn session(f: &Fact, cwd: &str, n: usize) -> String {
         rec("user", &sid, 0, cwd, &user),
         rec("assistant", &sid, 1, cwd, &edit),
         rec("user", &sid, 2, cwd, &done),
-        rec("assistant", &sid, 3, cwd, &said),
+        rec("assistant", &sid, 3, cwd, &reply),
     ]
     .join("\n")
         + "\n"

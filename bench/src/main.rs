@@ -1,9 +1,12 @@
 //! `membench`: a neutral benchmark for coding-agent memory tools.
+#![cfg_attr(test, allow(clippy::unwrap_used, clippy::cast_precision_loss))]
 
 mod adapter;
+mod fake;
 mod git;
 mod matching;
 mod mcp;
+mod mcp_adapter;
 mod mine;
 mod recalla;
 mod run;
@@ -48,7 +51,23 @@ enum Command {
         /// Raw per-probe results as JSON.
         #[arg(long)]
         out: Option<PathBuf>,
+        /// Command line of an MCP memory server, used by the `mcp` adapter.
+        #[arg(long)]
+        mcp_command: Option<String>,
+        /// Name the `mcp` adapter reports under.
+        #[arg(long, default_value = "mcp")]
+        mcp_name: String,
+        #[arg(long, default_value = "store")]
+        mcp_store_tool: String,
+        #[arg(long, default_value = "search")]
+        mcp_recall_tool: String,
+        #[arg(long, default_value = "text")]
+        mcp_text_arg: String,
+        #[arg(long, default_value = "query")]
+        mcp_query_arg: String,
     },
+    /// A tiny in-memory MCP memory server, for testing the `mcp` adapter.
+    FakeMcp,
     /// Write a suite's facts as Claude Code session logs (for transcript-ingesting tools).
     Sessions {
         #[arg(long)]
@@ -109,7 +128,21 @@ fn run(cli: Cli) -> Result<(), String> {
             repos,
             split,
             out,
+            mcp_command,
+            mcp_name,
+            mcp_store_tool,
+            mcp_recall_tool,
+            mcp_text_arg,
+            mcp_query_arg,
         } => {
+            let mcp = mcp_command.map(|c| mcp_adapter::Spec {
+                name: mcp_name,
+                command: c.split_whitespace().map(str::to_owned).collect(),
+                store_tool: mcp_store_tool,
+                recall_tool: mcp_recall_tool,
+                text_arg: mcp_text_arg,
+                query_arg: mcp_query_arg,
+            });
             let split = match split.as_deref() {
                 None => None,
                 Some("holdout") => Some(suite::Split::Holdout),
@@ -126,7 +159,7 @@ fn run(cli: Cli) -> Result<(), String> {
                     serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
                 for name in &adapters {
                     let dir = run::scratch(&base, &s.name, name)?;
-                    let mut a = run::make(name, recalla.as_deref(), &dir)?;
+                    let mut a = run::make(name, recalla.as_deref(), mcp.as_ref(), &dir)?;
                     results.push(run::one(&s, a.as_mut(), split, &dir, repos.as_deref())?);
                 }
             }
@@ -137,6 +170,7 @@ fn run(cli: Cli) -> Result<(), String> {
             }
             Ok(())
         }
+        Command::FakeMcp => fake::serve(),
         Command::Sessions { suite, out } => {
             let text = std::fs::read_to_string(&suite).map_err(|e| e.to_string())?;
             let s: suite::Suite = serde_json::from_str(&text).map_err(|e| e.to_string())?;
@@ -170,7 +204,7 @@ fn run(cli: Cli) -> Result<(), String> {
             let json = serde_json::to_string_pretty(&suite).map_err(|e| e.to_string())?;
             match out {
                 Some(p) => {
-                    std::fs::write(&p, json + "\n").map_err(|e| format!("{}: {e}", p.display()))?
+                    std::fs::write(&p, json + "\n").map_err(|e| format!("{}: {e}", p.display()))?;
                 }
                 None => println!("{json}"),
             }

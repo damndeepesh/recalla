@@ -10,8 +10,6 @@ use crate::tokens;
 /// Everything an adapter may need about the run.
 pub struct Ctx<'a> {
     pub suite: &'a Suite,
-    /// Full-history clone (no checkout).
-    pub repo: &'a Path,
     /// Detached worktree; the harness moves it from `t0` to `t1`.
     pub worktree: &'a Path,
     /// Private scratch directory for this adapter and suite.
@@ -52,11 +50,6 @@ pub trait Adapter {
 
     /// Writes the suite's facts through the tool's write interface.
     fn feed_facts(&mut self, ctx: &Ctx<'_>) -> Result<Support, String>;
-
-    /// Hands the tool the historical sessions to ingest and extract from.
-    fn feed_sessions(&mut self, _ctx: &Ctx<'_>, _sessions: &Path) -> Result<Support, String> {
-        Ok(Support::Unsupported)
-    }
 
     /// The working tree has moved from `t0` to `t1`; tools that track code may re-check.
     fn advance(&mut self, _ctx: &Ctx<'_>) -> Result<(), String> {
@@ -236,7 +229,6 @@ mod tests {
         let s = suite(texts);
         let ctx = Ctx {
             suite: &s,
-            repo: Path::new("."),
             worktree: Path::new("."),
             scratch: Path::new("."),
         };

@@ -1,5 +1,6 @@
 //! Runs adapters over suites and reports.
 
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
@@ -23,6 +24,7 @@ pub struct Result {
 pub fn make(
     name: &str,
     recalla: Option<&Path>,
+    mcp: Option<&crate::mcp_adapter::Spec>,
     scratch: &Path,
 ) -> std::result::Result<Box<dyn Adapter>, String> {
     Ok(match name {
@@ -35,6 +37,10 @@ pub fn make(
             scratch,
             name == "recalla-backfill",
         )?),
+        "mcp" => Box::new(crate::mcp_adapter::Mcp::new(
+            mcp.ok_or("--mcp-command is required for the mcp adapter")?
+                .clone(),
+        )),
         other => return Err(format!("unknown adapter {other}")),
     })
 }
@@ -57,7 +63,6 @@ pub fn one(
     }
     let ctx = Ctx {
         suite,
-        repo: repo.as_deref().unwrap_or(dir),
         worktree: &wt,
         scratch: dir,
     };
@@ -80,7 +85,7 @@ pub fn one(
                 let r = adapter.recall(&p.query(with_files), budget)?;
                 // Provenance is measured once per probe, at the middle budget with hints.
                 let measure = budget == BUDGETS[1] && with_files;
-                let mut score = if measure && adapter.has_provenance() {
+                let score = if measure && adapter.has_provenance() {
                     let mut ask = |i: &crate::adapter::Item| adapter.source(i);
                     score::score_probe(suite, p, &r, budget, with_files, Some(&mut ask))
                 } else {
@@ -142,14 +147,15 @@ pub fn table(results: &[Result]) -> String {
             #[allow(clippy::cast_precision_loss)]
             let tok =
                 mean(s.iter().map(|p| p.tokens as f64)).map_or("n/a".into(), |v| format!("{v:.0}"));
-            out.push_str(&format!(
-                "| {a} | {b} | {} | {} | {} | {} | {tok} | {} |\n",
+            let _ = writeln!(
+                out,
+                "| {a} | {b} | {} | {} | {} | {} | {tok} | {} |",
                 f(|p| p.recall),
                 f(|p| p.noise),
                 f(|p| p.staleness),
                 f(|p| p.provenance),
                 f(|p| p.efficiency),
-            ));
+            );
         }
     }
     out.push_str(
@@ -173,13 +179,14 @@ pub fn table(results: &[Result]) -> String {
         let m = |g: fn(&score::Extraction) -> f64| {
             ex.iter().map(|e| g(e)).sum::<f64>() / ex.len() as f64
         };
-        out.push_str(&format!(
-            "| {} | {:.2} | {:.2} | {} |\n",
+        let _ = writeln!(
+            out,
+            "| {} | {:.2} | {:.2} | {} |",
             r.adapter,
             m(|e| e.recall),
             m(|e| e.unlabeled_share),
             ex.iter().map(|e| e.memories).sum::<usize>()
-        ));
+        );
     }
     out
 }

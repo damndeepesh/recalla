@@ -184,7 +184,7 @@ pub fn sentences(subject: &str, body: &str) -> Vec<String> {
             let boundary = matches!(c, '.' | '!' | '?')
                 && bytes.get(i + 1).is_none_or(|&(_, n)| n.is_whitespace());
             if boundary {
-                out.push(p[start..pos + 1].trim().to_owned());
+                out.push(p[start..=pos].trim().to_owned());
                 start = pos + 1;
             }
         }
@@ -350,8 +350,13 @@ pub fn mine(repo: &Path, p: &Params) -> Result<Suite, String> {
         // Spread evenly over a hash order so the cap is neither the first
         // nor the last N commits, and stays reproducible.
         probes.sort_by(|a, b| a.commit.cmp(&b.commit));
+        #[allow(clippy::cast_precision_loss)]
         let step = probes.len() as f64 / p.max_probes as f64;
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        #[allow(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            clippy::cast_precision_loss
+        )]
         let keep: Vec<Probe> = (0..p.max_probes)
             .map(|i| probes[(i as f64 * step) as usize].clone())
             .collect();

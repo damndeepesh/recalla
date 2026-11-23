@@ -42,13 +42,16 @@ pub fn dump_tokens(suite: &Suite) -> usize {
 
 /// Scores one recall against a probe. `source` is asked for provenance only
 /// when `measure_provenance` is set (it can be slow).
+/// Asks the tool where an item came from.
+pub type Source<'a> = &'a mut dyn FnMut(&Item) -> Option<String>;
+
 pub fn score_probe(
     suite: &Suite,
     probe: &Probe,
     r: &Recall,
     budget: usize,
     with_files: bool,
-    source: Option<&mut dyn FnMut(&Item) -> Option<String>>,
+    source: Option<Source<'_>>,
 ) -> ProbeScore {
     let by_id: HashMap<&str, &Fact> = suite.facts.iter().map(|f| (f.id.as_str(), f)).collect();
     let item_words: Vec<HashSet<String>> = r.items.iter().map(|i| words(&i.text)).collect();
