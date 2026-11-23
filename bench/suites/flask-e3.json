@@ -1,0 +1,468 @@
+{
+  "name": "flask-e3",
+  "repo": {
+    "url": "https://github.com/pallets/flask",
+    "license": "BSD-3-Clause",
+    "t0": "f8e63d39913f9a7bb887066025724569aa3423a6",
+    "t1": "9d36623db1e9535eae7243a807079a54897efcc9",
+    "head": "4104f29956b16f3e351462651ec3c6cc5a0dd069"
+  },
+  "facts": [
+    {
+      "id": "feaedb932-0",
+      "kind": "decision",
+      "text": "Made the example use a keyword, rather than a positional argument, as the intent here is to show how to insert a tag with higher precedence.",
+      "files": [
+        "flask/json/tag.py"
+      ],
+      "commit": "eaedb9320c7aad581daa05f1510b64393c082dbb",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fb51ab3ff-0",
+      "kind": "decision",
+      "text": "encode filenames as ascii instead of latin-1 latin-1 is allowed by pep3333, but that breaks gunicorn",
+      "files": [
+        "flask/helpers.py",
+        "tests/test_helpers.py"
+      ],
+      "commit": "b51ab3ff2c4af7e592e649e0e97657154b79c11f",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.17
+    },
+    {
+      "id": "fed9775fb-0",
+      "kind": "decision",
+      "text": "If create_url_adapter raises (which it can if werkzeug cannot bind environment, for example on non-ASCII Host header), we handle it as other routing exceptions rather than raising through.",
+      "files": [
+        "flask/ctx.py",
+        "tests/test_reqctx.py"
+      ],
+      "commit": "ed9775fb77bc2291473c176937326aadd435f73c",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.67
+    },
+    {
+      "id": "f47bdf9f2-0",
+      "kind": "decision",
+      "text": "_compat.py: Use feature detection instead of version detection",
+      "files": [
+        "flask/_compat.py"
+      ],
+      "commit": "47bdf9f26fdd499c00a25efa4c0229c544cf682d",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fe1cc16f8-0",
+      "kind": "decision",
+      "text": "By explicitly comparing port value with None, instead of using its bool() value.",
+      "files": [
+        "flask/app.py",
+        "tests/test_basic.py"
+      ],
+      "commit": "e1cc16f8bea15f11f63eacaa6089cd6e6b8b1965",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f33379155-0",
+      "kind": "decision",
+      "text": "Now that we have a Black pre-commit hook (#3138), ensure pre-commit gets installed on ``pip install -e .[dev]`` and document use of Black (rather than \"try to follow pep8\") in CONTRIBUTING.",
+      "files": [
+        "setup.py"
+      ],
+      "commit": "33379155f613dbdb4fe6d0918a5038a989fc18bf",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f7bf83669-0",
+      "kind": "decision",
+      "text": "This supports an increasingly common usecase whereby JSON is the primary response (rather than a templated string).",
+      "files": [
+        "flask/app.py",
+        "tests/test_basic.py"
+      ],
+      "commit": "7bf8366970ec49b5396a1f86f00fdd1c5fef3fed",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.69
+    },
+    {
+      "id": "fc367a86c-0",
+      "kind": "decision",
+      "text": "Test test_send_from_directory_bad_request no longer fails in Python 3.8.",
+      "files": [
+        "tests/test_helpers.py"
+      ],
+      "commit": "c367a86cc5be70da4928b276d0218f98df6e854d",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fc43edfc7-0",
+      "kind": "decision",
+      "text": "- remove encoding detection backport, json.loads supports it directly - use str.translate instead of multiple str.replace",
+      "files": [
+        "src/flask/json/__init__.py",
+        "tests/test_helpers.py"
+      ],
+      "commit": "c43edfc7c08b8dbe883761bec14fa75ee7db1bf3",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.27
+    },
+    {
+      "id": "f7ba35c4d-0",
+      "kind": "decision",
+      "text": "* No longer causes AttributeError: 'PosixPath' object has no attribute 'rstrip'.",
+      "files": [
+        "src/flask/helpers.py",
+        "tests/test_basic.py"
+      ],
+      "commit": "7ba35c4d4fe99418cee9c87900bd0d3b38cf5bd0",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f25357078-0",
+      "kind": "decision",
+      "text": "Also show the message when loading fails while getting a command, instead of only \"command not found\".",
+      "files": [
+        "src/flask/cli.py",
+        "tests/conftest.py",
+        "tests/test_cli.py"
+      ],
+      "commit": "253570784cdcc85d82142128ce33e3b9d8f8db14",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f8efea0cc-0",
+      "kind": "decision",
+      "text": "Now use a weakref for the back reference to avoid this.",
+      "files": [
+        "src/flask/app.py",
+        "tests/test_basic.py"
+      ],
+      "commit": "8efea0ccbbf0985e0c3c001e5bd90b4912a18f54",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.91
+    },
+    {
+      "id": "fdc11cdb4-0",
+      "kind": "decision",
+      "text": "This tells the browser to use conditional requests rather than a 12 hour cache.",
+      "files": [
+        "src/flask/app.py",
+        "src/flask/helpers.py",
+        "tests/test_blueprints.py",
+        "tests/test_helpers.py",
+        "tests/test_regression.py"
+      ],
+      "commit": "dc11cdb4a4627b9f8c79e47e39aa7e1357151896",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.82
+    },
+    {
+      "id": "f705e5268-0",
+      "kind": "decision",
+      "text": "This takes a popular API whereby instead of passing the HTTP method as an argument to route it is instead used as the method name i.e.",
+      "files": [
+        "src/flask/scaffold.py",
+        "tests/test_basic.py"
+      ],
+      "commit": "705e52684a9063889c16a289695a2e4429df6887",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.83
+    },
+    {
+      "id": "fc6c6408c-0",
+      "kind": "gotcha",
+      "text": "Note the docs build requires the latest (dev) Werkzeug due to this change (to import ContextVar from werkzeug.local).",
+      "files": [
+        "src/flask/helpers.py",
+        "tests/test_async.py"
+      ],
+      "commit": "c6c6408c3fb96245a2e2afc4b754cdf065fdad47",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.55
+    },
+    {
+      "id": "fc6c6408c-1",
+      "kind": "decision",
+      "text": "Werkzeug offers a ContextVar replacement for Python < 3.7, however it doesn't work across asyncio tasks, hence it makes sense to error out rather than find there are odd bugs.",
+      "files": [
+        "src/flask/helpers.py",
+        "tests/test_async.py"
+      ],
+      "commit": "c6c6408c3fb96245a2e2afc4b754cdf065fdad47",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.55
+    },
+    {
+      "id": "f00f5a3e5-0",
+      "kind": "decision",
+      "text": "This also allows blueprints to have a custom ensure_sync, although this is a by product rather than an expected use case.",
+      "files": [
+        "src/flask/app.py",
+        "src/flask/blueprints.py",
+        "src/flask/helpers.py",
+        "src/flask/scaffold.py",
+        "tests/test_async.py"
+      ],
+      "commit": "00f5a3e55ca3b6dd4e98044ab76f055dc74997ac",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.76
+    },
+    {
+      "id": "fcb13128c-0",
+      "kind": "decision",
+      "text": "However as the current implementation uses ContextVars which do persist the context copying is no longer required.",
+      "files": [
+        "src/flask/helpers.py"
+      ],
+      "commit": "cb13128cf03b2f1b3c5b48eab518e57e7b5f6516",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f7f87f3dd-0",
+      "kind": "decision",
+      "text": "This was done to pay any setup costs during registration rather than runtime, however this only saved a iscoroutne check.",
+      "files": [
+        "src/flask/app.py",
+        "src/flask/blueprints.py",
+        "src/flask/helpers.py",
+        "src/flask/scaffold.py",
+        "tests/test_async.py"
+      ],
+      "commit": "7f87f3dd93baf45d5f69f02a2dcf4493dfc4a1be",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.63
+    }
+  ],
+  "probes": [
+    {
+      "id": "pa841cfab",
+      "task": "Only use a custom JSONDecoder if needed",
+      "files": [
+        "src/flask/json/__init__.py"
+      ],
+      "commit": "a841cfabb58d3c1ac1d11b09353f458e759a63c2",
+      "required": [],
+      "stale": [
+        "fc43edfc7-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p751d85f3",
+      "task": "cli: use importlib.metadata instead of pkg_resources",
+      "files": [
+        "setup.py",
+        "src/flask/cli.py"
+      ],
+      "commit": "751d85f3de3f726446bb12e4ddfae885a6645ba1",
+      "required": [
+        "f25357078-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p426a1e25",
+      "task": "fix pytest 7 warnings",
+      "files": [
+        "tests/test_basic.py",
+        "tests/test_reqctx.py"
+      ],
+      "commit": "426a1e25b77e760b4f54bf94aee3e3617850569f",
+      "required": [
+        "f705e5268-0",
+        "f8efea0cc-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pbeae1249",
+      "task": "add `exclude-patterns` option to `flask run`",
+      "files": [
+        "src/flask/cli.py"
+      ],
+      "commit": "beae1249f7e580779ae18d2d831f7ec51e5aff98",
+      "required": [
+        "f25357078-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p6f79cb8a",
+      "task": "Fix typing on `app.session_interface`",
+      "files": [
+        "src/flask/app.py"
+      ],
+      "commit": "6f79cb8a23467aa01f94f6ad53790f468ba77c76",
+      "required": [
+        "f8efea0cc-0",
+        "fdc11cdb4-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "paf34b8c9",
+      "task": "Add better types for app decorators",
+      "files": [
+        "src/flask/scaffold.py"
+      ],
+      "commit": "af34b8c9e7adbf0b060738fee12f04c1e46a98fd",
+      "required": [
+        "f705e5268-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p88863288",
+      "task": "relax errorhandler function arg type",
+      "files": [
+        "src/flask/app.py",
+        "src/flask/blueprints.py",
+        "src/flask/scaffold.py",
+        "src/flask/typing.py"
+      ],
+      "commit": "88863288225d5ee13a79c463f2a39391b6a52c61",
+      "required": [
+        "f705e5268-0",
+        "f8efea0cc-0",
+        "fdc11cdb4-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p190dd4df",
+      "task": "don't use AnyStr for ResponseValue type",
+      "files": [
+        "src/flask/app.py",
+        "src/flask/helpers.py",
+        "src/flask/typing.py"
+      ],
+      "commit": "190dd4df86874495f56bb088fbd0cb1d9f0e77a0",
+      "required": [
+        "fdc11cdb4-0",
+        "f8efea0cc-0"
+      ],
+      "stale": [
+        "fcb13128c-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "peede1a36",
+      "task": "fix annotation for json.loads",
+      "files": [
+        "src/flask/json/__init__.py"
+      ],
+      "commit": "eede1a3685e21deaeb6686e9de9b76a73b6a510c",
+      "required": [],
+      "stale": [
+        "fc43edfc7-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pa74e2664",
+      "task": "skip coverage for TYPE_CHECKING",
+      "files": [
+        "src/flask/app.py",
+        "src/flask/blueprints.py",
+        "src/flask/ctx.py",
+        "src/flask/globals.py",
+        "src/flask/helpers.py",
+        "src/flask/json/__init__.py",
+        "src/flask/logging.py",
+        "src/flask/scaffold.py",
+        "src/flask/sessions.py",
+        "src/flask/templating.py",
+        "src/flask/testing.py",
+        "src/flask/typing.py"
+      ],
+      "commit": "a74e266474f0981e9fc0d54d5dc430386823e4d7",
+      "required": [
+        "fdc11cdb4-0",
+        "f705e5268-0",
+        "f8efea0cc-0"
+      ],
+      "stale": [
+        "fc43edfc7-0",
+        "fcb13128c-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pfdab801f",
+      "task": "add redirect method to app",
+      "files": [
+        "src/flask/__init__.py",
+        "src/flask/app.py",
+        "src/flask/helpers.py",
+        "tests/test_helpers.py"
+      ],
+      "commit": "fdab801fbbd9de5adbdb3320ca4a1cb116c892f5",
+      "required": [
+        "fdc11cdb4-0",
+        "f8efea0cc-0"
+      ],
+      "stale": [
+        "fb51ab3ff-0",
+        "fc367a86c-0",
+        "fc43edfc7-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "peb5dd9f5",
+      "task": "add aborter object to app",
+      "files": [
+        "src/flask/__init__.py",
+        "src/flask/app.py",
+        "src/flask/helpers.py",
+        "tests/test_helpers.py"
+      ],
+      "commit": "eb5dd9f5ef255c578cbbe13c1cb4dd11389d5519",
+      "required": [
+        "fdc11cdb4-0",
+        "f8efea0cc-0"
+      ],
+      "stale": [
+        "fb51ab3ff-0",
+        "fc367a86c-0",
+        "fc43edfc7-0"
+      ],
+      "split": "holdout"
+    }
+  ]
+}

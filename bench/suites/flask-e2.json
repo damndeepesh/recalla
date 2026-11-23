@@ -1,0 +1,410 @@
+{
+  "name": "flask-e2",
+  "repo": {
+    "url": "https://github.com/pallets/flask",
+    "license": "BSD-3-Clause",
+    "t0": "7c510199850957161240f081359e2246d8982be1",
+    "t1": "f13870731c100d3ed7daa5d96a75b697973def77",
+    "head": "12a4d1554689c0a0ac13988b0daf10c23c37c81d"
+  },
+  "facts": [
+    {
+      "id": "f93fe1d54-0",
+      "kind": "decision",
+      "text": "- a raises statement with multiple values is no longer allowed in python 3",
+      "files": [
+        "flask/helpers.py"
+      ],
+      "commit": "93fe1d54bd44b190aa0f58990bc397bf22324452",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f5da31f8a-0",
+      "kind": "gotcha",
+      "text": "- caused by changes in the execution model of python 3 where the alias of an except clause is cleared on exit of the except",
+      "files": [
+        "flask/app.py",
+        "flask/testsuite/basic.py"
+      ],
+      "commit": "5da31f8af36012a4f76c3bd0d536ae107e0519b5",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.27
+    },
+    {
+      "id": "f4dc2ef19-0",
+      "kind": "decision",
+      "text": "Use pytest.raises() instead of try/catch with asser 0",
+      "files": [
+        "tests/test_basic.py",
+        "tests/test_blueprints.py",
+        "tests/test_config.py",
+        "tests/test_reqctx.py",
+        "tests/test_testing.py"
+      ],
+      "commit": "4dc2ef19eaa4ced5cb2f4a2a1673e65459c355d2",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f8482ce6b-0",
+      "kind": "decision",
+      "text": "Exceptions during teardown handling will no longer leave application contexts lingering around.",
+      "files": [
+        "flask/ctx.py",
+        "tests/test_appctx.py"
+      ],
+      "commit": "8482ce6b8ca9f1110b86bff4c3f998655fdecf8a",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.94
+    },
+    {
+      "id": "f70de011d-0",
+      "kind": "decision",
+      "text": "> Starting today, Read the Docs will start hosting projects from subdomains on the domain readthedocs.io, instead of on readthedocs.org.",
+      "files": [
+        "docs/conf.py"
+      ],
+      "commit": "70de011d5102bea6b97010643cf36698f94f97fb",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fba07f5bd-0",
+      "kind": "decision",
+      "text": "When raising a DeprecationWarning, show the line in the application code which caused the warning, rather than the line in Flask",
+      "files": [
+        "flask/exthook.py"
+      ],
+      "commit": "ba07f5bd81f66a40333cc619d0a8a7b3c17ec49f",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f6bee3e49-0",
+      "kind": "decision",
+      "text": "Add a --version switch to flask cli re #1828",
+      "files": [
+        "flask/cli.py"
+      ],
+      "commit": "6bee3e4995066466a35ac080844d4962a728d084",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.76
+    },
+    {
+      "id": "f0514ba2d-0",
+      "kind": "gotcha",
+      "text": "This is because reading the jinja_env object causes the environment initialisation function to set auto_reload to app.debug (which isn't yet True).",
+      "files": [
+        "flask/app.py"
+      ],
+      "commit": "0514ba2de1751de1b0c9a223c96f6a7145714e6a",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f1df2788a-0",
+      "kind": "decision",
+      "text": "Use app_ctx instead of request_ctx to access the app",
+      "files": [
+        "flask/wrappers.py"
+      ],
+      "commit": "1df2788a8f29a1238cbdebd7fa59b0d6218995b5",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.27
+    },
+    {
+      "id": "f7a7a163f-0",
+      "kind": "gotcha",
+      "text": "shorten output when ImportError due to app bug.",
+      "files": [
+        "flask/cli.py"
+      ],
+      "commit": "7a7a163ff18c4491b8c2a6cd0630a6f4e4ce2984",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fca176cb9-0",
+      "kind": "decision",
+      "text": "pass serializer at tag init instead of to each method split tagged dict and passthrough into separate cases add docstrings",
+      "files": [
+        "flask/json/tag.py"
+      ],
+      "commit": "ca176cb903f9566be07e359791e364ce2fe0b1bc",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.91
+    },
+    {
+      "id": "fd75d83de-0",
+      "kind": "gotcha",
+      "text": "test_encode_aware_datetime() fails for non-UTC timezones due to the bug.",
+      "files": [
+        "tests/test_helpers.py"
+      ],
+      "commit": "d75d83defdbcc2e498f816b5cd20dcc24a1b7138",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.11
+    },
+    {
+      "id": "f4d2a3ab2-0",
+      "kind": "decision",
+      "text": "test no debug flag doesn't reconfigure test templates_auto_reload property instead of config use app fixture in test",
+      "files": [
+        "tests/test_templating.py"
+      ],
+      "commit": "4d2a3ab2e07e36b56d09e16f0836dbd0bdd7b34c",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "feb961834-0",
+      "kind": "gotcha",
+      "text": "This is because datetime.timezone is Python 3 only.",
+      "files": [
+        "tests/test_helpers.py"
+      ],
+      "commit": "eb9618347c680a038e2e6310228d85a53b080f93",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "p6e1e3e03",
+      "task": "check FLASK_SKIP_DOTENV in app.run",
+      "files": [
+        "flask/app.py"
+      ],
+      "commit": "6e1e3e03ca188a4d9b3aef493e572157c8ae2313",
+      "required": [],
+      "stale": [
+        "f5da31f8a-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pf7a3bdc6",
+      "task": "Fix blueprint route for \"\"",
+      "files": [
+        "flask/blueprints.py",
+        "tests/test_blueprints.py"
+      ],
+      "commit": "f7a3bdc6db7aefeeb974c0b9800bbe64d152f842",
+      "required": [
+        "f4dc2ef19-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pb21b4d16",
+      "task": "add more merge cases",
+      "files": [
+        "flask/blueprints.py",
+        "tests/test_blueprints.py"
+      ],
+      "commit": "b21b4d1608f5d83d7d6f503672f7eff46ed28f95",
+      "required": [
+        "f4dc2ef19-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pb4e09260",
+      "task": "Check whether exist registered routes",
+      "files": [
+        "flask/cli.py"
+      ],
+      "commit": "b4e092600dc2cfd5326a373b4b9fd757a5d8a61a",
+      "required": [],
+      "stale": [
+        "f7a7a163f-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pa913b4da",
+      "task": "SSLContext was added in Python 2.7.9",
+      "files": [
+        "flask/cli.py",
+        "tests/test_cli.py"
+      ],
+      "commit": "a913b4dafd1d85cfa1d8bafeea5417748de8d487",
+      "required": [],
+      "stale": [
+        "f7a7a163f-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pb51ab3ff",
+      "task": "encode filenames as ascii instead of latin-1 latin-1 is allowed by pep3333, but that breaks gunicorn",
+      "files": [
+        "flask/helpers.py",
+        "tests/test_helpers.py"
+      ],
+      "commit": "b51ab3ff2c4af7e592e649e0e97657154b79c11f",
+      "required": [],
+      "stale": [
+        "fd75d83de-0",
+        "feb961834-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p8cdd01ea",
+      "task": "Test added for _AppCtxGlobals __repr__ method",
+      "files": [
+        "tests/test_appctx.py"
+      ],
+      "commit": "8cdd01ea5da2f92c0108803618b168e128084858",
+      "required": [
+        "f8482ce6b-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p8fa3ed13",
+      "task": "details fixed",
+      "files": [
+        "tests/test_appctx.py"
+      ],
+      "commit": "8fa3ed13bf362a71f942ed3d37efbdbdd5731375",
+      "required": [
+        "f8482ce6b-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "paa7e15dc",
+      "task": "Reduce unnecessary function calls. When propagate exceptions, the function call of \"_find_error_handler\" makes no sense.",
+      "files": [
+        "flask/app.py"
+      ],
+      "commit": "aa7e15dcbab208ca404bcecd94cbe6fc583150dc",
+      "required": [],
+      "stale": [
+        "f5da31f8a-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p25de45cb",
+      "task": "Add support for PathLike objects in static file helpers",
+      "files": [
+        "flask/_compat.py",
+        "flask/helpers.py",
+        "tests/test_helpers.py"
+      ],
+      "commit": "25de45cbb6fc7304f67b685034151f9ac6ea0df5",
+      "required": [],
+      "stale": [
+        "fd75d83de-0",
+        "feb961834-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p8590d65a",
+      "task": "Use Werkzeug's JSONMixin class and update tests",
+      "files": [
+        "flask/wrappers.py",
+        "setup.py",
+        "tests/test_helpers.py"
+      ],
+      "commit": "8590d65a57ad57c99a82fdf4e1c57921d7e1bdcd",
+      "required": [],
+      "stale": [
+        "f1df2788a-0",
+        "fd75d83de-0",
+        "feb961834-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pb46f5942",
+      "task": "address flake8 issues",
+      "files": [
+        "flask/_compat.py",
+        "flask/app.py",
+        "flask/cli.py",
+        "flask/helpers.py",
+        "flask/templating.py",
+        "flask/testing.py",
+        "flask/wrappers.py",
+        "scripts/make-release.py",
+        "tests/test_apps/helloworld/wsgi.py",
+        "tests/test_basic.py",
+        "tests/test_blueprints.py",
+        "tests/test_cli.py"
+      ],
+      "commit": "b46f5942a528053034fecf210572ee04bc4a3284",
+      "required": [
+        "f4dc2ef19-0"
+      ],
+      "stale": [
+        "f1df2788a-0",
+        "f5da31f8a-0",
+        "f7a7a163f-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p53c893b6",
+      "task": "fix string concats left over by black",
+      "files": [
+        "examples/tutorial/flaskr/blog.py",
+        "src/flask/app.py",
+        "src/flask/cli.py",
+        "src/flask/ctx.py",
+        "src/flask/helpers.py",
+        "src/flask/testing.py",
+        "tests/test_basic.py",
+        "tests/test_config.py",
+        "tests/test_instance_config.py",
+        "tests/test_templating.py"
+      ],
+      "commit": "53c893b646252d610e877eb9385e9e250a1ae5e1",
+      "required": [
+        "f4dc2ef19-0",
+        "f4d2a3ab2-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pdf470aec",
+      "task": "use app.name as app.logger name",
+      "files": [
+        "src/flask/app.py",
+        "src/flask/logging.py",
+        "tests/test_logging.py",
+        "tests/test_templating.py"
+      ],
+      "commit": "df470aecb96efbcb17ca76e73196c25c38ce6d17",
+      "required": [
+        "f4d2a3ab2-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    }
+  ]
+}

@@ -1,0 +1,716 @@
+{
+  "name": "fzf-e3",
+  "repo": {
+    "url": "https://github.com/junegunn/fzf",
+    "license": "MIT",
+    "t0": "b4ccf64e621b495ddf26b93a05c11deb7afdba6d",
+    "t1": "0012183ede3619e2bf52932c196377f8a7befbf6",
+    "head": "faa6a7e9f6e701d57a159d7d05f0b557fa84d354"
+  },
+  "facts": [
+    {
+      "id": "fd8188fce-0",
+      "kind": "gotcha",
+      "text": "This is because `kitty icat` generates an extra line after the image area.",
+      "files": [
+        "src/terminal.go",
+        "src/tui/dummy.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/tui/tui.go"
+      ],
+      "commit": "d8188fce7b7bea982e7f9050c35e488e49fb8fd0",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.58
+    },
+    {
+      "id": "ff103aa47-0",
+      "kind": "gotcha",
+      "text": "`0` is returned, because it shall not be considered an error when the script is (accidentally) sourced from a non-interactive shell.",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh",
+        "shell/key-bindings.bash",
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "f103aa4753b435f8f45c5130323effeb75583c15",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "ff103aa47-1",
+      "kind": "decision",
+      "text": "* [bash] return instead of not executing an if-block, when non-interactive",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh",
+        "shell/key-bindings.bash",
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "f103aa4753b435f8f45c5130323effeb75583c15",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f561e0b04-0",
+      "kind": "decision",
+      "text": "It was decided to not “protect” `fzf` and `fzf-tmux` for now.",
+      "files": [
+        "shell/completion.bash",
+        "shell/key-bindings.bash"
+      ],
+      "commit": "561e0b04a8e23b9088010d4b08f55683decf05db",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.5
+    },
+    {
+      "id": "ff1d306fe-0",
+      "kind": "decision",
+      "text": "However, it should be easily possible to improve `__fzf_list_hosts()` to no longer need the final `awk` in the pipeline there.",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh"
+      ],
+      "commit": "f1d306feab0d6ec91d440c61e54f2280f140de68",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.67
+    },
+    {
+      "id": "f3277e8c8-0",
+      "kind": "gotcha",
+      "text": "They are not neccessary because we can use a program such as chafa that can resize images by the terminal columns and lines.",
+      "files": [
+        "bin/fzf-preview.sh",
+        "src/terminal.go"
+      ],
+      "commit": "3277e8c89c2eaf18a1eb99898cdab79eb0be23d7",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.8
+    },
+    {
+      "id": "f7484292e-0",
+      "kind": "gotcha",
+      "text": "Because fzf processes HTTP GET requests in the main event loop, accessing the endpoint from within execute/transform actions would result in a deadlock and hang fzf indefinitely.",
+      "files": [
+        "man/man1/fzf.1",
+        "src/server.go"
+      ],
+      "commit": "7484292e63f0dabca4cccdca136f6a6d105b3b79",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.73
+    },
+    {
+      "id": "f208e5563-0",
+      "kind": "decision",
+      "text": "Replace \"default find command\" with built-in directory traversal",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "src/constants.go",
+        "src/reader.go"
+      ],
+      "commit": "208e5563322436112bb263e69a72f89b41c7037e",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.47
+    },
+    {
+      "id": "f1dbdb943-0",
+      "kind": "gotcha",
+      "text": "The latter leaves the character \"=\" in the command name, which causes an issue because \"=\" cannot be a part of a variable name.",
+      "files": [
+        "shell/completion.bash"
+      ],
+      "commit": "1dbdb9438f67f490785e414f700158468cd5e871",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fd282a164-0",
+      "kind": "decision",
+      "text": "Add walker options and replace 'find' with the built-in walker (#3649)",
+      "files": [
+        "man/man1/fzf.1",
+        "shell/completion.bash",
+        "shell/completion.zsh",
+        "shell/key-bindings.bash",
+        "shell/key-bindings.fish",
+        "shell/key-bindings.zsh",
+        "src/core.go",
+        "src/options.go",
+        "src/reader.go"
+      ],
+      "commit": "d282a1649d7d953f028306f13d6616958f3fd1f3",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.54
+    },
+    {
+      "id": "fe74b1251-0",
+      "kind": "gotcha",
+      "text": "This simplifies the distribution, and the users are less likely to have problems caused by using incompatible scripts and binaries.",
+      "files": [
+        "main.go",
+        "man/man1/fzf.1",
+        "src/options.go"
+      ],
+      "commit": "e74b1251c0f579335e03b3e7182cd7a9f88dbe37",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.61
+    },
+    {
+      "id": "f3c877c50-0",
+      "kind": "decision",
+      "text": "To support flushing the profiles at program exit it adds util.AtExit to register \"at exit\" functions and mandates that util.Exit is used instead of os.Exit to stop the program.",
+      "files": [
+        "main_test.go",
+        "src/core.go",
+        "src/options.go",
+        "src/options_no_pprof.go",
+        "src/options_pprof.go",
+        "src/options_pprof_test.go",
+        "src/tui/light_unix.go",
+        "src/tui/tui.go",
+        "src/util/atexit.go",
+        "src/util/atexit_test.go"
+      ],
+      "commit": "3c877c504b6102daf5dcc1083b1f1a7db88d304c",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.52
+    },
+    {
+      "id": "fd18d92f9-0",
+      "kind": "decision",
+      "text": "Replace fmt.Errorf with no parameters with errors.New (#3747)",
+      "files": [
+        "src/server.go"
+      ],
+      "commit": "d18d92f925f791271b095df968d290ced05d065a",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f0994d9c8-0",
+      "kind": "decision",
+      "text": "* prefer doubling slashed instead of generic env.",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "0994d9c881f8380997b96bb0a4a7416b50bc2b0d",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f685fb71d-0",
+      "kind": "decision",
+      "text": "[vim] Use native --tmux option instead of fzf-tmux when possible",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "685fb71d8953189e36375b822c8d8e1293736128",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.88
+    },
+    {
+      "id": "f561f9291-0",
+      "kind": "decision",
+      "text": "[vim] Replace backslashes with forward slashes on win32unix",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "561f9291fdff168c5103f00ce8e06c554575591d",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fd4216b0d-0",
+      "kind": "decision",
+      "text": "Use MSYS=enable_pcon instead of winpty on mintty 3.4.5 or later",
+      "files": [
+        "src/core.go",
+        "src/util/util.go",
+        "src/util/util_test.go",
+        "src/winpty.go",
+        "src/winpty_windows.go"
+      ],
+      "commit": "d4216b0dcc13567479d81cc5ad2adedb1443ea8b",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.91
+    },
+    {
+      "id": "f3dee8778-0",
+      "kind": "decision",
+      "text": "# This will no longer cause 'Vim: Warning: Output is not to a terminal' fzf --bind 'enter:execute:vim {}' > /tmp/foo",
+      "files": [
+        "src/proxy.go",
+        "src/reader.go",
+        "src/terminal.go",
+        "src/tui/light.go",
+        "src/tui/light_unix.go",
+        "src/tui/tcell_test.go",
+        "src/tui/ttyname_unix.go",
+        "src/tui/ttyname_windows.go",
+        "src/util/util.go"
+      ],
+      "commit": "3dee8778d073199e0fe1e186e54f7eabc2fdef43",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f3afd543a-0",
+      "kind": "decision",
+      "text": "[fish] Use perl instead of sed to strip leading tabs",
+      "files": [
+        "shell/key-bindings.fish"
+      ],
+      "commit": "3afd543a7e1491f26e7831fcb19e83b5fb9ce4ec",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f7c613d0d-0",
+      "kind": "gotcha",
+      "text": "Do not disable --height on mintty (because it works)",
+      "files": [
+        "src/winpty_windows.go"
+      ],
+      "commit": "7c613d0d9bb2b9a6a30d7bc9642c5b89619e140c",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fc2953399-0",
+      "kind": "decision",
+      "text": "It should default to 'hl' instead of 'current-hl'",
+      "files": [
+        "src/tui/tui.go"
+      ],
+      "commit": "c29533994f656f34de37ca639b0abca486f5dd7f",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f1616ed54-0",
+      "kind": "gotcha",
+      "text": "Fix index out of bounds error caused by outdated offset",
+      "files": [
+        "src/terminal.go"
+      ],
+      "commit": "1616ed543dd250f68852007a5e2e44d8937e4302",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fe9e0011f-0",
+      "kind": "decision",
+      "text": "When `setopt ksh_arrays` in zsh, `${(@kv)history}` gives only the first entry rather than all.",
+      "files": [
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "e9e0011f1d319629337f3b1837056bc36c6a1f87",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fe1fcdbc3-0",
+      "kind": "decision",
+      "text": "fix(zsh): use the '=~' operator instead of grep (#3906)",
+      "files": [
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "e1fcdbc3372087d80ebfd30c3c433881b9535b38",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fb44ab9e3-0",
+      "kind": "gotcha",
+      "text": "Because it is important to be able to see the whole command before deciding to kill it.",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh"
+      ],
+      "commit": "b44ab9e33c236787bcd00b655cae4a8ef8497059",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f587df594-0",
+      "kind": "gotcha",
+      "text": "Because the initial reader is not started, Terminal never gets the initial list 5.",
+      "files": [
+        "src/constants.go",
+        "src/core.go",
+        "src/options.go",
+        "src/reader.go",
+        "src/terminal.go"
+      ],
+      "commit": "587df594b884c3649b14c8f19dfbcee78e74a0a9",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.84
+    },
+    {
+      "id": "f587df594-1",
+      "kind": "decision",
+      "text": "This commit fixes the above problem by extracting the reload command bound to 'start' event and starting the initial reader with that command instead of letting Terminal start it.",
+      "files": [
+        "src/constants.go",
+        "src/core.go",
+        "src/options.go",
+        "src/reader.go",
+        "src/terminal.go"
+      ],
+      "commit": "587df594b884c3649b14c8f19dfbcee78e74a0a9",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.84
+    },
+    {
+      "id": "f0eee95af-0",
+      "kind": "decision",
+      "text": "* Replace SIGSTOP with SIGTSTP * Do not rely on SIGCONT",
+      "files": [
+        "src/terminal.go",
+        "src/terminal_unix.go",
+        "src/terminal_windows.go"
+      ],
+      "commit": "0eee95af574880fbd2c6c599988b86a427520677",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f90a8800b-0",
+      "kind": "gotcha",
+      "text": "We cache a merger for partial input as well, because it is automatically invalidated as soon as the new data comes in.",
+      "files": [
+        "src/matcher.go"
+      ],
+      "commit": "90a8800bb596cd98e103788096f2780ee97100b4",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fed76f076-0",
+      "kind": "decision",
+      "text": "- Use `string collect` instead of cat to get the contents of $FZF_DEFAULT_OPTS_FILE.",
+      "files": [
+        "shell/key-bindings.fish"
+      ],
+      "commit": "ed76f076ddb81d0350b7c00bab279a6520bf6f09",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f66dbee10-0",
+      "kind": "gotcha",
+      "text": "But due to the hardcoded value for the minimum size of the preview window the size could not be decreased further than 5.",
+      "files": [
+        "src/terminal.go"
+      ],
+      "commit": "66dbee10f56ba3d776ad176b603eee9f30f0e940",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.17
+    },
+    {
+      "id": "fb2c3e567-0",
+      "kind": "gotcha",
+      "text": "Don't use the `-f` switch of `string split`, because it was added in fish version 3.2.0.",
+      "files": [
+        "shell/key-bindings.fish"
+      ],
+      "commit": "b2c3e567dadd35253bbccaf4e69c9dc352d36304",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "paefb9a5b",
+      "task": "Nullify unwanted FZF_DEFAULT_* variables in tmux popup",
+      "files": [
+        "src/proxy.go"
+      ],
+      "commit": "aefb9a5bc41f92227e4bffa050caca0270b450ba",
+      "required": [
+        "f3dee8778-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p6c104d77",
+      "task": "Change 'interface{}' to 'any' (#4308)",
+      "files": [
+        "src/terminal_test.go",
+        "src/tui/tcell_test.go",
+        "src/util/eventbox.go"
+      ],
+      "commit": "6c104d771e382f499025a35b10f39d997ce83b7d",
+      "required": [
+        "f3dee8778-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p4298c0b1",
+      "task": "Add `--ghost=TEXT` to display a ghost text when the input is empty",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "test/test_core.rb"
+      ],
+      "commit": "4298c0b1eb31b7563eb608e3fbf4069488ada08d",
+      "required": [
+        "f587df594-0",
+        "f587df594-1",
+        "f0eee95af-0"
+      ],
+      "stale": [
+        "f66dbee10-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p87f7f436",
+      "task": "Fix ghost text with inline info",
+      "files": [
+        "src/terminal.go",
+        "test/test_core.rb"
+      ],
+      "commit": "87f7f436e8e6de98336eb26d695bec93cc5b6b07",
+      "required": [
+        "f0eee95af-0",
+        "f3277e8c8-0",
+        "f3dee8778-0"
+      ],
+      "stale": [
+        "f66dbee10-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p779e3cc5",
+      "task": "[vim] Use 24-bit colors on gvim even when &termguicolors is off",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "779e3cc5b551d791f9f39df8129a95365bca9da7",
+      "required": [
+        "f685fb71d-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p923c3a81",
+      "task": "[bash] Fix $FZF_COMPLETION_{DIR,PATH}_OPTS to support non-trivial arguments",
+      "files": [
+        "shell/completion.bash"
+      ],
+      "commit": "923c3a814de39ff906d675834af634252b3d2b3f",
+      "required": [
+        "f1dbdb943-0"
+      ],
+      "stale": [
+        "ff103aa47-0",
+        "ff103aa47-1"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p7e4dbb5f",
+      "task": "Prevent start:track-current from being disabled",
+      "files": [
+        "src/terminal.go"
+      ],
+      "commit": "7e4dbb5f3b93d38b20545a1e5a668e44cab440ce",
+      "required": [
+        "f0eee95af-0",
+        "f3277e8c8-0",
+        "f3dee8778-0"
+      ],
+      "stale": [
+        "f66dbee10-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p664ee1f4",
+      "task": "Add change-pointer and transform-pointer",
+      "files": [
+        "man/man1/fzf.1",
+        "src/actiontype_string.go",
+        "src/options.go",
+        "src/terminal.go",
+        "test/test_core.rb"
+      ],
+      "commit": "664ee1f4832340ea301f9525cb2d4ce8fc7f12cd",
+      "required": [
+        "f587df594-0",
+        "f587df594-1",
+        "f0eee95af-0"
+      ],
+      "stale": [
+        "f66dbee10-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p1a8f6336",
+      "task": "[fish] Fix for file/dir names containing newlines",
+      "files": [
+        "shell/key-bindings.fish"
+      ],
+      "commit": "1a8f63361193446370eb0aec8206091afceaac76",
+      "required": [],
+      "stale": [
+        "fed76f076-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pa41be615",
+      "task": "[fish] Fix whitespace/regex characters in command line",
+      "files": [
+        "shell/key-bindings.fish"
+      ],
+      "commit": "a41be61506541fd583e56d8b16f5b65af1517a32",
+      "required": [],
+      "stale": [
+        "fed76f076-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pd2c662e5",
+      "task": "Reset coordinator delay on 'reload'",
+      "files": [
+        "src/core.go"
+      ],
+      "commit": "d2c662e54f7d5d011d42915c543c265c0f555d97",
+      "required": [
+        "f587df594-0",
+        "f587df594-1",
+        "fd4216b0d-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pb81696fb",
+      "task": "bash: set keybinding right before printing special character (#4377)",
+      "files": [
+        "shell/completion.bash"
+      ],
+      "commit": "b81696fb64a5c01a33d789312c47a7834f02430e",
+      "required": [
+        "f1dbdb943-0"
+      ],
+      "stale": [
+        "ff103aa47-0",
+        "ff103aa47-1"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p2c638149",
+      "task": "[neovim] Respect winborder of Neovim 0.11+ (#4389)",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "2c6381499c8bfb3f1604f61f3e2eb0eadcfc2728",
+      "required": [
+        "f685fb71d-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p54fd92b7",
+      "task": "--no-color: Keep ANSI attributes in the list",
+      "files": [
+        "src/core.go",
+        "src/result.go"
+      ],
+      "commit": "54fd92b7ddb22647170110790391d39a1065a863",
+      "required": [
+        "f587df594-0",
+        "f587df594-1",
+        "fd4216b0d-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p09194c24",
+      "task": "[bash,zsh] Work around a quirk of macOS awk",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh",
+        "shell/key-bindings.bash",
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "09194c24f275d9387b31e50b38cf7f3a94b1f0fa",
+      "required": [
+        "f1dbdb943-0",
+        "fe1fcdbc3-0"
+      ],
+      "stale": [
+        "ff103aa47-0",
+        "ff103aa47-1"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pc166eaba",
+      "task": "[bash,zsh] Work around Solaris awk, which is non-standard",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh",
+        "shell/key-bindings.bash",
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "c166eaba6d5e74d39a68c45804a01417d707a304",
+      "required": [
+        "f1dbdb943-0",
+        "fe1fcdbc3-0"
+      ],
+      "stale": [
+        "ff103aa47-0",
+        "ff103aa47-1"
+      ],
+      "split": "tune"
+    }
+  ]
+}

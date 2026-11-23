@@ -1,0 +1,465 @@
+{
+  "name": "fzf-e2",
+  "repo": {
+    "url": "https://github.com/junegunn/fzf",
+    "license": "MIT",
+    "t0": "c97172bdd477725c35034526e35a518a61df7e58",
+    "t1": "8d20f3d5c4e2645e623ed43487501dfe76a86b98",
+    "head": "53bcdc4294540fa8d927a5532cc7ac0aa58e3487"
+  },
+  "facts": [
+    {
+      "id": "f2e8e63fb-0",
+      "kind": "decision",
+      "text": "Instead of drawing the window border in Vim using an extra window, extend the --border option so that we do can it natively.",
+      "files": [
+        "man/man1/fzf.1",
+        "plugin/fzf.vim",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/tui/tui.go"
+      ],
+      "commit": "2e8e63fb0b3b62e89472eebe9e86578598e1a541",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.72
+    },
+    {
+      "id": "f1c68f81c-0",
+      "kind": "decision",
+      "text": "While such extra messages should be properly addressed by the user, we can ignore them by checking the last line of the output instead of the first line.",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "1c68f81c37f62db849ba8a37a0de68e2e3397938",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f1ed25d76-0",
+      "kind": "gotcha",
+      "text": "The clean-up is done in s:collect(), so let's make sure it's run before we may terminate due to CTRL-C or ESC (or some other error code) in s:exit_handler().",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "1ed25d76ba51f9b3ab66f75b73734be43d41b8c3",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f37708ad9-0",
+      "kind": "decision",
+      "text": "The change is no longer necessary since 090dee8.",
+      "files": [
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "37708ad9cd5d6f37cee63a1ee1a8308f60283c3d",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f4271e9cf-0",
+      "kind": "decision",
+      "text": "Fix Ctrl+Space key combination to emit CtrlSpace instead of Rune ' '",
+      "files": [
+        "src/tui/tcell.go",
+        "src/tui/tcell_test.go"
+      ],
+      "commit": "4271e9cffae06b0b98d334d67ff7f0f5f9da80b0",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fca43f95f-0",
+      "kind": "decision",
+      "text": "Fix Backspace key to emit BSpace and AltBS events instead of CtrlH",
+      "files": [
+        "src/tui/tcell.go",
+        "src/tui/tcell_test.go"
+      ],
+      "commit": "ca43f95fb1835f74f837e1599a3383b4a7123390",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fedac9820-0",
+      "kind": "gotcha",
+      "text": "No need to repeatedly run cygpath process because $SHELL never changes.",
+      "files": [
+        "src/util/util_windows.go"
+      ],
+      "commit": "edac9820b54d8db7ef667c2d79b9e526c625f59d",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f3312cf52-0",
+      "kind": "decision",
+      "text": "This makes it easier to make customizations, for example instead of",
+      "files": [
+        "shell/key-bindings.bash"
+      ],
+      "commit": "3312cf525d23b3e12ae3a7261220a0e952c43ead",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f52594355-0",
+      "kind": "decision",
+      "text": "'kill **<tab>' instead of 'kill <tab>' just like any other completions.",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh",
+        "test/test_go.rb"
+      ],
+      "commit": "52594355bfa63ce7d579c7961f4f2fb30b486101",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f728f7352-0",
+      "kind": "decision",
+      "text": "- Replace fzf#shellescape with shellescape - Prepend command with '&' in powershell to deal with quoted exe",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "728f73528192a24e01f63fed3f4215125543c937",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "ff0bfeba7-0",
+      "kind": "gotcha",
+      "text": "But we're not going to set it as the default because it is computationally more expensive.",
+      "files": [
+        "man/man1/fzf-tmux.1",
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/result.go",
+        "src/result_test.go",
+        "test/test_go.rb"
+      ],
+      "commit": "f0bfeba733f755a81b2e2d327268f2dabae8f684",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.86
+    },
+    {
+      "id": "ff9d53303-0",
+      "kind": "gotcha",
+      "text": "&shell is guaranteed to be cmd.exe on windows because we call s:use_sh()",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "f9d53303bb00225edb6e46ca1851e5cf1b55e623",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "ff6ce624c-0",
+      "kind": "gotcha",
+      "text": "Also fix failing tests due to info separator",
+      "files": [
+        "test/test_go.rb"
+      ],
+      "commit": "f6ce624c6f70f0a381f6ed13b423374363338641",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.89
+    },
+    {
+      "id": "f0881a6bc-0",
+      "kind": "gotcha",
+      "text": "NOTE: An error from setwinvar call is ignored because the exact behavior of &winhighlight with an empty target group is not clearly documented.",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "0881a6bc17d970d2833be21fafc8de69fe468631",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "fb7bb9731-0",
+      "kind": "gotcha",
+      "text": "Technically, there's no reason to use the API because the information is already available via `{}` and `{q}`, but I'd like to completely remove the risk of misuse.",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/server.go",
+        "src/terminal.go",
+        "test/test_go.rb"
+      ],
+      "commit": "b7bb97311810bd94483df32c6e9102814e9ea514",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.28
+    },
+    {
+      "id": "f0c5956c4-0",
+      "kind": "gotcha",
+      "text": "* Default border style on Windows is changed to `sharp` because some Windows terminals are not capable of displaying `rounded` border characters correctly.",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/dummy.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/tui/tui.go"
+      ],
+      "commit": "0c5956c43c1604d8e4364f08369dc4c58295ef3c",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.71
+    },
+    {
+      "id": "f284d77fe-0",
+      "kind": "gotcha",
+      "text": "* 'point', because \"the pointer\" points to the current item.",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/tui.go",
+        "test/test_go.rb"
+      ],
+      "commit": "284d77fe2e41ec69fcc7ca7162bcf9b65b1641be",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.73
+    }
+  ],
+  "probes": [
+    {
+      "id": "p863a1256",
+      "task": "Trigger focus actions synchronously",
+      "files": [
+        "src/terminal.go"
+      ],
+      "commit": "863a12562b876bac87c9e06c9434251e59a11484",
+      "required": [],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pd210660c",
+      "task": "Add actions: show-header and hide-header",
+      "files": [
+        "man/man1/fzf.1",
+        "src/actiontype_string.go",
+        "src/options.go",
+        "src/terminal.go"
+      ],
+      "commit": "d210660ce8302fa54836f8682db213c1fac877ba",
+      "required": [
+        "ff0bfeba7-0"
+      ],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p20240101",
+      "task": "0.45.0",
+      "files": [
+        "install.ps1",
+        "main.go",
+        "man/man1/fzf-tmux.1",
+        "man/man1/fzf.1",
+        "plugin/fzf.vim"
+      ],
+      "commit": "20240101197348a78db5a1dac945a2dff6a4e654",
+      "required": [
+        "ff0bfeba7-0",
+        "f1ed25d76-0"
+      ],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p2671259f",
+      "task": "[zsh] Make CTRL-R compatible with accept-or-print-query (#3557)",
+      "files": [
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "2671259fdb3094a5eac528f291c1fdadbcf9eda9",
+      "required": [],
+      "stale": [
+        "f37708ad9-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pe47dc758",
+      "task": "Fix focus event not triggered in certain cases",
+      "files": [
+        "src/terminal.go",
+        "test/test_go.rb"
+      ],
+      "commit": "e47dc758c90fc151ef86dc5f189fdea19383d962",
+      "required": [
+        "f52594355-0",
+        "ff0bfeba7-0",
+        "ff6ce624c-0"
+      ],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p250496c9",
+      "task": "Add 'result' event that is triggered when the result list is ready",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/tui.go",
+        "test/test_go.rb"
+      ],
+      "commit": "250496c953f8e36cb70ca99d58034bd79a1d0670",
+      "required": [
+        "ff0bfeba7-0",
+        "f52594355-0",
+        "ff6ce624c-0"
+      ],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p1a9ea6f7",
+      "task": "Remove 'replace' directive for 'go install' compatibility",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/util/util.go"
+      ],
+      "commit": "1a9ea6f738cfafab83a5e0e828e60f0bf68bffee",
+      "required": [
+        "f4271e9cf-0",
+        "fca43f95f-0",
+        "ff0bfeba7-0"
+      ],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pe90bb716",
+      "task": "[zsh] Handle '*' suffix in history line numbers",
+      "files": [
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "e90bb7169c04f5d5f1d19eba2bb41dc2b13391d0",
+      "required": [],
+      "stale": [
+        "f37708ad9-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p16f64739",
+      "task": "Change mattn/go-runewidth dependency to rivo/uniseg for accurate results",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/tui/tui.go",
+        "src/util/util.go"
+      ],
+      "commit": "16f647393838ea3eb0778a45178323aea21b67a0",
+      "required": [
+        "ff0bfeba7-0",
+        "f4271e9cf-0",
+        "fca43f95f-0"
+      ],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pa4391aee",
+      "task": "Add --with-shell for shelling out with different command and flags (#3746)",
+      "files": [
+        "man/man1/fzf.1",
+        "src/core.go",
+        "src/options.go",
+        "src/reader.go",
+        "src/reader_test.go",
+        "src/terminal.go",
+        "src/terminal_test.go",
+        "src/terminal_unix.go",
+        "src/terminal_windows.go",
+        "src/util/util_unix.go",
+        "src/util/util_windows.go",
+        "test/test_go.rb"
+      ],
+      "commit": "a4391aeedd4fec1865d2d646711f58d04058531b",
+      "required": [
+        "ff0bfeba7-0",
+        "f52594355-0",
+        "fedac9820-0"
+      ],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p159a37fa",
+      "task": "Restore CmdLine parameter when running commands using cmd.exe",
+      "files": [
+        "src/util/util_windows.go"
+      ],
+      "commit": "159a37fa377ab7202ec67e1675a3e2a955c8291d",
+      "required": [
+        "fedac9820-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p835d2fb9",
+      "task": "[vim] Fix argument escaping for Windows batch file",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "835d2fb98cedbb6384dfbeb41e4ba48c3c0a8081",
+      "required": [
+        "f1ed25d76-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    }
+  ]
+}

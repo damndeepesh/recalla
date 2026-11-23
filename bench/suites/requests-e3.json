@@ -1,0 +1,146 @@
+{
+  "name": "requests-e3",
+  "repo": {
+    "url": "https://github.com/psf/requests",
+    "license": "Apache-2.0",
+    "t0": "7e20b9193a59fe4925fbb93deddc3102355ac22f",
+    "t1": "ee58368c9f1c96ca9c66adff6ed05d5f233bdb2b",
+    "head": "251f73f65d46ff5de64b8ae2e6c6fe38c1a28808"
+  },
+  "facts": [
+    {
+      "id": "f2af05979-0",
+      "kind": "decision",
+      "text": "Use the utility class provided by requests to do native string transformation rather than recreating the wheel.",
+      "files": [
+        "requests/cookies.py"
+      ],
+      "commit": "2af059797a33a1ee2132ed13e456413c18bc7aa2",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f0d7de50d-0",
+      "kind": "gotcha",
+      "text": "Just lstrip instead of strip because trailing whitespace already works.",
+      "files": [
+        "requests/models.py",
+        "tests/test_requests.py"
+      ],
+      "commit": "0d7de50dbd7eacb0242506454363c71925d7241a",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f0d7de50d-1",
+      "kind": "decision",
+      "text": "Just lstrip instead of strip because trailing whitespace already works.",
+      "files": [
+        "requests/models.py",
+        "tests/test_requests.py"
+      ],
+      "commit": "0d7de50dbd7eacb0242506454363c71925d7241a",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fead8fba8-0",
+      "kind": "gotcha",
+      "text": "Fixes DeprecationWarnings in Python 3.6 due to invalid escape sequences.",
+      "files": [
+        "requests/api.py",
+        "requests/models.py",
+        "requests/sessions.py"
+      ],
+      "commit": "ead8fba84b12e7496c65272a07de47d553aa0ca0",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.93
+    },
+    {
+      "id": "fa9470fe3-0",
+      "kind": "gotcha",
+      "text": "Fix regression in API caused by commit 85400d8d6751071ef78f042d1efa72bdcf76cc0e   - The added optional parameter changes API and should default to None",
+      "files": [
+        "requests/utils.py"
+      ],
+      "commit": "a9470fe31f0c9590dafeac4b53f91fbf11fd6677",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fd8c2fdf9-0",
+      "kind": "decision",
+      "text": "Use 'prefix' instead of 'key' in session docstring",
+      "files": [
+        "requests/sessions.py"
+      ],
+      "commit": "d8c2fdf92f6f2124bb4ef73dd898f1c1824b7c9b",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fb77c1a3d-0",
+      "kind": "decision",
+      "text": "I saw the warning raised recently and had to dive into the code for exact compatibility, but I stopped after reading the comment rather than the code.",
+      "files": [
+        "requests/__init__.py"
+      ],
+      "commit": "b77c1a3debbca5f7317773a2a7a75540ad4c45cf",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "p75c57985",
+      "task": "update json param's description to avoid confusion",
+      "files": [
+        "requests/api.py"
+      ],
+      "commit": "75c57985b02b98c897994e81afcf88b69b33f528",
+      "required": [
+        "fead8fba8-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p8546a155",
+      "task": "The library raises NoneType error when file-pointer (fp) resolves to None.",
+      "files": [
+        "requests/models.py",
+        "tests/test_requests.py"
+      ],
+      "commit": "8546a15587b2a240c1d1404d3ef99365b911bf13",
+      "required": [
+        "f0d7de50d-0",
+        "f0d7de50d-1",
+        "fead8fba8-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pc1b828bc",
+      "task": "Response.content minor perf improvement",
+      "files": [
+        "requests/models.py"
+      ],
+      "commit": "c1b828bc95b8ed0407511b93ee260aa1032f4f8c",
+      "required": [
+        "f0d7de50d-0",
+        "f0d7de50d-1",
+        "fead8fba8-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    }
+  ]
+}

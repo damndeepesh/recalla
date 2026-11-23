@@ -1,0 +1,1288 @@
+{
+  "name": "ripgrep-e3",
+  "repo": {
+    "url": "https://github.com/BurntSushi/ripgrep",
+    "license": "MIT-OR-Unlicense",
+    "t0": "30d06b3b4c39500fc99ffdc27aa6c476eaf18f3d",
+    "t1": "c93fc793a08f3a97e02457d5132b4cc346768014",
+    "head": "4a51093f78bfbef86d89275f4916fd6b6039fe9e"
+  },
+  "facts": [
+    {
+      "id": "fad97e9c9-0",
+      "kind": "gotcha",
+      "text": "This was because the inner literal detector was adapter from the prefix literal detector, which had to stop here.",
+      "files": [
+        "grep-regex/src/literal.rs"
+      ],
+      "commit": "ad97e9c93fc0687ba7a96680ddc749c1da664446",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fad97e9c9-1",
+      "kind": "decision",
+      "text": "However, for inner literals, this calculus no longer makes sense.",
+      "files": [
+        "grep-regex/src/literal.rs"
+      ],
+      "commit": "ad97e9c93fc0687ba7a96680ddc749c1da664446",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f6a0e0147-0",
+      "kind": "decision",
+      "text": "So this commit fixes this by falling back to prefix or suffix literals when they're available instead of prematurely giving up and assuming the regex engine will do the rest.",
+      "files": [
+        "grep-regex/src/literal.rs",
+        "grep-regex/src/matcher.rs"
+      ],
+      "commit": "6a0e0147e03a0322fc8e7e959e787f7a635df906",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f0c3b673e-0",
+      "kind": "gotcha",
+      "text": "It turns out that querying the CWD while in a directory that no longer exists results in an error.",
+      "files": [
+        "src/args.rs"
+      ],
+      "commit": "0c3b673e4c64c6e9c580b15ff8cf9c2a21c29cbd",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f0c3b673e-1",
+      "kind": "decision",
+      "text": "It turns out that querying the CWD while in a directory that no longer exists results in an error.",
+      "files": [
+        "src/args.rs"
+      ],
+      "commit": "0c3b673e4c64c6e9c580b15ff8cf9c2a21c29cbd",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f6f2b79f5-0",
+      "kind": "gotcha",
+      "text": "Unlike git this does *not* read environment variables GIT_DIR and GIT_COMMON_DIR, because it is not clear how to interpret them when searching multiple repositories.",
+      "files": [
+        "ignore/src/dir.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "6f2b79f5847f941aec44ed5813c0dae16c2b2946",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.87
+    },
+    {
+      "id": "f9f7c2ebc-0",
+      "kind": "gotcha",
+      "text": "This is not a breaking change because it strictly increases the number of allowed inputs to `WalkParallel::run`.",
+      "files": [
+        "ignore/src/walk.rs"
+      ],
+      "commit": "9f7c2ebc09caec2282065974725f9cd2326b2355",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.53
+    },
+    {
+      "id": "f322fc75a-0",
+      "kind": "gotcha",
+      "text": "The serial walker does produce a successful entry for a directory that it cannot descend into due to insufficient permissions.",
+      "files": [
+        "ignore/src/walk.rs"
+      ],
+      "commit": "322fc75a3da11242c3e23a60bc4cddbc688552b0",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.93
+    },
+    {
+      "id": "f711426a6-0",
+      "kind": "gotcha",
+      "text": "It turns out that users were relying on this buggy behavior.",
+      "files": [
+        "ci/test_complete.sh",
+        "ignore/src/dir.rs",
+        "ignore/src/walk.rs",
+        "src/app.rs",
+        "src/args.rs",
+        "tests/feature.rs"
+      ],
+      "commit": "711426a632aee0affb7009cd8e3492c4ff7273e8",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.56
+    },
+    {
+      "id": "f52d7f474-0",
+      "kind": "gotcha",
+      "text": "Due to how walkdir works if symlinks are not followed, symlinks to directories are seen as simple files by ripgrep.",
+      "files": [
+        "ignore/src/walk.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "52d7f474206eb517c7284448777ed839c0cae8bb",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.84
+    },
+    {
+      "id": "f3d59bd98-0",
+      "kind": "gotcha",
+      "text": "The final \"dance\" is unnecessary, because by the time quitting begins, no thread will ever spawn a new `Work`.",
+      "files": [
+        "ignore/src/walk.rs"
+      ],
+      "commit": "3d59bd98aaea776092168f8feaf5daeeaf743cbf",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.34
+    },
+    {
+      "id": "f3d59bd98-1",
+      "kind": "decision",
+      "text": "The trick was to replace the heuristic spin-loop with blocking receive.",
+      "files": [
+        "ignore/src/walk.rs"
+      ],
+      "commit": "3d59bd98aaea776092168f8feaf5daeeaf743cbf",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.34
+    },
+    {
+      "id": "fee21897e-0",
+      "kind": "decision",
+      "text": "Once we have that, we just use 'qemu-foo rg' instead of 'rg'.",
+      "files": [
+        "tests/util.rs"
+      ],
+      "commit": "ee21897ebd35fc875a790b7ef0192609e81489f0",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.54
+    },
+    {
+      "id": "ff314b0d5-0",
+      "kind": "gotcha",
+      "text": "It turns out that the previous version wasn't quite correct.",
+      "files": [
+        "crates/ignore/src/walk.rs"
+      ],
+      "commit": "f314b0d55f2fa7c9f19b677624a19a7ba24c7cf4",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.71
+    },
+    {
+      "id": "f0ea65efd-0",
+      "kind": "gotcha",
+      "text": "It turns out that using literals in this case when the -w flag is NOT used results in a performance regression.",
+      "files": [
+        "crates/regex/src/literal.rs"
+      ],
+      "commit": "0ea65efd6d7a98b721fcf5f62a6e549204ee01b2",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f139f186e-0",
+      "kind": "gotcha",
+      "text": "While there are no real intrinsic differences, depth first traversal generally tends to use less memory because directory trees are more commonly wide than they are deep.",
+      "files": [
+        "crates/ignore/src/lib.rs",
+        "crates/ignore/src/walk.rs"
+      ],
+      "commit": "139f186e5721e74542604fad8a3c5907c4911faa",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.61
+    },
+    {
+      "id": "fa2e6aec7-0",
+      "kind": "gotcha",
+      "text": "Or more precisely, a new bug with the same root cause.",
+      "files": [
+        "tests/regression.rs"
+      ],
+      "commit": "a2e6aec7a4d9382941932245e8854f0ae5703a5e",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f7ed9a318-0",
+      "kind": "gotcha",
+      "text": "For PCRE2's case in multiline mode, it is available because we force it to be so for correctness.",
+      "files": [
+        "crates/printer/src/summary.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "7ed9a31819aa4f1c1b25f1fa95bdf602232ddbb0",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.67
+    },
+    {
+      "id": "f59644d45-0",
+      "kind": "decision",
+      "text": "A new release of cross has been put out, so we no longer need to install it from git.",
+      "files": [
+        "ci/utils.sh"
+      ],
+      "commit": "59644d45928fff5ae2ef509a2ed6a5b63a7baf8c",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f020c5453-0",
+      "kind": "decision",
+      "text": "It seems that PowerShell uses sockets instead of FIFOs to redirect the output between commands.",
+      "files": [
+        "crates/cli/src/lib.rs"
+      ],
+      "commit": "020c5453a5880257c87949030550d24c596f5c8d",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f94e4b8e3-0",
+      "kind": "decision",
+      "text": "Instead of printing column numbers relative to the current line, it was printing column numbers as byte offsets relative to where the match began.",
+      "files": [
+        "crates/printer/src/standard.rs",
+        "tests/multiline.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "94e4b8e301302097dad48b292560ce135c4d4926",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.73
+    },
+    {
+      "id": "f229d1a8d-0",
+      "kind": "gotcha",
+      "text": "The root cause of this problem is that 'CreateProcess' on Windows will implicitly look in the current working directory for an executable when it is given a relative path to a program.",
+      "files": [
+        "crates/cli/src/decompress.rs",
+        "crates/cli/src/lib.rs",
+        "crates/core/args.rs",
+        "crates/core/search.rs"
+      ],
+      "commit": "229d1a8d41b0023420e7815578fa0b39c0d5c2e4",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.87
+    },
+    {
+      "id": "fb3a6a69f-0",
+      "kind": "decision",
+      "text": "This also replaces '--all' in Cargo commands with '--workspace'.",
+      "files": [
+        "crates/ignore/src/default_types.rs",
+        "crates/regex/src/matcher.rs"
+      ],
+      "commit": "b3a6a69f9d6eb00f4ce8fa5dfc4f2ac2327e75e1",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "ffc31aedc-0",
+      "kind": "gotcha",
+      "text": "It turns out that the vimgrep format really only wants one line per match, even when that match spans multiple lines.",
+      "files": [
+        "crates/core/args.rs",
+        "crates/printer/src/standard.rs",
+        "tests/multiline.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "fc31aedcf3cae7a773c94a79775396759af10dd8",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.99
+    },
+    {
+      "id": "f656aa126-0",
+      "kind": "gotcha",
+      "text": "The problem is that even though ripgrep supports multi-line searches, it is *still* line oriented.",
+      "files": [
+        "crates/printer/src/standard.rs",
+        "crates/searcher/src/searcher/glue.rs",
+        "tests/json.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "656aa126492b04f1ac8b0406f589b6de4c4b7d60",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f656aa126-1",
+      "kind": "decision",
+      "text": "And there in lay the solution: all we need to do is tweak the multi-line searcher so that it combines lines with matches that directly adjacent, instead of requiring at least one byte of overlap.",
+      "files": [
+        "crates/printer/src/standard.rs",
+        "crates/searcher/src/searcher/glue.rs",
+        "tests/json.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "656aa126492b04f1ac8b0406f589b6de4c4b7d60",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fefd9cfb2-0",
+      "kind": "decision",
+      "text": "So this commit refactors the printer's regex searching to use that buffer instead of the intended bundle of bytes containing just the relevant matching portions of that same buffer.",
+      "files": [
+        "crates/core/app.rs",
+        "crates/matcher/src/lib.rs",
+        "crates/printer/src/json.rs",
+        "crates/printer/src/lib.rs",
+        "crates/printer/src/standard.rs",
+        "crates/printer/src/summary.rs",
+        "crates/printer/src/util.rs",
+        "crates/regex/src/word.rs",
+        "crates/searcher/src/searcher/core.rs",
+        "crates/searcher/src/sink.rs",
+        "tests/json.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "efd9cfb2fc1f0233de9eda4c03416d32ef2c3ce8",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.92
+    },
+    {
+      "id": "ffbb2cfed-0",
+      "kind": "decision",
+      "text": "This is basically the same bug as #1401, but applied to replacements instead of --only-matching.",
+      "files": [
+        "crates/printer/src/util.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "fbb2cfed28d68b220e51c0fe8db9d89a4516aab6",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.83
+    },
+    {
+      "id": "f431ea386-0",
+      "kind": "decision",
+      "text": "It sounds like Projectfile is no longer being used, but we should keep it around in case folks are still using it.",
+      "files": [
+        "crates/ignore/src/default_types.rs"
+      ],
+      "commit": "431ea386206da2c9c2f73bd8119345191b679f78",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "ffdfc418b-0",
+      "kind": "decision",
+      "text": "It's no big deal to disable mmap searching on 32-bit, so we just do that instead of returning incorrect results.",
+      "files": [
+        "crates/searcher/src/searcher/mmap.rs"
+      ],
+      "commit": "fdfc418be55ff91e0c2efad6a3e27db054cb5534",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.13
+    },
+    {
+      "id": "f7e05cde0-0",
+      "kind": "gotcha",
+      "text": "In the above examples, the first failure mode looks obvious, but that's only because RIPGREP_CONFIG_PATH is being set at the same time that we run the command.",
+      "files": [
+        "crates/core/config.rs"
+      ],
+      "commit": "7e05cde008c25940fb777ab1ae0c26c181692764",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f91afd421-0",
+      "kind": "gotcha",
+      "text": "Because of our bad abstraction boundaries, we added a kludge to deal with PCRE2 look-around by extending the bytes we search by a fixed amount to hopefully permit any look-around to operate.",
+      "files": [
+        "crates/printer/src/util.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "91afd4214a9ada15e475bba02694f4fb50079cbc",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f91afd421-1",
+      "kind": "decision",
+      "text": "I mostly went with their solution, but adding the new replacement routine as an internal helper rather than a new APIn in the 'grep-matcher' crate.",
+      "files": [
+        "crates/printer/src/util.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "91afd4214a9ada15e475bba02694f4fb50079cbc",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f9f0e88bc-0",
+      "kind": "gotcha",
+      "text": "Which is weird, because the \\ is clearly not dangling.",
+      "files": [
+        "crates/ignore/src/gitignore.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9f0e88bcb14e02da1b88872435b17d74786640b5",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f8e57989c-0",
+      "kind": "gotcha",
+      "text": "It turns out that if there are text anchors (that is, \\A or \\z, or ^/$ when multi-line is disabled), then the \"fast\" line searching path isn't quite correct.",
+      "files": [
+        "crates/regex/src/config.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/searcher/src/searcher/core.rs",
+        "crates/searcher/src/searcher/glue.rs"
+      ],
+      "commit": "8e57989cd20379acfca28a341da61df177daca1c",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.6
+    },
+    {
+      "id": "f28bff84a-0",
+      "kind": "decision",
+      "text": "Now that std::thread::available_parallelism is a thing, we no longer need num_cpus.",
+      "files": [
+        "crates/core/args.rs",
+        "crates/core/main.rs"
+      ],
+      "commit": "28bff84a0adf2180d443584f6218799da34ae8f6",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f6b19be24-0",
+      "kind": "decision",
+      "text": "So instead of just writing fluff, I removed the lint.",
+      "files": [
+        "crates/grep/src/lib.rs"
+      ],
+      "commit": "6b19be24776db74dd2df0bdbd5f199a8cd9964ce",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f1035f6b1-0",
+      "kind": "decision",
+      "text": "The idea here is to drop down and actually use regex-automata 0.3 instead of the regex crate itself.",
+      "files": [
+        "crates/core/args.rs",
+        "crates/globset/src/lib.rs",
+        "crates/regex/src/config.rs",
+        "crates/regex/src/crlf.rs",
+        "crates/regex/src/literal.rs",
+        "crates/regex/src/literalold.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/regex/src/multi.rs",
+        "crates/regex/src/non_matching.rs",
+        "crates/regex/src/strip.rs",
+        "crates/regex/src/util.rs"
+      ],
+      "commit": "1035f6b1ff502eb5b1a5fc49a79f45971c772d47",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.11
+    },
+    {
+      "id": "f9d62eb99-0",
+      "kind": "decision",
+      "text": "For example, one \"problem\" with how they're handled now is that ripgrep will re-insert its own line terminators when printing output instead of copying the input.",
+      "files": [
+        "crates/regex/src/config.rs",
+        "crates/regex/src/crlf.rs",
+        "crates/regex/src/lib.rs",
+        "crates/regex/src/matcher.rs"
+      ],
+      "commit": "9d62eb997a19efbf5e96d28870f8edad9bde1b9b",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fa6dbff50-0",
+      "kind": "decision",
+      "text": "Now that we use regex-automata, we no longer use any type with \"locations\" in it.",
+      "files": [
+        "crates/regex/src/error.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/regex/src/word.rs"
+      ],
+      "commit": "a6dbff502f1e0ce3401ea0b2a7a8a33bd12f5053",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.3
+    },
+    {
+      "id": "f4b8aa91a-0",
+      "kind": "gotcha",
+      "text": "Because of this, we actually get to remove one of the two uses of `unsafe` in ripgrep's `main` program.",
+      "files": [
+        "crates/core/args.rs",
+        "crates/pcre2/src/matcher.rs"
+      ],
+      "commit": "4b8aa91ae5b17bd988ed05ab5c7c387de9247b13",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f4b8aa91a-1",
+      "kind": "decision",
+      "text": "That means we no longer need to do transcoding or UTF-8 validity checks.",
+      "files": [
+        "crates/core/args.rs",
+        "crates/pcre2/src/matcher.rs"
+      ],
+      "commit": "4b8aa91ae5b17bd988ed05ab5c7c387de9247b13",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f8ac66a9e-0",
+      "kind": "gotcha",
+      "text": "A benefit though is that converting the HIR to its concrete syntax is now lazy and only happens when logging is enabled.",
+      "files": [
+        "crates/regex/src/config.rs",
+        "crates/regex/src/literal.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/regex/src/word.rs"
+      ],
+      "commit": "8ac66a9e0461b0c50a5f69508f0740d893426d3d",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.4
+    },
+    {
+      "id": "f4782ebd5-0",
+      "kind": "decision",
+      "text": "This patch also replaces instances of eprintln with eprintln_locked to avoid interleaving lines.",
+      "files": [
+        "crates/core/logger.rs",
+        "crates/core/main.rs",
+        "crates/core/messages.rs"
+      ],
+      "commit": "4782ebd5e0773465ba2c32a328250253c2b55779",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.61
+    },
+    {
+      "id": "f341a19e0-0",
+      "kind": "gotcha",
+      "text": "It turns out our fast path for -w/--word-regexp wasn't quite correct in some cases.",
+      "files": [
+        "crates/regex/src/word.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "341a19e0d05bc6f0cabeb2dc756b37cfc047f8f0",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.48
+    },
+    {
+      "id": "f51765f2f-0",
+      "kind": "gotcha",
+      "text": "I believe this happened because rustfmt now knows how to format `let ...",
+      "files": [
+        "crates/ignore/src/default_types.rs"
+      ],
+      "commit": "51765f2f4cbd6c561df35cf1d7d8637cf73006fa",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f3bfa125b-0",
+      "kind": "gotcha",
+      "text": "We drop our MIPS target because it no longer works.[1] We were previously using it as a means of testing ripgrep in a big endian environment.",
+      "files": [
+        "tests/feature.rs",
+        "tests/misc.rs",
+        "tests/util.rs"
+      ],
+      "commit": "3bfa125b2ea8175947360322f1429a0205be6c76",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f3bfa125b-1",
+      "kind": "decision",
+      "text": "ci: replace mips with powerpc64, aarch64 and s390x",
+      "files": [
+        "tests/feature.rs",
+        "tests/misc.rs",
+        "tests/util.rs"
+      ],
+      "commit": "3bfa125b2ea8175947360322f1429a0205be6c76",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f6cdb99ea-0",
+      "kind": "gotcha",
+      "text": "I did this because the marginal cost of adding the Iterator::count() specialization to memchr was extremely small.",
+      "files": [
+        "crates/searcher/src/lines.rs"
+      ],
+      "commit": "6cdb99ea61d585cc32716d181517d71b4df769b5",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f6cdb99ea-1",
+      "kind": "decision",
+      "text": "As of the memchr 2.6 release, its Iterator::count method is specialized to only count the number of occurrences instead of finding the offset of each occurrence.",
+      "files": [
+        "crates/searcher/src/lines.rs"
+      ],
+      "commit": "6cdb99ea61d585cc32716d181517d71b4df769b5",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fd938e955-0",
+      "kind": "gotcha",
+      "text": "But it turns out that a naive stack-behind-a-mutex can be quite a bit slower than something that's a little smarter, such as a work-stealing stack used in this commit.",
+      "files": [
+        "crates/ignore/src/walk.rs"
+      ],
+      "commit": "d938e955af7a39ac0245b1ce84924f7f4a2141ac",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.86
+    },
+    {
+      "id": "f23e21133-0",
+      "kind": "gotcha",
+      "text": "I originally did not put PathPrinter into grep-printer because I considered it somewhat extraneous to what a \"grep\" program does, and also that its implementation was rather simple.",
+      "files": [
+        "crates/core/args.rs",
+        "crates/core/main.rs",
+        "crates/core/path_printer.rs",
+        "crates/printer/src/hyperlink.rs",
+        "crates/printer/src/lib.rs",
+        "crates/printer/src/path.rs",
+        "crates/printer/src/standard.rs",
+        "crates/printer/src/summary.rs",
+        "crates/printer/src/util.rs"
+      ],
+      "commit": "23e21133ba6a8ca2c4d040092ad1bc22f14e8861",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.76
+    },
+    {
+      "id": "ff608d4d9-0",
+      "kind": "gotcha",
+      "text": "I want this because I know at least for my own use cases, I sometimes log into systems using an SSH hostname that is distinct from the system's actual hostname (usually because the system is shared in some way or changing its hostname is not allowed/practical).",
+      "files": [
+        "crates/core/app.rs",
+        "crates/core/args.rs",
+        "crates/printer/src/hyperlink.rs",
+        "crates/printer/src/hyperlink_aliases.rs",
+        "crates/printer/src/lib.rs",
+        "crates/printer/src/path.rs",
+        "crates/printer/src/standard.rs",
+        "crates/printer/src/summary.rs",
+        "crates/printer/src/util.rs"
+      ],
+      "commit": "f608d4d9b3ab210b7e6964ca7d1d7dc9c077329e",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.83
+    },
+    {
+      "id": "ff608d4d9-1",
+      "kind": "decision",
+      "text": "The biggest change is probably requiring the caller to pass in things like a hostname instead of having the crate do it.",
+      "files": [
+        "crates/core/app.rs",
+        "crates/core/args.rs",
+        "crates/printer/src/hyperlink.rs",
+        "crates/printer/src/hyperlink_aliases.rs",
+        "crates/printer/src/lib.rs",
+        "crates/printer/src/path.rs",
+        "crates/printer/src/standard.rs",
+        "crates/printer/src/summary.rs",
+        "crates/printer/src/util.rs"
+      ],
+      "commit": "f608d4d9b3ab210b7e6964ca7d1d7dc9c077329e",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.83
+    },
+    {
+      "id": "f7f456404-0",
+      "kind": "decision",
+      "text": "It also inlines the dozen or so lines of code for FNV hashing instead of bringing in a micro-crate for it.",
+      "files": [
+        "crates/globset/src/fnv.rs",
+        "crates/globset/src/glob.rs",
+        "crates/globset/src/lib.rs",
+        "crates/globset/src/pathutil.rs"
+      ],
+      "commit": "7f456404010005142a6493fb48bd9fd06aca2731",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.96
+    },
+    {
+      "id": "f88524a2b-0",
+      "kind": "gotcha",
+      "text": "Because of that, we can dedup the patterns via just their concrete syntax without any fuss.",
+      "files": [
+        "crates/core/args.rs"
+      ],
+      "commit": "88524a2b5232c951f9d4c0a169a046a7354251bd",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fc21302b4-0",
+      "kind": "gotcha",
+      "text": "It turns out that the presence of a Unicode word boundary can defeat acceleration to a point.",
+      "files": [
+        "crates/regex/src/literal.rs"
+      ],
+      "commit": "c21302b4096f9ce1af095fbe8b14828a90ecfecb",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "febb986e7-0",
+      "kind": "gotcha",
+      "text": "The failure mode here is still pretty bad because you need to know to reach for the `--debug` flag in the first place.",
+      "files": [
+        "crates/core/flags/hiargs.rs"
+      ],
+      "commit": "ebb986e767655f8c9c05a7a7e99b09236a6e8be5",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f286de956-0",
+      "kind": "gotcha",
+      "text": "Essentially, --version now subsumes --pcre2-version, although we do retain the former because it (usefully) emits an exit code based on whether PCRE2 is available or not.",
+      "files": [
+        "crates/core/flags/doc/version.rs",
+        "crates/core/flags/mod.rs",
+        "crates/core/main.rs"
+      ],
+      "commit": "286de9564e511f01f13756c207e9b26ec781591d",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f9ed7565f-0",
+      "kind": "gotcha",
+      "text": "Basically, unless the -a/--text flag is given, it is generally always an error to search for an explicit NUL byte because the binary detection will prevent it from matching.",
+      "files": [
+        "crates/core/flags/hiargs.rs",
+        "crates/regex/src/ban.rs",
+        "crates/regex/src/config.rs",
+        "crates/regex/src/error.rs",
+        "crates/regex/src/lib.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/searcher/src/line_buffer.rs",
+        "crates/searcher/src/searcher/mod.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9ed7565fcb47d02e76398d41f24ba0817f6b9c2f",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "p48362846",
+      "task": "ignore/gitignore: skip BOM at start of ignore file",
+      "files": [
+        "crates/ignore/src/gitignore.rs",
+        "crates/ignore/tests/gitignore_skip_bom.rs"
+      ],
+      "commit": "483628469a2580e4eab0edfbe7a7f3f8b1951848",
+      "required": [
+        "f9f0e88bc-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pedafb612",
+      "task": "core: add \"total\" to --stats output",
+      "files": [
+        "crates/core/main.rs"
+      ],
+      "commit": "edafb612d2b93b0dc28531abf155bdd7e3bcfe63",
+      "required": [
+        "f286de956-0"
+      ],
+      "stale": [
+        "f28bff84a-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pda672f87",
+      "task": "color: add italic to style attributes",
+      "files": [
+        "crates/core/flags/defs.rs",
+        "crates/printer/src/color.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "da672f87e853d239b2f562d70c0b34d3afea6dfc",
+      "required": [
+        "f52d7f474-0",
+        "f656aa126-0",
+        "f656aa126-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p380809f1",
+      "task": "ignore/types: add Makefile.*",
+      "files": [
+        "crates/ignore/src/default_types.rs"
+      ],
+      "commit": "380809f1e250035808170db2e9a2cbd09395f450",
+      "required": [
+        "fb3a6a69f-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p75970fd1",
+      "task": "ignore: don't process command line arguments in reverse order",
+      "files": [
+        "crates/ignore/src/walk.rs"
+      ],
+      "commit": "75970fd16b4d5f8ff9fb1d9c157467eb166acf23",
+      "required": [
+        "fd938e955-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pd869038c",
+      "task": "ignore: improve multithreading heuristic",
+      "files": [
+        "crates/ignore/src/walk.rs"
+      ],
+      "commit": "d869038cf610f10a8b7aca24284719e65a477e1a",
+      "required": [
+        "fd938e955-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p119407d0",
+      "task": "printer: use std::path::absolute on Windows",
+      "files": [
+        "crates/printer/src/hyperlink.rs"
+      ],
+      "commit": "119407d0a918ca54da1e0a5e8806dbb8cd7e2be0",
+      "required": [
+        "ff608d4d9-0",
+        "ff608d4d9-1"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p5be67c12",
+      "task": "ignore/types: include msbuild solution filters",
+      "files": [
+        "crates/ignore/src/default_types.rs"
+      ],
+      "commit": "5be67c1244f494414629f71be859e0e1552dd6fd",
+      "required": [
+        "fb3a6a69f-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p292bc54e",
+      "task": "printer: support `-r/--replace` with `--json`",
+      "files": [
+        "crates/core/flags/hiargs.rs",
+        "crates/printer/src/json.rs",
+        "crates/printer/src/jsont.rs",
+        "tests/json.rs"
+      ],
+      "commit": "292bc54e64e55b69fec806bf3ee6481958e2946f",
+      "required": [
+        "fefd9cfb2-0",
+        "f656aa126-0",
+        "f656aa126-1"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p53279db4",
+      "task": "deps: switch to tikv-jemallocator",
+      "files": [
+        "crates/core/main.rs"
+      ],
+      "commit": "53279db4143f4307c2b1b27f2cd32a43b0496205",
+      "required": [
+        "f286de956-0"
+      ],
+      "stale": [
+        "f28bff84a-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p624bbf7d",
+      "task": "globset: add matches_all method",
+      "files": [
+        "crates/globset/src/lib.rs"
+      ],
+      "commit": "624bbf7dcee8d69949a447b4e4393e23d3e25b38",
+      "required": [
+        "f7f456404-0"
+      ],
+      "stale": [
+        "f1035f6b1-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p861f6d37",
+      "task": "style: simplify string formatting",
+      "files": [
+        "build.rs",
+        "crates/core/flags/complete/powershell.rs",
+        "crates/core/search.rs",
+        "tests/json.rs",
+        "tests/util.rs"
+      ],
+      "commit": "861f6d374fa3d599dca86111e9b513772ca3de1a",
+      "required": [
+        "f229d1a8d-0",
+        "f3bfa125b-0",
+        "f3bfa125b-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p6f39f830",
+      "task": "globset: compact Debug impl for `GlobSetBuilder` and `Glob`",
+      "files": [
+        "crates/globset/src/glob.rs",
+        "crates/globset/src/lib.rs"
+      ],
+      "commit": "6f39f830cb9bc7b31c330d2c019c216477374371",
+      "required": [
+        "f7f456404-0"
+      ],
+      "stale": [
+        "f1035f6b1-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pd199058e",
+      "task": "cli: make `rg -vf file` behave sensibly",
+      "files": [
+        "crates/core/flags/hiargs.rs",
+        "crates/pcre2/src/matcher.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "d199058e77cbea419f072015373ab1beb0e508ee",
+      "required": [
+        "f9ed7565f-0",
+        "f4b8aa91a-0",
+        "f4b8aa91a-1"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p5e2d32fe",
+      "task": "printer: slightly simplify code",
+      "files": [
+        "crates/printer/src/standard.rs"
+      ],
+      "commit": "5e2d32fe7f3b7dcf768ffc1264dabe83e00ccaec",
+      "required": [
+        "f656aa126-0",
+        "f656aa126-1",
+        "fefd9cfb2-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p4ab1862d",
+      "task": "stats: fix case where \"bytes searched\" could be wrong",
+      "files": [
+        "crates/searcher/src/searcher/glue.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "4ab1862dc04783b6615807d4b4511388c6b30364",
+      "required": [
+        "f656aa126-0",
+        "f656aa126-1",
+        "f52d7f474-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p60aa9f17",
+      "task": "tests: increase sleep duration for sort file metadata tests on Windows AArch64",
+      "files": [
+        "tests/misc.rs"
+      ],
+      "commit": "60aa9f17276409257ad612fccefba13c26ed0d74",
+      "required": [
+        "f3bfa125b-0",
+        "f3bfa125b-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p126bbeab",
+      "task": "printer: fix handling of `has_match` for summary printer",
+      "files": [
+        "crates/core/flags/hiargs.rs",
+        "crates/printer/src/summary.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "126bbeab8c1cbbc1d6cb36b4c2d560574233856d",
+      "required": [
+        "f9ed7565f-0",
+        "fefd9cfb2-0",
+        "f52d7f474-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p66aa4a63",
+      "task": "printer: deduplicate hyperlink alias names",
+      "files": [
+        "crates/core/flags/defs.rs",
+        "crates/printer/src/hyperlink/aliases.rs",
+        "crates/printer/src/hyperlink/mod.rs",
+        "crates/printer/src/hyperlink_aliases.rs",
+        "crates/printer/src/lib.rs"
+      ],
+      "commit": "66aa4a63bb52468aa789cfa00c0643111ff03239",
+      "required": [
+        "ff608d4d9-0",
+        "ff608d4d9-1",
+        "fefd9cfb2-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pa60e62d9",
+      "task": "rust: move to Rust 2024",
+      "files": [
+        "crates/core/flags/hiargs.rs",
+        "crates/printer/src/hyperlink/mod.rs",
+        "crates/regex/src/ban.rs"
+      ],
+      "commit": "a60e62d9ac559b1468d4dd27b80a7b662a600e0c",
+      "required": [
+        "f9ed7565f-0",
+        "febb986e7-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pf596a5d8",
+      "task": "globset: add `allow_unclosed_class` toggle",
+      "files": [
+        "crates/globset/src/glob.rs",
+        "crates/ignore/src/gitignore.rs",
+        "crates/ignore/src/overrides.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "f596a5d8750a6a6db1b87ad95a78667322c06cbd",
+      "required": [
+        "f9f0e88bc-0",
+        "f52d7f474-0",
+        "f656aa126-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pa7b7d81d",
+      "task": "lint: fix a few Clippy errors",
+      "files": [
+        "crates/cli/src/decompress.rs",
+        "crates/ignore/examples/walk.rs",
+        "crates/printer/src/json.rs",
+        "crates/printer/src/jsont.rs"
+      ],
+      "commit": "a7b7d81d66b6e2e4311d5dd0683022c2978650f1",
+      "required": [
+        "f229d1a8d-0",
+        "fefd9cfb2-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p9d8016d1",
+      "task": "printer: finish removal of `max_matches`",
+      "files": [
+        "crates/core/flags/hiargs.rs",
+        "crates/printer/src/json.rs",
+        "crates/printer/src/summary.rs"
+      ],
+      "commit": "9d8016d10c94a5af2768eb6dd0440386a7d317a0",
+      "required": [
+        "fefd9cfb2-0",
+        "f9ed7565f-0",
+        "febb986e7-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pde2567a4",
+      "task": "printer: fix panic in replacements in look-around corner case",
+      "files": [
+        "crates/printer/src/util.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "de2567a4c76fa671005538d6cd841abc44932b9a",
+      "required": [
+        "f91afd421-0",
+        "f91afd421-1",
+        "fefd9cfb2-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p767086db",
+      "task": "searcher: hint at sequential memory map reading",
+      "files": [
+        "crates/searcher/src/searcher/mmap.rs"
+      ],
+      "commit": "767086db4ccb6abc3e4ce5125da614ea62f7346b",
+      "required": [],
+      "stale": [
+        "ffdfc418b-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pe7b0f89e",
+      "task": "lint: use `cloned()` or `copied()` when we can",
+      "files": [
+        "crates/core/search.rs",
+        "crates/globset/src/glob.rs",
+        "crates/matcher/tests/util.rs",
+        "crates/pcre2/src/matcher.rs"
+      ],
+      "commit": "e7b0f89e81811b295446404f02ca133fe8434054",
+      "required": [
+        "f229d1a8d-0",
+        "f4b8aa91a-0",
+        "f4b8aa91a-1"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pe2b508de",
+      "task": "perf: honor custom line terminators in the regex engine (#2832)",
+      "files": [
+        "crates/regex/src/config.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/searcher/src/searcher/core.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "e2b508de363c9f16fff2a6bb50e8692287cba015",
+      "required": [
+        "f9ed7565f-0",
+        "fefd9cfb2-0",
+        "f52d7f474-0"
+      ],
+      "stale": [
+        "f1035f6b1-0",
+        "f8ac66a9e-0",
+        "f9d62eb99-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p9c49a258",
+      "task": "fix: fall back past MAX_LOOK_AHEAD in multi-line match discovery (#3503)",
+      "files": [
+        "crates/printer/src/util.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9c49a258944543082630246983b373525bb9f851",
+      "required": [
+        "f91afd421-0",
+        "f91afd421-1",
+        "fefd9cfb2-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    }
+  ]
+}
