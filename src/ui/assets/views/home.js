@@ -410,7 +410,7 @@ function activity(o) {
         "div",
         { class: "act-stats" },
         stat("k-mem", "memories learned", sum("memories")),
-        stat("k-pack", "packs sent", sum("packs")),
+        stat("k-none", "packs sent", sum("packs")),
         stat("k-ses", "sessions", sum("sessions")),
       ),
       h(
@@ -418,8 +418,7 @@ function activity(o) {
         { class: "chart" },
         columns(a, {
           value: (d) => d.memories,
-          line: (d) => d.packs,
-          label: `Memories learned per day, with packs sent per day as a line, since ${first}`,
+          label: `Memories learned per day since ${first}`,
         }),
         h(
           "div",

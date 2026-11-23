@@ -281,7 +281,7 @@ window.addEventListener("hashchange", () => render());
 
 try {
   await session();
-  document.getElementById("version").textContent = `Version ${appVersion()}`;
+  document.getElementById("version").textContent = `v${appVersion()}`;
   refreshSetupFlag();
   await render(true);
 } catch (e) {

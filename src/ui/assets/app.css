@@ -429,13 +429,16 @@ textarea {
 .side-foot {
   margin-top: auto;
   display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-2) 0;
+  padding: var(--sp-3) var(--sp-3) 0;
   border-top: 1px solid var(--hair);
   color: var(--muted);
   font-size: var(--fs-xs);
 }
 .side-tools {
+  grid-column: 1 / -1;
   display: flex;
   gap: var(--sp-1);
 }
@@ -459,7 +462,7 @@ main {
 }
 .view {
   padding: var(--sp-6) clamp(var(--sp-4), 3vw, var(--sp-7)) var(--sp-7);
-  max-width: 84rem;
+  max-width: 112rem;
 }
 .view.wide {
   max-width: none;
@@ -2068,9 +2071,8 @@ dialog::backdrop {
 .k-mem .key {
   background: color-mix(in srgb, var(--chart-ink) 78%, var(--card));
 }
-.k-pack .key {
-  height: 2px;
-  background: var(--k-procedure);
+.k-none .key {
+  display: none;
 }
 .k-ses .key {
   display: none;
