@@ -5,7 +5,8 @@
 
 use std::ffi::OsString;
 use std::fmt::Write as _;
-use std::io::Write;
+use std::fs;
+use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand, ValueEnum};
@@ -24,6 +25,7 @@ use crate::mirror;
 use crate::model::{Kind, Memory, Scope};
 use crate::ops::{self, PackArgs, Why, open_existing, pack_for, prefix, truncate_chars, why};
 use crate::paths;
+use crate::select::{self, Selection};
 use crate::store::{Filter, Hit, Store, Via};
 
 #[derive(Debug, Parser)]
@@ -88,6 +90,24 @@ enum Command {
         /// Don't update the markdown mirror afterwards.
         #[arg(long)]
         no_mirror: bool,
+        #[arg(
+            long = "dir",
+            value_name = "PATH",
+            help = "Only sessions run in this project directory or inside it (repeatable)"
+        )]
+        dirs: Vec<PathBuf>,
+        #[arg(
+            long = "session",
+            value_name = "ID|FILE",
+            help = "Only this session: its id (8+ characters is enough) or a .jsonl path (repeatable)"
+        )]
+        sessions: Vec<String>,
+        /// List the sessions that would be imported, then exit (nothing is written).
+        #[arg(long)]
+        list: bool,
+        /// Choose interactively: first Claude Code or Codex, then which sessions.
+        #[arg(long, conflicts_with_all = ["dirs", "sessions", "list"])]
+        pick: bool,
         /// Print the report as JSON.
         #[arg(long)]
         json: bool,
@@ -321,8 +341,13 @@ where
             dry_run,
             no_extract,
             no_mirror,
+            dirs,
+            sessions,
+            list,
+            pick,
             json,
         } => {
+            let mut sel = Selection { dirs, sessions };
             let claude_root = harness.claude().then(|| root.or_else(claude::default_root));
             let codex_root = harness
                 .codex()
@@ -352,8 +377,19 @@ where
                     return SOME_FAILED;
                 }
             }
+            if pick {
+                match pick_sessions(&opts, &mut io::stdin().lock(), out, err) {
+                    Ok(Some(chosen)) => sel = chosen,
+                    Ok(None) => return OK,
+                    Err(code) => return code,
+                }
+            }
+            if list {
+                return list_sessions(&opts, &sel, json, out, err);
+            }
             backfill(
                 &opts,
+                &sel,
                 !(dry_run || no_extract),
                 !(dry_run || no_mirror),
                 json,
@@ -814,15 +850,171 @@ fn stats_text(store: &Store, json: bool) -> Result<String, String> {
 }
 
 /// Ingest, then (when `extract`) extract; one combined report.
+/// Reads one trimmed line; `None` at end of input.
+fn read_answer(input: &mut impl BufRead) -> Option<String> {
+    let mut line = String::new();
+    match input.read_line(&mut line) {
+        Ok(0) | Err(_) => None,
+        Ok(_) => Some(line.trim().to_owned()),
+    }
+}
+
+/// Asks until `parse` accepts the answer. `None` on empty answer, `q` or end of input.
+fn ask<T>(
+    input: &mut impl BufRead,
+    out: &mut impl Write,
+    prompt: &str,
+    parse: impl Fn(&str) -> Result<T, String>,
+) -> Option<T> {
+    loop {
+        let _ = write!(out, "{prompt}");
+        let _ = out.flush();
+        let a = read_answer(input)?;
+        if a.is_empty() || a.eq_ignore_ascii_case("q") {
+            return None;
+        }
+        match parse(&a) {
+            Ok(v) => return Some(v),
+            Err(m) => {
+                let _ = writeln!(out, "  {m}");
+            }
+        }
+    }
+}
+
+/// Interactive menu: pick a harness, then sessions. `Ok(None)` when cancelled,
+/// `Err(code)` when there is nothing to choose from.
+fn pick_sessions(
+    opts: &Options,
+    input: &mut impl BufRead,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> Result<Option<Selection>, u8> {
+    let all: Vec<_> = match ingest::list(opts, &Selection::default()) {
+        Ok(f) => f
+            .into_iter()
+            .filter(|c| !select::is_subagent(&c.path))
+            .collect(),
+        Err(e) => return Err(emit(err, &format!("error: {e}\n"), USAGE)),
+    };
+    let mut harnesses: Vec<&str> = Vec::new();
+    for c in &all {
+        if !harnesses.contains(&c.agent) {
+            harnesses.push(c.agent);
+        }
+    }
+    if harnesses.is_empty() {
+        return Err(emit(
+            err,
+            "error: no sessions found to choose from\n",
+            USAGE,
+        ));
+    }
+    let _ = writeln!(out, "Which tool's sessions?");
+    for (i, h) in harnesses.iter().enumerate() {
+        let n = all.iter().filter(|c| c.agent == *h).count();
+        let _ = writeln!(out, "  {}) {h} ({n} sessions)", i + 1);
+    }
+    let Some(h) = ask(input, out, "Choose [number, q to cancel]: ", |a| {
+        select::parse_choice(a, harnesses.len()).and_then(|v| {
+            (v.len() == 1)
+                .then(|| harnesses[v[0]])
+                .ok_or_else(|| "choose one".to_owned())
+        })
+    }) else {
+        return Ok(None);
+    };
+    let mut rows: Vec<_> = all.iter().filter(|c| c.agent == h).collect();
+    rows.sort_by(|a, b| a.cwd.cmp(&b.cwd).then_with(|| a.path.cmp(&b.path)));
+    let _ = writeln!(out, "\n{h} sessions:");
+    for (i, c) in rows.iter().enumerate() {
+        let id = select::session_ids(&c.path)
+            .into_iter()
+            .next()
+            .unwrap_or_default();
+        let id: String = id
+            .chars()
+            .rev()
+            .take(12)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
+        let bytes = fs::metadata(&c.path).map_or(0, |m| m.len());
+        let cwd = c
+            .cwd
+            .as_ref()
+            .map_or_else(|| "?".to_owned(), |p| p.display().to_string());
+        let _ = writeln!(out, "  {:>3}) {cwd}  …{id}  {}", i + 1, size(bytes));
+    }
+    let Some(chosen) = ask(
+        input,
+        out,
+        "Import which? [e.g. 1,3-5 or a for all, q to cancel]: ",
+        |a| select::parse_choice(a, rows.len()),
+    ) else {
+        return Ok(None);
+    };
+    let sessions = chosen
+        .into_iter()
+        .filter_map(|i| select::session_ids(&rows[i].path).into_iter().next())
+        .collect();
+    Ok(Some(Selection {
+        dirs: Vec::new(),
+        sessions,
+    }))
+}
+
+fn list_sessions(
+    opts: &Options,
+    sel: &Selection,
+    json: bool,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let found = match ingest::list(opts, sel) {
+        Ok(f) => f,
+        Err(e) => return emit(err, &format!("error: {e}\n"), USAGE),
+    };
+    let text = if json {
+        let rows: Vec<_> = found
+            .iter()
+            .map(|c| {
+                json!({"agent": c.agent, "path": c.path.display().to_string(),
+                       "cwd": c.cwd.as_ref().map(|p| p.display().to_string()),
+                       "id": select::session_ids(&c.path).first()})
+            })
+            .collect();
+        format!("{}\n", json!({"sessions": rows}))
+    } else {
+        let mut t = String::new();
+        for c in &found {
+            let id = select::session_ids(&c.path)
+                .into_iter()
+                .next()
+                .unwrap_or_default();
+            let cwd = c
+                .cwd
+                .as_ref()
+                .map_or_else(|| "?".to_owned(), |p| p.display().to_string());
+            let _ = writeln!(t, "{:<7} {id}  {cwd}", c.agent);
+        }
+        let _ = writeln!(t, "{} session(s)", found.len());
+        t
+    };
+    emit(out, &text, OK)
+}
+
 fn backfill(
     opts: &Options,
+    sel: &Selection,
     extract: bool,
     mirror: bool,
     json: bool,
     out: &mut impl Write,
     err: &mut impl Write,
 ) -> u8 {
-    let report = match ingest::run(opts) {
+    let report = match ingest::run_selected(opts, sel) {
         Ok(report) => report,
         Err(e) => return emit(err, &format!("error: {e}\n"), USAGE),
     };

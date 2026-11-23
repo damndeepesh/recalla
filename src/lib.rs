@@ -19,6 +19,7 @@ pub mod ops;
 pub mod pack;
 pub mod paths;
 pub mod redact;
+pub mod select;
 pub mod store;
 pub mod ui;
 

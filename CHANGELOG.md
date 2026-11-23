@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+- `recalla backfill --dir PATH`, `--session ID|FILE` (both repeatable), `--list` and `--pick`: import one project or a few sessions instead of the whole history. `--pick` asks for Claude Code or Codex, lists that tool's sessions, and imports the numbers you choose. A selector that matches nothing is an error and writes nothing.
+
 ### Changed
 - `recalla ui`: redesigned dashboard (new visual system with self-hosted Bricolage Grotesque and Geist, bento Home with activity and token charts, memory browser, sessions, context packs, setup). Memory text renders `code` spans.
 

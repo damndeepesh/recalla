@@ -101,6 +101,10 @@ flowchart LR
 - Archive: `archive/<blake3>.zst`, content-addressed, written once (tmp + fsync + rename). Holds RAW bytes (local copy, 0600). `--no-archive` opts out.
 - Measured on real logs: 30.4 MB in 0.65 s (28 MB peak RSS). DB ~20% of raw; archive ~16% of raw. Re-run is a no-op in 1 ms.
 
+### Scoped backfill (`select`)
+
+`backfill --dir/--session` filters the discovered files before anything is opened. `select` matches a session's working directory (read from the first records, since Claude's project folder name is a lossy encoding) by path prefix on canonical paths, or its id (exact, or 8+ characters of start/end; subagent files follow their parent session). Selectors that match nothing fail the run before the store is touched. `--list` prints candidates; `--pick` is a stdin menu (tool, then sessions) that resolves to id selectors. Sources are keyed by path, so partial runs compose with later full ones.
+
 ## Store schema (v2)
 - `sources`: one checkpoint per log file (identity, size, next_offset).
 - `events`: redacted, truncated events with full provenance, plus `events_fts` (FTS5).

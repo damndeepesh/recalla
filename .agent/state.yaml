@@ -1,15 +1,13 @@
 updated: 2026-11-23
 milestone: v0.3.0
-branch: feature/ui-redesign
-task: "Dashboard redesign (recalla ui): final polish before PR"
+branch: feature/scoped-backfill
+task: "backfill --dir/--session/--list/--pick: PR + merge"
 status: review
 plan: null
 done:
-  - landing page: intro video band (assets/recalla-intro.mp4, poster, media-src CSP); PRs #40 #41 + portfolio #5 open, merging
-  - released v0.2.1; redesign committed with fixes: no stray null, bars-only chart, backtick code, sidebar footer, Home rows fill full width (626f45c); make check green
+  - scoped backfill implemented (src/select.rs, ingest::run_selected/list, cli flags); 16 integration tests + unit tests; make check green
 next:
-  - make secrets, make e2e (2 hooks checks fail on main too: test copies real ~/.claude/settings.json; fix on fix/ branch), ARCHITECTURE + CHANGELOG, then push + PR as damndeepesh
-  - docs/landing-v2 (web/) is stacked on this branch and has its own PR
+  - make secrets, push feature/scoped-backfill, PR as damndeepesh, merge after CI (no version bump)
 blockers: []
 notes:
   - this worktree (../recalla-ui) holds this branch; remove with `git worktree remove ../recalla-ui` when done
