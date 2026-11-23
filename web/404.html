@@ -8,15 +8,47 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'self'; form-action 'none'">
 <link rel="icon" href="/recalla/favicon.svg" type="image/svg+xml">
 <script src="/recalla/assets/theme.js"></script>
-<link rel="preload" href="/recalla/assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/recalla/assets/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin>
+<script src="/recalla/assets/lost.js" defer></script>
 <link rel="stylesheet" href="/recalla/assets/app.css">
 </head>
-<body>
-<main class="wrap lost">
-  <p class="chip"><span class="chip-ver">404</span><span>Not found</span></p>
-  <h1>Nothing remembered here.</h1>
-  <p class="lede">That page doesn't exist. It may have moved, or the link may be mistyped.</p>
-  <p><a class="btn" href="/recalla/">Back to Recalla</a></p>
+<body class="lost-page">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap top-in lost-top"><a class="brand" href="/recalla/" aria-label="Recalla home"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" class="mark-bg"/><path class="mark-r" fill-rule="evenodd" d="M9 8h9a5 5 0 0 1 1 9.9L23 24h-4.4l-3.4-5.8H13V24H9zm4 3.4v3.4h4.4a1.7 1.7 0 0 0 0-3.4z"/><circle class="mark-dot" cx="25" cy="8" r="3"/></svg><span>Recalla</span></a><a class="btn btn-s" href="/recalla/">Back home</a></div></header>
+<main id="main" class="wrap lost">
+<div class="lost-copy">
+<p class="lost-big" aria-hidden="true">4<span>0</span>4</p>
+<h1>Nothing remembered here.</h1>
+<p class="lede">This page has no memory on record. It may have moved, or the link may be mistyped.</p>
+<div class="recall-form">
+<label for="q">Recall a page</label>
+<div class="recall-input"><span class="p" aria-hidden="true">recall&gt;</span><input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="install, dashboard, download" aria-controls="hits" aria-describedby="hit-count"></div>
+<ul class="hits" id="hits">
+<li><a href="/recalla/">Home<small>/recalla/</small></a></li>
+<li><a href="/recalla/#install">Install in four commands<small>#install</small></a></li>
+<li><a href="/recalla/#dashboard">Dashboard tour<small>#dashboard</small></a></li>
+<li><a href="/recalla/#how">How it works<small>#how</small></a></li>
+<li><a href="/recalla/#why">Why Recalla<small>#why</small></a></li>
+<li><a href="/recalla/#download">Download and verify<small>#download</small></a></li>
+<li><a href="/recalla/#faq">Questions<small>#faq</small></a></li>
+<li><a href="https://github.com/damndeepesh/recalla">Source on GitHub<small>github</small></a></li>
+</ul>
+<p class="no-hit" id="hit-count" role="status"></p>
+</div>
+</div>
+<figure class="term lost-term">
+<div class="bar"><span class="shell">zsh</span><span class="bar-t">recalla why</span></div>
+<pre tabindex="0" aria-label="Terminal: recalla found no memory for this page"><span class="p">$</span> recalla why <span id="lost-path">this-page</span>
+<span class="miss">error: no memory matches this id</span>
+<span class="d">  searched   memories, mirror, archive</span>
+<span class="d">  superseded none</span>
+<span class="d">  anchors    none</span>
+
+<span class="d">hint: nothing here was ever remembered.</span>
+<span class="d">      Recall a page from the list instead.</span>
+
+<span class="p">$</span> <span class="cursor" aria-hidden="true">_</span></pre>
+</figure>
 </main>
 </body>
 </html>

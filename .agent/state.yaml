@@ -5,6 +5,7 @@ task: "Dashboard redesign (recalla ui): final polish before PR"
 status: review
 plan: null
 done:
+  - landing page: intro video band (assets/recalla-intro.mp4, poster, media-src CSP); PRs #40 #41 + portfolio #5 open, merging
   - released v0.2.1; redesign committed with fixes: no stray null, bars-only chart, backtick code, sidebar footer, Home rows fill full width (626f45c); make check green
 next:
   - make secrets, make e2e (2 hooks checks fail on main too: test copies real ~/.claude/settings.json; fix on fix/ branch), ARCHITECTURE + CHANGELOG, then push + PR as damndeepesh
