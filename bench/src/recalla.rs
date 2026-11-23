@@ -59,7 +59,7 @@ impl Adapter for Recalla {
         if self.backfill {
             let root = ctx.scratch.join("claude-root");
             crate::sessions::write(ctx.suite, &root)?;
-            self.project = ctx.suite.name.clone();
+            self.project = crate::sessions::cwd(ctx.suite);
             self.run(&[
                 "backfill",
                 "--root",
@@ -126,13 +126,26 @@ impl Adapter for Recalla {
         self.run(&["why", id, "--json"]).ok()
     }
 
+    /// Reads the markdown mirror, Recalla's documented plain-file export.
     fn exported(&mut self) -> Result<Option<Vec<String>>, String> {
-        let out = self.run(&["search", "", "--json", "--project", &self.project])?;
-        let v: Value = serde_json::from_str(&out).map_err(|e| e.to_string())?;
-        Ok(v.as_array().map(|a| {
-            a.iter()
-                .filter_map(|m| m["text"].as_str().map(str::to_owned))
-                .collect()
-        }))
+        let mut out = Vec::new();
+        let mut stack = vec![self.data.join("mirror")];
+        while let Some(d) = stack.pop() {
+            let Ok(rd) = std::fs::read_dir(&d) else {
+                continue;
+            };
+            for e in rd.flatten() {
+                let p = e.path();
+                if p.is_dir() {
+                    stack.push(p);
+                } else if p.extension().is_some_and(|x| x == "md") {
+                    let t = std::fs::read_to_string(&p).map_err(|e| e.to_string())?;
+                    // Body follows the closing frontmatter fence.
+                    let body = t.splitn(3, "---").nth(2).unwrap_or(&t).trim();
+                    out.push(body.to_owned());
+                }
+            }
+        }
+        Ok(Some(out))
     }
 }

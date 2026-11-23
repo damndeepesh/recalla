@@ -146,5 +146,34 @@ pub fn table(results: &[Result]) -> String {
             ));
         }
     }
+    out.push_str(
+        "\n| adapter | extraction recall | unlabeled share | memories |\n|---|---|---|---|\n",
+    );
+    let mut seen: Vec<&str> = Vec::new();
+    for r in results {
+        if seen.contains(&r.adapter.as_str()) {
+            continue;
+        }
+        let ex: Vec<&score::Extraction> = results
+            .iter()
+            .filter(|x| x.adapter == r.adapter)
+            .filter_map(|x| x.extraction.as_ref())
+            .collect();
+        if ex.is_empty() {
+            continue;
+        }
+        seen.push(&r.adapter);
+        #[allow(clippy::cast_precision_loss)]
+        let m = |g: fn(&score::Extraction) -> f64| {
+            ex.iter().map(|e| g(e)).sum::<f64>() / ex.len() as f64
+        };
+        out.push_str(&format!(
+            "| {} | {:.2} | {:.2} | {} |\n",
+            r.adapter,
+            m(|e| e.recall),
+            m(|e| e.unlabeled_share),
+            ex.iter().map(|e| e.memories).sum::<usize>()
+        ));
+    }
     out
 }
