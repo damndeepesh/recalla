@@ -1,13 +1,13 @@
 updated: 2026-11-23
 milestone: v0.3.0
-branch: feature/scoped-backfill
-task: "backfill --dir/--session/--list/--pick: PR + merge"
+branch: chore/release-0.3.0
+task: "release v0.3.0: bump, e2e, PR, tag"
 status: review
 plan: null
 done:
-  - scoped backfill implemented (src/select.rs, ingest::run_selected/list, cli flags); 16 integration tests + unit tests; make check green
+  - #42 scoped backfill and #43 landing fix merged; version bumped to 0.3.0
 next:
-  - make secrets, push feature/scoped-backfill, PR as damndeepesh, merge after CI (no version bump)
+  - make e2e, PR + merge, then cargo publish (owner go) and tag v0.3.0
 blockers: []
 notes:
   - this worktree (../recalla-ui) holds this branch; remove with `git worktree remove ../recalla-ui` when done
