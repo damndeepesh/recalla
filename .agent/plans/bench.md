@@ -23,17 +23,18 @@ A neutral, runnable benchmark for coding-agent memory tools. Primary axis: what 
 - Credibility: fixed seeds, pinned token counter (same est_tokens for all, documented), raw per-probe outputs saved, report JSON + markdown, loses-where listed automatically. No network, no LLM, no API key. Agent-run tier (repeat-mistake, adherence) deferred; needs owner approval for subscription use.
 
 ## Steps
-- [ ] 1. DESIGN_DECISIONS entry (separate crate, black-box adapters, scoring, tokens) + SPEC pointer
-- [ ] 2. Workspace + `bench/` crate skeleton, CLI (`run`, `list`, `report`), JSON report types
-- [ ] 3. Suite format + seeded synthetic repo/history generator (git commits, decisions/gotchas/preferences, distractors)
-- [ ] 4. Adapters: none, dump, file
-- [ ] 5. Adapter: recalla (CLI + mcp), MCP-generic client (JSON-RPC stdio)
-- [ ] 6. Scorers 1-4 + tests on tiny fixtures with hand-computed expectations
-- [ ] 7. Staleness scenario (git commit changes anchored code)
-- [ ] 8. Add-ons: extraction (transcript-in), token savings
-- [ ] 9. Report (JSON + markdown, per-probe raw, weighted total, where-each-tool-loses)
-- [ ] 10. Real-data mode
-- [ ] 11. `make bench`, CI smoke (tiny suite), docs (bench/README.md, README link), CHANGELOG, state
+Done (wip commits on feature/bench): crate skeleton, miner + 18 suites, tokens/matching/score, adapters none/dump/file/grep/recalla/recalla-backfill, MCP client, session writer, `run` table incl. extraction, safe path names.
+- [ ] A. Probe quality: a required fact must share a content word with the task or files (flask/requests have none; drop or remint); report probe counts per suite
+- [ ] B. Provenance scoring wired into `run` (mid budget, with files) via adapter `source`
+- [ ] C. Generic MCP adapter (command + tool names via flags) and a fake MCP server in tests
+- [ ] D. Report: raw per-probe JSON, where-each-tool-loses, tune vs holdout, weighted total (3 pillars, equal)
+- [ ] E. Hand spot-check of ~20 mined facts/probes; record findings in bench/README.md
+- [ ] F. bench/SCORING.md (lock definitions + weights), bench/README.md, DESIGN_DECISIONS (tempfile), `make bench`, CI smoke, CHANGELOG, state
+- [ ] G. Real-data mode (`membench real`), local only
+- Deferred: agent-run tier (billed; needs approval); claude-mem/supermemory (need LLM/network; separate tier, needs approval)
+
+## Rules
+All work on feature/bench into dev, never main. No tuning Recalla against the holdout split; only fix real defects (e.g. #48), each on its own branch.
 
 ## Files
 bench/**, Cargo.toml (workspace), Makefile, DESIGN_DECISIONS.md, CHANGELOG.md, .agent/state.yaml, README.md, CI workflow (smoke).
