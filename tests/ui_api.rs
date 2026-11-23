@@ -362,7 +362,11 @@ fn overview_shape_and_numbers() {
             assert!(d[f].is_u64() || d[f].is_i64(), "{f}");
         }
     }
-    assert!(activity.windows(2).all(|w| w[1]["day"].as_i64() > w[0]["day"].as_i64()));
+    assert!(
+        activity
+            .windows(2)
+            .all(|w| w[1]["day"].as_i64() > w[0]["day"].as_i64())
+    );
     assert_eq!(v["memories"]["total"], total);
     let by_status: u64 = v["memories"]["by_status"]
         .as_object()
