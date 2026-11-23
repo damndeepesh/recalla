@@ -1,16 +1,14 @@
 updated: 2026-11-23
-milestone: v1.0
-branch: feature/ui
-task: "recalla ui: local dashboard with connector status"
+milestone: v0.2.0
+branch: chore/release-0.2.0
+task: "Release v0.2.0 (recalla ui dashboard)"
 status: review
-plan: .agent/plans/ui.md
+plan: null
 done:
-  - dashboard built (server, API, frontend, schema v8); security review fixes (D-023)
-  - docs: CHANGELOG, README, ADR D-022/D-023, ARCHITECTURE
+  - dashboard merged (#36); release PR with version bump, changelog, landing section
 next:
-  - open PR for feature/ui
-  - release v0.2.0 on the user's go (bump, CHANGELOG, publish, tag; then update web/ landing page)
+  - merge release PR, cargo publish, tag v0.2.0, verify release + crates.io + landing page
+  - then issues: #27 recalla forget, extractor #13-#17 (v0.3.0), redaction #4-#8 (v0.3.0, Opus review), #32 Windows
 blockers: []
 notes:
-  - v0.1.0 release and landing page items from main are tracked in git history; Pages must be enabled once by the user
-  - version stays 0.1.0 until the release step
+  - Cloudflare serves deepeshgupta.dev; portfolio carries a copy of web/ in public/recalla (see web/README.md to refresh after a page change)
