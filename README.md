@@ -15,7 +15,7 @@ It turns your existing session history into compact, source-linked memories, fla
 </div>
 
 > [!WARNING]
-> **Alpha (v0.2.1).** Imports Claude Code and Codex history and works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Extraction is rule-based, precise but not exhaustive, and still being tuned on real histories. See [ROADMAP.md](ROADMAP.md) for what's next, and please [open an issue](https://github.com/damndeepesh/recalla/issues) if it misses or invents something on your logs.
+> **Alpha (v0.3.0).** Imports Claude Code and Codex history and works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Extraction is rule-based, precise but not exhaustive, and still being tuned on real histories. See [ROADMAP.md](ROADMAP.md) for what's next, and please [open an issue](https://github.com/damndeepesh/recalla/issues) if it misses or invents something on your logs.
 
 ---
 
@@ -52,7 +52,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for components and data flow.
 
 ## Status
 
-Alpha (v0.2.1). Everything in the MVP is built and covered by tests and an end-to-end script.
+Alpha (v0.3.0). Everything in the MVP is built and covered by tests and an end-to-end script.
 
 | Component | State |
 | --- | --- |
