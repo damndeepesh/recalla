@@ -1,0 +1,393 @@
+{
+  "name": "fzf-e2",
+  "repo": {
+    "url": "https://github.com/junegunn/fzf",
+    "license": "MIT",
+    "t0": "c97172bdd477725c35034526e35a518a61df7e58",
+    "t1": "8d20f3d5c4e2645e623ed43487501dfe76a86b98",
+    "head": "53bcdc4294540fa8d927a5532cc7ac0aa58e3487"
+  },
+  "facts": [
+    {
+      "id": "f2e8e63fb-0",
+      "kind": "decision",
+      "text": "Instead of drawing the window border in Vim using an extra window, extend the --border option so that we do can it natively.",
+      "files": [
+        "man/man1/fzf.1",
+        "plugin/fzf.vim",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/tui/tui.go"
+      ],
+      "commit": "2e8e63fb0b3b62e89472eebe9e86578598e1a541",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.72
+    },
+    {
+      "id": "f1c68f81c-0",
+      "kind": "decision",
+      "text": "While such extra messages should be properly addressed by the user, we can ignore them by checking the last line of the output instead of the first line.",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "1c68f81c37f62db849ba8a37a0de68e2e3397938",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f1ed25d76-0",
+      "kind": "gotcha",
+      "text": "The clean-up is done in s:collect(), so let's make sure it's run before we may terminate due to CTRL-C or ESC (or some other error code) in s:exit_handler().",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "1ed25d76ba51f9b3ab66f75b73734be43d41b8c3",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f37708ad9-0",
+      "kind": "decision",
+      "text": "The change is no longer necessary since 090dee8.",
+      "files": [
+        "shell/key-bindings.zsh"
+      ],
+      "commit": "37708ad9cd5d6f37cee63a1ee1a8308f60283c3d",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f4271e9cf-0",
+      "kind": "decision",
+      "text": "Fix Ctrl+Space key combination to emit CtrlSpace instead of Rune ' '",
+      "files": [
+        "src/tui/tcell.go",
+        "src/tui/tcell_test.go"
+      ],
+      "commit": "4271e9cffae06b0b98d334d67ff7f0f5f9da80b0",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fca43f95f-0",
+      "kind": "decision",
+      "text": "Fix Backspace key to emit BSpace and AltBS events instead of CtrlH",
+      "files": [
+        "src/tui/tcell.go",
+        "src/tui/tcell_test.go"
+      ],
+      "commit": "ca43f95fb1835f74f837e1599a3383b4a7123390",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fedac9820-0",
+      "kind": "gotcha",
+      "text": "No need to repeatedly run cygpath process because $SHELL never changes.",
+      "files": [
+        "src/util/util_windows.go"
+      ],
+      "commit": "edac9820b54d8db7ef667c2d79b9e526c625f59d",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f3312cf52-0",
+      "kind": "decision",
+      "text": "This makes it easier to make customizations, for example instead of",
+      "files": [
+        "shell/key-bindings.bash"
+      ],
+      "commit": "3312cf525d23b3e12ae3a7261220a0e952c43ead",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f52594355-0",
+      "kind": "decision",
+      "text": "'kill **<tab>' instead of 'kill <tab>' just like any other completions.",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh",
+        "test/test_go.rb"
+      ],
+      "commit": "52594355bfa63ce7d579c7961f4f2fb30b486101",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "ff0bfeba7-0",
+      "kind": "gotcha",
+      "text": "But we're not going to set it as the default because it is computationally more expensive.",
+      "files": [
+        "man/man1/fzf-tmux.1",
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/result.go",
+        "src/result_test.go",
+        "test/test_go.rb"
+      ],
+      "commit": "f0bfeba733f755a81b2e2d327268f2dabae8f684",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.86
+    },
+    {
+      "id": "ff9d53303-0",
+      "kind": "gotcha",
+      "text": "&shell is guaranteed to be cmd.exe on windows because we call s:use_sh()",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "f9d53303bb00225edb6e46ca1851e5cf1b55e623",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "ff6ce624c-0",
+      "kind": "gotcha",
+      "text": "Also fix failing tests due to info separator",
+      "files": [
+        "test/test_go.rb"
+      ],
+      "commit": "f6ce624c6f70f0a381f6ed13b423374363338641",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.89
+    },
+    {
+      "id": "f0881a6bc-0",
+      "kind": "gotcha",
+      "text": "NOTE: An error from setwinvar call is ignored because the exact behavior of &winhighlight with an empty target group is not clearly documented.",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "0881a6bc17d970d2833be21fafc8de69fe468631",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "fb7bb9731-0",
+      "kind": "gotcha",
+      "text": "Technically, there's no reason to use the API because the information is already available via `{}` and `{q}`, but I'd like to completely remove the risk of misuse.",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/server.go",
+        "src/terminal.go",
+        "test/test_go.rb"
+      ],
+      "commit": "b7bb97311810bd94483df32c6e9102814e9ea514",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.28
+    },
+    {
+      "id": "f0c5956c4-0",
+      "kind": "gotcha",
+      "text": "* Default border style on Windows is changed to `sharp` because some Windows terminals are not capable of displaying `rounded` border characters correctly.",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/dummy.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/tui/tui.go"
+      ],
+      "commit": "0c5956c43c1604d8e4364f08369dc4c58295ef3c",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.71
+    },
+    {
+      "id": "f284d77fe-0",
+      "kind": "gotcha",
+      "text": "* 'point', because \"the pointer\" points to the current item.",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/tui.go",
+        "test/test_go.rb"
+      ],
+      "commit": "284d77fe2e41ec69fcc7ca7162bcf9b65b1641be",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.73
+    }
+  ],
+  "probes": [
+    {
+      "id": "p1a9ea6f7",
+      "task": "Remove 'replace' directive for 'go install' compatibility",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "src/options.go",
+        "src/terminal.go",
+        "src/tui/light.go",
+        "src/tui/tcell.go",
+        "src/util/util.go"
+      ],
+      "commit": "1a9ea6f738cfafab83a5e0e828e60f0bf68bffee",
+      "required": [],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pcdfaf761",
+      "task": "Expose state information via environment variables to child processes",
+      "files": [
+        "man/man1/fzf.1",
+        "src/terminal.go"
+      ],
+      "commit": "cdfaf761df2e68503ca7c74c0aaa3e6fa4a46bda",
+      "required": [],
+      "stale": [
+        "fb7bb9731-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p413c66be",
+      "task": "Fix tests for tcell build",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "src/tui/tcell.go",
+        "test/test_go.rb"
+      ],
+      "commit": "413c66beba677d7492c1e61cd7d225227c012f9b",
+      "required": [
+        "ff6ce624c-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p2a1e5a97",
+      "task": "More test fixes for tcell on GitHub Actions",
+      "files": [
+        "test/test_go.rb"
+      ],
+      "commit": "2a1e5a9729eb9c9240d632fb40ac97924f013a45",
+      "required": [
+        "ff0bfeba7-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p88f4c167",
+      "task": "Make it possible to disable `Ctrl+T` / `Alt+C` / completions (#3678)",
+      "files": [
+        "shell/key-bindings.bash",
+        "shell/key-bindings.fish",
+        "shell/key-bindings.zsh",
+        "test/test_go.rb"
+      ],
+      "commit": "88f4c16755d8fb53e55adec84d60d4aeaf1e7d91",
+      "required": [
+        "f52594355-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p8a2df797",
+      "task": "Do not hide separator by default on --info=inline-right|hidden",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "test/test_go.rb"
+      ],
+      "commit": "8a2df7971186884b3115db68b751622f1f683481",
+      "required": [
+        "ff0bfeba7-0",
+        "ff6ce624c-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pa4391aee",
+      "task": "Add --with-shell for shelling out with different command and flags (#3746)",
+      "files": [
+        "man/man1/fzf.1",
+        "src/core.go",
+        "src/options.go",
+        "src/reader.go",
+        "src/reader_test.go",
+        "src/terminal.go",
+        "src/terminal_test.go",
+        "src/terminal_unix.go",
+        "src/terminal_windows.go",
+        "src/util/util_unix.go",
+        "src/util/util_windows.go",
+        "test/test_go.rb"
+      ],
+      "commit": "a4391aeedd4fec1865d2d646711f58d04058531b",
+      "required": [
+        "fedac9820-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p7ed6c790",
+      "task": "Determine shell type once by the basename",
+      "files": [
+        "src/util/util_windows.go"
+      ],
+      "commit": "7ed6c7905c814d22e3c12cf161a054d3ecb7adde",
+      "required": [
+        "fedac9820-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p0994d9c8",
+      "task": "Make :FZF work in Vim from Git Bash (#3798)",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "0994d9c881f8380997b96bb0a4a7416b50bc2b0d",
+      "required": [
+        "f1ed25d76-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p74f196ee",
+      "task": "[vim] Fix callback not run on exit code 1",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "74f196eebbc6adfbb4d6423fbefe3c8cdeebe67e",
+      "required": [
+        "f1ed25d76-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    }
+  ]
+}

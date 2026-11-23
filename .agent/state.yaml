@@ -1,17 +1,16 @@
 updated: 2026-11-23
 milestone: v0.4 (dev)
-branch: feature/pack-ranking
-task: "Task-focused pack --query (PR #49 into dev)"
+branch: feature/bench
+task: "Benchmark (bench/): PR into dev; then real-data mode"
 status: review
 plan: .agent/plans/bench.md
 done:
-  - "dev has forget (#45), extractor recall/precision (#46, #47), pack --query any-word match (#48)"
-  - "#49: pack --query focuses on the task (file anchors, 25% cutoff, near-dup drop); make check green"
-  - "feature/bench (local, unpushed): membench miner, 18 suites, adapters, scorers, provenance, real worktree t0->t1"
+  - "dev has forget, extractor fixes, pack --query any-word match (#48) and task focus (#49)"
+  - "bench real: membench real mines the local repo history (private clone, nothing uploaded)"
+  - "bench/: miner, 18 suites (240 probes), adapters (none/dump/file/grep/mcp/recalla/recalla-backfill), scorers, report, make bench, CI job, SCORING/README/SPOTCHECK"
 next:
-  - merge #49 into dev when CI is green (never main for now)
-  - finish bench steps C-G in .agent/plans/bench.md (generic MCP adapter, report, hand spot-check, docs, make bench, real-data mode), then PR feature/bench into dev
-  - later: per-file PreToolUse recall hook; extraction from plain assistant explanations (6% recall on bench)
+  - PR feature/bench into dev, merge when CI is green (never main for now)
+  - Recalla: extraction from plain assistant explanations (bench extraction recall 0.05); per-file PreToolUse recall hook
 blockers: []
 notes:
   - e2e has 2 pre-existing hooks failures (install/uninstall settings), unrelated to pack

@@ -1,0 +1,237 @@
+{
+  "name": "flask-e2",
+  "repo": {
+    "url": "https://github.com/pallets/flask",
+    "license": "BSD-3-Clause",
+    "t0": "7c510199850957161240f081359e2246d8982be1",
+    "t1": "f13870731c100d3ed7daa5d96a75b697973def77",
+    "head": "12a4d1554689c0a0ac13988b0daf10c23c37c81d"
+  },
+  "facts": [
+    {
+      "id": "f4dc2ef19-0",
+      "kind": "decision",
+      "text": "Use pytest.raises() instead of try/catch with asser 0",
+      "files": [
+        "tests/test_basic.py",
+        "tests/test_blueprints.py",
+        "tests/test_config.py",
+        "tests/test_reqctx.py",
+        "tests/test_testing.py"
+      ],
+      "commit": "4dc2ef19eaa4ced5cb2f4a2a1673e65459c355d2",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f8482ce6b-0",
+      "kind": "decision",
+      "text": "Exceptions during teardown handling will no longer leave application contexts lingering around.",
+      "files": [
+        "flask/ctx.py",
+        "tests/test_appctx.py"
+      ],
+      "commit": "8482ce6b8ca9f1110b86bff4c3f998655fdecf8a",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.94
+    },
+    {
+      "id": "f70de011d-0",
+      "kind": "decision",
+      "text": "> Starting today, Read the Docs will start hosting projects from subdomains on the domain readthedocs.io, instead of on readthedocs.org.",
+      "files": [
+        "docs/conf.py"
+      ],
+      "commit": "70de011d5102bea6b97010643cf36698f94f97fb",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fba07f5bd-0",
+      "kind": "decision",
+      "text": "When raising a DeprecationWarning, show the line in the application code which caused the warning, rather than the line in Flask",
+      "files": [
+        "flask/exthook.py"
+      ],
+      "commit": "ba07f5bd81f66a40333cc619d0a8a7b3c17ec49f",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f6bee3e49-0",
+      "kind": "decision",
+      "text": "Add a --version switch to flask cli re #1828",
+      "files": [
+        "flask/cli.py"
+      ],
+      "commit": "6bee3e4995066466a35ac080844d4962a728d084",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.76
+    },
+    {
+      "id": "f0514ba2d-0",
+      "kind": "gotcha",
+      "text": "This is because reading the jinja_env object causes the environment initialisation function to set auto_reload to app.debug (which isn't yet True).",
+      "files": [
+        "flask/app.py"
+      ],
+      "commit": "0514ba2de1751de1b0c9a223c96f6a7145714e6a",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f1df2788a-0",
+      "kind": "decision",
+      "text": "Use app_ctx instead of request_ctx to access the app",
+      "files": [
+        "flask/wrappers.py"
+      ],
+      "commit": "1df2788a8f29a1238cbdebd7fa59b0d6218995b5",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.27
+    },
+    {
+      "id": "f7a7a163f-0",
+      "kind": "gotcha",
+      "text": "shorten output when ImportError due to app bug.",
+      "files": [
+        "flask/cli.py"
+      ],
+      "commit": "7a7a163ff18c4491b8c2a6cd0630a6f4e4ce2984",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fca176cb9-0",
+      "kind": "decision",
+      "text": "pass serializer at tag init instead of to each method split tagged dict and passthrough into separate cases add docstrings",
+      "files": [
+        "flask/json/tag.py"
+      ],
+      "commit": "ca176cb903f9566be07e359791e364ce2fe0b1bc",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.91
+    },
+    {
+      "id": "fd75d83de-0",
+      "kind": "gotcha",
+      "text": "test_encode_aware_datetime() fails for non-UTC timezones due to the bug.",
+      "files": [
+        "tests/test_helpers.py"
+      ],
+      "commit": "d75d83defdbcc2e498f816b5cd20dcc24a1b7138",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.11
+    },
+    {
+      "id": "f4d2a3ab2-0",
+      "kind": "decision",
+      "text": "test no debug flag doesn't reconfigure test templates_auto_reload property instead of config use app fixture in test",
+      "files": [
+        "tests/test_templating.py"
+      ],
+      "commit": "4d2a3ab2e07e36b56d09e16f0836dbd0bdd7b34c",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "feb961834-0",
+      "kind": "gotcha",
+      "text": "This is because datetime.timezone is Python 3 only.",
+      "files": [
+        "tests/test_helpers.py"
+      ],
+      "commit": "eb9618347c680a038e2e6310228d85a53b080f93",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "pc38499bb",
+      "task": "ignore colon with slash when split app_import_path Flask currently supports importing app through a combination of module path and app variable name, such as '/usr/app.py:my_app'. When the module path contains a colon, it will conflict with this import way and a `flask.cli.NoAppException` will be raised.",
+      "files": [
+        "flask/cli.py",
+        "tests/test_cli.py"
+      ],
+      "commit": "c38499bbf26cfa9683e30c52139a94dc5a50dcc4",
+      "required": [],
+      "stale": [
+        "f7a7a163f-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "ped9775fb",
+      "task": "Handle errors during create_url_adapter",
+      "files": [
+        "flask/ctx.py",
+        "tests/test_reqctx.py"
+      ],
+      "commit": "ed9775fb77bc2291473c176937326aadd435f73c",
+      "required": [
+        "f8482ce6b-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pdbd4520c",
+      "task": "fix tests failing with server name warnings",
+      "files": [
+        "tests/conftest.py",
+        "tests/test_basic.py",
+        "tests/test_helpers.py",
+        "tests/test_reqctx.py"
+      ],
+      "commit": "dbd4520ccbe0954d8ff4f926ba5f16c4f5291533",
+      "required": [
+        "f4dc2ef19-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pa5ecdfa7",
+      "task": "Fixes for PEP451 import loaders and pytest 5.x",
+      "files": [
+        "examples/tutorial/tests/test_db.py",
+        "flask/helpers.py",
+        "tests/test_basic.py",
+        "tests/test_helpers.py"
+      ],
+      "commit": "a5ecdfa7a57bf6bcba7391fc6d356e3f7de33e57",
+      "required": [
+        "f4dc2ef19-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pc367a86c",
+      "task": "Test test_send_from_directory_bad_request no longer fails in Python 3.8.",
+      "files": [
+        "tests/test_helpers.py"
+      ],
+      "commit": "c367a86cc5be70da4928b276d0218f98df6e854d",
+      "required": [],
+      "stale": [
+        "fd75d83de-0",
+        "feb961834-0"
+      ],
+      "split": "tune"
+    }
+  ]
+}
