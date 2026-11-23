@@ -38,6 +38,10 @@ enum Command {
         adapters: Vec<String>,
         #[arg(long)]
         recalla: Option<PathBuf>,
+        /// Directory of full-history clones named like the suites (see suites/build.sh).
+        /// With it, tools get a real checkout at t0 that moves to t1.
+        #[arg(long)]
+        repos: Option<PathBuf>,
         /// Only the holdout (or tune) probes.
         #[arg(long)]
         split: Option<String>,
@@ -102,6 +106,7 @@ fn run(cli: Cli) -> Result<(), String> {
             suite,
             adapters,
             recalla,
+            repos,
             split,
             out,
         } => {
@@ -122,7 +127,7 @@ fn run(cli: Cli) -> Result<(), String> {
                 for name in &adapters {
                     let dir = run::scratch(&base, &s.name, name)?;
                     let mut a = run::make(name, recalla.as_deref(), &dir)?;
-                    results.push(run::one(&s, a.as_mut(), split, &dir)?);
+                    results.push(run::one(&s, a.as_mut(), split, &dir, repos.as_deref())?);
                 }
             }
             println!("{}", run::table(&results));
@@ -135,7 +140,7 @@ fn run(cli: Cli) -> Result<(), String> {
         Command::Sessions { suite, out } => {
             let text = std::fs::read_to_string(&suite).map_err(|e| e.to_string())?;
             let s: suite::Suite = serde_json::from_str(&text).map_err(|e| e.to_string())?;
-            sessions::write(&s, &out)
+            sessions::write(&s, &out, &sessions::cwd(&s, std::path::Path::new("")))
         }
         Command::Mine {
             repo,

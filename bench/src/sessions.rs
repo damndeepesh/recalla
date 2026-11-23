@@ -9,10 +9,15 @@ use serde_json::json;
 
 use crate::suite::{Fact, Suite};
 
-/// Working directory recorded in the sessions.
+/// Working directory recorded in the sessions: the real checkout when there
+/// is one (so anchors resolve), else a placeholder.
 #[must_use]
-pub fn cwd(suite: &Suite) -> String {
-    format!("/bench/{}", suite.name)
+pub fn cwd(suite: &Suite, worktree: &Path) -> String {
+    if worktree.join(".git").exists() {
+        worktree.display().to_string()
+    } else {
+        format!("/bench/{}", suite.name)
+    }
 }
 
 /// Names that end up in file paths: suite files are untrusted input.
@@ -26,18 +31,17 @@ pub fn safe_name(s: &str) -> bool {
 }
 
 /// Writes `<root>/projects/<enc>/<fact id>.jsonl` for every fact.
-pub fn write(suite: &Suite, root: &Path) -> Result<(), String> {
+pub fn write(suite: &Suite, root: &Path, cwd: &str) -> Result<(), String> {
     if !safe_name(&suite.name) {
         return Err(format!("unsafe suite name {:?}", suite.name));
     }
-    let cwd = cwd(suite);
     let dir = root.join("projects").join(cwd.replace('/', "-"));
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     for (n, f) in suite.facts.iter().enumerate() {
         if !safe_name(&f.id) {
             return Err(format!("unsafe fact id {:?}", f.id));
         }
-        let lines = session(f, &cwd, n);
+        let lines = session(f, cwd, n);
         fs::write(dir.join(format!("{}.jsonl", f.id)), lines).map_err(|e| e.to_string())?;
     }
     Ok(())

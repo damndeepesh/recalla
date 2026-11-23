@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 
 use crate::adapter::{Adapter, Ctx, Dump, File, Grep, NoMemory, Support, scratch_for};
+use crate::git;
 use crate::recalla::Recalla;
 use crate::score::{self, ProbeScore};
 use crate::suite::{Split, Suite};
@@ -43,14 +44,28 @@ pub fn one(
     adapter: &mut dyn Adapter,
     split: Option<Split>,
     dir: &Path,
+    repos: Option<&Path>,
 ) -> std::result::Result<Result, String> {
+    let wt = dir.join("wt");
+    let repo = repos.map(|r| r.join(base_name(&suite.name)));
+    if let Some(repo) = &repo {
+        let w = wt.display().to_string();
+        git::git(
+            repo,
+            &["worktree", "add", "-q", "--detach", &w, &suite.repo.t0],
+        )?;
+    }
     let ctx = Ctx {
         suite,
-        repo: dir,
-        worktree: dir,
+        repo: repo.as_deref().unwrap_or(dir),
+        worktree: &wt,
         scratch: dir,
     };
-    if adapter.feed_facts(&ctx)? == Support::Unsupported {
+    let fed = adapter.feed_facts(&ctx);
+    if fed.is_ok() && repo.is_some() {
+        git::git(&wt, &["checkout", "-q", &suite.repo.t1])?;
+    }
+    if fed? == Support::Unsupported {
         return Err(format!("{} cannot be fed", adapter.name()));
     }
     adapter.advance(&ctx)?;
@@ -167,4 +182,9 @@ pub fn table(results: &[Result]) -> String {
         ));
     }
     out
+}
+
+/// `ripgrep-e2` -> `ripgrep`.
+fn base_name(suite: &str) -> &str {
+    suite.rsplit_once("-e").map_or(suite, |(b, _)| b)
 }

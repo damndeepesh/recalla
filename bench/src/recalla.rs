@@ -56,10 +56,15 @@ impl Adapter for Recalla {
     }
 
     fn feed_facts(&mut self, ctx: &Ctx<'_>) -> Result<Support, String> {
+        if !self.backfill && ctx.worktree.join(".git").exists() {
+            // A real directory, so `remember` can anchor to the code it names.
+            self.project = ctx.worktree.display().to_string();
+        }
         if self.backfill {
             let root = ctx.scratch.join("claude-root");
-            crate::sessions::write(ctx.suite, &root)?;
-            self.project = crate::sessions::cwd(ctx.suite);
+            let cwd = crate::sessions::cwd(ctx.suite, ctx.worktree);
+            crate::sessions::write(ctx.suite, &root, &cwd)?;
+            self.project = cwd;
             self.run(&[
                 "backfill",
                 "--root",
@@ -119,6 +124,13 @@ impl Adapter for Recalla {
             })
             .unwrap_or_default();
         Ok(Recall { items })
+    }
+
+    fn advance(&mut self, ctx: &Ctx<'_>) -> Result<(), String> {
+        if ctx.worktree.join(".git").exists() {
+            self.run(&["check", "--project", &self.project])?;
+        }
+        Ok(())
     }
 
     fn has_provenance(&self) -> bool {
