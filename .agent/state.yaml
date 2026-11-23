@@ -1,13 +1,13 @@
 updated: 2026-11-23
 milestone: v0.3.0
-branch: chore/release-0.3.0
-task: "release v0.3.0: bump, e2e, PR, tag"
+branch: feature/forget
+task: "0.4 on dev: forget (#27), extractor #13-#17"
 status: review
 plan: null
 done:
-  - #42 scoped backfill and #43 landing fix merged; version bumped to 0.3.0
+  - v0.3.0 released (tag, crates.io); dev branch created; recalla forget implemented with tests
 next:
-  - make e2e, PR + merge, then cargo publish (owner go) and tag v0.3.0
+  - PR feature/forget into dev, then extractor fixes #13/#14 (recall) and #15-#17 (precision), each on its own branch into dev; weekly dev->main merge, no version bump until the big release
 blockers: []
 notes:
   - this worktree (../recalla-ui) holds this branch; remove with `git worktree remove ../recalla-ui` when done

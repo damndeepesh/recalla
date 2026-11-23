@@ -19,7 +19,7 @@ Local-first memory engine for coding agents. It backfills session history into a
 - `recalla backfill [--dir P]... [--session ID|FILE]... [--list] [--pick] [--harness claude|codex|all] [--root R] [--codex-root C] [--data-dir D] [--no-archive] [--no-extract] [--dry-run] [--json]`: import + extract
 - `recalla extract [--rebuild]` / `recalla search <q> [--kind K] [--project P]`: re-extract / inspect memories
 - `recalla pack [--budget N] [--query Q] [--format md|json]` / `recalla stats` / `recalla why <id>`: context pack, ledger, provenance
-- `recalla check [--project P] [--json]` / `recalla confirm <id>`: flag memories whose anchored code changed / re-anchor one
+- `recalla check [--project P] [--json]` / `recalla confirm <id>` / `recalla forget <id>`: flag memories whose anchored code changed / re-anchor one / archive a wrong one
 - `recalla mirror [--full] [--json]` / `recalla rebuild --from-mirror [DIR] [--yes] [--allow-drop]`: sync the markdown mirror (also automatic; `--no-mirror` on backfill/extract) / restore the memory layer from it (dry run without `--yes`; safe while mcp/hooks run; `VACUUM INTO` backup `recalla.db.bak-<ts>`; `--allow-drop` to remove memories absent from the mirror)
 - `recalla mcp [--data-dir D] [--project P]`: MCP stdio server (tools: recall, remember, review, why)
 - `recalla hooks <install|uninstall|status> [--settings P] [--dry-run]` / `recalla hook <session-start|capture>`: Claude Code hooks (never block, log to `<data>/log/hook.log`)

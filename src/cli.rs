@@ -22,8 +22,10 @@ use crate::hooks_cfg;
 use crate::ingest::{self, Options, Report};
 use crate::mcp::{self, McpCtx};
 use crate::mirror;
-use crate::model::{Kind, Memory, Scope};
-use crate::ops::{self, PackArgs, Why, open_existing, pack_for, prefix, truncate_chars, why};
+use crate::model::{Kind, Memory, Scope, Status};
+use crate::ops::{
+    self, PackArgs, Why, clean, open_existing, pack_for, prefix, truncate_chars, why,
+};
 use crate::paths;
 use crate::select::{self, Selection};
 use crate::store::{Filter, Hit, Store, Via};
@@ -266,6 +268,13 @@ enum Command {
     },
     /// Confirm a memory is still right: re-anchor it to the code as it is now.
     Confirm {
+        /// Memory id or a prefix of at least 4 hex characters.
+        id: String,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+    },
+    /// Drop a wrong memory: archive it (undo with `recalla confirm <id>`).
+    Forget {
         /// Memory id or a prefix of at least 4 hex characters.
         id: String,
         #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
@@ -531,6 +540,7 @@ where
             json,
         } => run_check(project, data_dir, json, out, err),
         Command::Confirm { id, data_dir } => run_confirm(&id, data_dir, out, err),
+        Command::Forget { id, data_dir } => run_forget(&id, data_dir, out, err),
         Command::Why { id, data_dir, json } => {
             read_only(data_dir, out, err, |s| why(s, &id, json, true))
         }
@@ -738,6 +748,70 @@ fn run_confirm(
         ),
         Err(e) => emit(err, &format!("error: {e}\n"), SOME_FAILED),
     }
+}
+
+/// `recalla forget <id>`: archive one memory (human path, so Global memories
+/// are allowed). An ambiguous or malformed id is a usage error listing the
+/// candidates; an unknown id is a failure.
+fn run_forget(
+    id: &str,
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let mut store = match open_existing(&data_dir) {
+        Ok(s) => s,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    let found = match store.memories_by_uid_prefix(id) {
+        Ok(f) => f,
+        Err(e) => return emit(err, &format!("error: {e}\n"), USAGE),
+    };
+    let m = match found.as_slice() {
+        [] => {
+            return emit(
+                err,
+                &format!("error: no memory matches {id}\n"),
+                SOME_FAILED,
+            );
+        }
+        [m] => m,
+        many => {
+            let mut t = format!(
+                "error: {id} matches {} memories; use a longer prefix:\n",
+                many.len()
+            );
+            for m in many {
+                let _ = writeln!(
+                    t,
+                    "  {}  {}",
+                    prefix(&m.uid, 12),
+                    truncate_chars(&clean(&m.text), 70)
+                );
+            }
+            return emit(err, &t, USAGE);
+        }
+    };
+    let short = prefix(&m.uid, 8);
+    if m.status == Status::Archived {
+        return emit(out, &format!("{short} is already archived\n"), OK);
+    }
+    if let Err(e) = store.archive(&m.uid) {
+        return emit(err, &format!("error: {e}\n"), SOME_FAILED);
+    }
+    warn_mirror(&mut store, &data_dir, err);
+    emit(
+        out,
+        &format!(
+            "Archived {short}: {}\nUndo with: recalla confirm {short}\n",
+            truncate_chars(&clean(&m.text), 80)
+        ),
+        OK,
+    )
 }
 
 /// `recalla pack`. Hooks call this, so a missing database is a hint on

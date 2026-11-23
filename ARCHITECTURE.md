@@ -176,6 +176,7 @@ flowchart LR
     - with 200 ms after hook capture
     - in full via `recalla check`
 - **MCP `remember`** anchors a new memory exactly as extraction does (paths named in the text, project-scoped, root must be a real project dir), so agent-saved memories go stale too.
+- **Forget** (`recalla forget <id>`): archive by uid prefix (≥4 hex; ambiguous lists candidates, exit 2; unknown exit 1), sync the mirror. Allowed for Global memories (human path). Undo with confirm.
 - **Confirm** (`recalla confirm`, MCP `review confirm`): re-resolve the anchors, clear the reasons, set the memory Active. Symbol anchors stay symbol-only.
 - **Pack:** the "Needs re-verify ⚠" lines show the reason, e.g. `(symbol changed: Store::insert)`.
 - **Redaction:** `cwd` and `git_branch` use `redact_path` (layers 1–2, no entropy), so random path components don't break project keys (D-020).

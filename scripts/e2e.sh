@@ -143,6 +143,13 @@ $B confirm "$(sqlite3 "$D/recalla.db" "select substr(uid,1,8) from memories wher
 ok "confirm re-anchors" $?
 $B check --project "$PROJ" --data-dir "$D" 2>&1 | grep -q '0 newly stale'
 ok "check clean after confirm" $?
+uid=$(sqlite3 "$D/recalla.db" "select substr(uid,1,8) from memories where status='active' limit 1")
+$B forget "$uid" --data-dir "$D" 2>&1 | grep -q Archived
+ok "forget archives a memory" $?
+[ "$(sqlite3 "$D/recalla.db" "select status from memories where uid like '$uid%'")" = archived ]
+ok "forgotten memory is archived, not deleted" $?
+$B confirm "$uid" --data-dir "$D" >/dev/null 2>&1
+ok "confirm restores a forgotten memory" $?
 
 echo "== 7. MCP over stdio (both protocol eras)"
 MCP=$(printf '%s\n' \

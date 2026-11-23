@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+- `recalla forget <id>`: archive a wrong memory from the CLI (undo with `recalla confirm`). Closes #27.
+
 ## [0.3.0] - 2026-11-23
 
 ### Added
