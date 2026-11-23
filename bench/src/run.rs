@@ -118,7 +118,7 @@ pub fn scratch(base: &Path, suite: &str, adapter: &str) -> std::result::Result<P
     Ok(p)
 }
 
-fn mean(xs: impl Iterator<Item = f64>) -> Option<f64> {
+pub fn mean(xs: impl Iterator<Item = f64>) -> Option<f64> {
     let v: Vec<f64> = xs.collect();
     #[allow(clippy::cast_precision_loss)]
     (!v.is_empty()).then(|| v.iter().sum::<f64>() / v.len() as f64)

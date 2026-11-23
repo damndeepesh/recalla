@@ -9,6 +9,7 @@ mod mcp;
 mod mcp_adapter;
 mod mine;
 mod recalla;
+mod report;
 mod run;
 mod score;
 mod sessions;
@@ -27,45 +28,51 @@ struct Cli {
     command: Command,
 }
 
+#[derive(clap::Args)]
+struct RunArgs {
+    #[arg(long, num_args = 1.., required = true)]
+    suite: Vec<PathBuf>,
+    #[arg(
+        long,
+        value_delimiter = ',',
+        default_value = "none,file,grep,dump,recalla"
+    )]
+    adapters: Vec<String>,
+    #[arg(long)]
+    recalla: Option<PathBuf>,
+    /// Directory of full-history clones named like the suites (see suites/build.sh).
+    /// With it, tools get a real checkout at t0 that moves to t1.
+    #[arg(long)]
+    repos: Option<PathBuf>,
+    /// Only the holdout (or tune) probes.
+    #[arg(long)]
+    split: Option<String>,
+    /// Raw per-probe results as JSON.
+    #[arg(long)]
+    out: Option<PathBuf>,
+    /// Written report (markdown): totals, tune vs holdout, where each tool loses.
+    #[arg(long)]
+    report: Option<PathBuf>,
+    /// Command line of an MCP memory server, used by the `mcp` adapter.
+    #[arg(long)]
+    mcp_command: Option<String>,
+    /// Name the `mcp` adapter reports under.
+    #[arg(long, default_value = "mcp")]
+    mcp_name: String,
+    #[arg(long, default_value = "store")]
+    mcp_store_tool: String,
+    #[arg(long, default_value = "search")]
+    mcp_recall_tool: String,
+    #[arg(long, default_value = "text")]
+    mcp_text_arg: String,
+    #[arg(long, default_value = "query")]
+    mcp_query_arg: String,
+}
+
 #[derive(Subcommand)]
 enum Command {
     /// Run adapters over suites and print a markdown table.
-    Run {
-        #[arg(long, num_args = 1.., required = true)]
-        suite: Vec<PathBuf>,
-        #[arg(
-            long,
-            value_delimiter = ',',
-            default_value = "none,file,grep,dump,recalla"
-        )]
-        adapters: Vec<String>,
-        #[arg(long)]
-        recalla: Option<PathBuf>,
-        /// Directory of full-history clones named like the suites (see suites/build.sh).
-        /// With it, tools get a real checkout at t0 that moves to t1.
-        #[arg(long)]
-        repos: Option<PathBuf>,
-        /// Only the holdout (or tune) probes.
-        #[arg(long)]
-        split: Option<String>,
-        /// Raw per-probe results as JSON.
-        #[arg(long)]
-        out: Option<PathBuf>,
-        /// Command line of an MCP memory server, used by the `mcp` adapter.
-        #[arg(long)]
-        mcp_command: Option<String>,
-        /// Name the `mcp` adapter reports under.
-        #[arg(long, default_value = "mcp")]
-        mcp_name: String,
-        #[arg(long, default_value = "store")]
-        mcp_store_tool: String,
-        #[arg(long, default_value = "search")]
-        mcp_recall_tool: String,
-        #[arg(long, default_value = "text")]
-        mcp_text_arg: String,
-        #[arg(long, default_value = "query")]
-        mcp_query_arg: String,
-    },
+    Run(RunArgs),
     /// A tiny in-memory MCP memory server, for testing the `mcp` adapter.
     FakeMcp,
     /// Write a suite's facts as Claude Code session logs (for transcript-ingesting tools).
@@ -121,55 +128,7 @@ fn main() -> ExitCode {
 
 fn run(cli: Cli) -> Result<(), String> {
     match cli.command {
-        Command::Run {
-            suite,
-            adapters,
-            recalla,
-            repos,
-            split,
-            out,
-            mcp_command,
-            mcp_name,
-            mcp_store_tool,
-            mcp_recall_tool,
-            mcp_text_arg,
-            mcp_query_arg,
-        } => {
-            let mcp = mcp_command.map(|c| mcp_adapter::Spec {
-                name: mcp_name,
-                command: c.split_whitespace().map(str::to_owned).collect(),
-                store_tool: mcp_store_tool,
-                recall_tool: mcp_recall_tool,
-                text_arg: mcp_text_arg,
-                query_arg: mcp_query_arg,
-            });
-            let split = match split.as_deref() {
-                None => None,
-                Some("holdout") => Some(suite::Split::Holdout),
-                Some("tune") => Some(suite::Split::Tune),
-                Some(o) => return Err(format!("unknown split {o}")),
-            };
-            let tmp = tempfile::TempDir::new().map_err(|e| e.to_string())?;
-            let base = tmp.path().to_path_buf();
-            let mut results = Vec::new();
-            for path in &suite {
-                let text = std::fs::read_to_string(path)
-                    .map_err(|e| format!("{}: {e}", path.display()))?;
-                let s: suite::Suite =
-                    serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
-                for name in &adapters {
-                    let dir = run::scratch(&base, &s.name, name)?;
-                    let mut a = run::make(name, recalla.as_deref(), mcp.as_ref(), &dir)?;
-                    results.push(run::one(&s, a.as_mut(), split, &dir, repos.as_deref())?);
-                }
-            }
-            println!("{}", run::table(&results));
-            if let Some(p) = out {
-                let json = serde_json::to_string_pretty(&results).map_err(|e| e.to_string())?;
-                std::fs::write(&p, json).map_err(|e| e.to_string())?;
-            }
-            Ok(())
-        }
+        Command::Run(a) => cmd_run(a),
         Command::FakeMcp => fake::serve(),
         Command::Sessions { suite, out } => {
             let text = std::fs::read_to_string(&suite).map_err(|e| e.to_string())?;
@@ -217,4 +176,62 @@ fn run(cli: Cli) -> Result<(), String> {
             Ok(())
         }
     }
+}
+
+fn cmd_run(a: RunArgs) -> Result<(), String> {
+    let RunArgs {
+        suite,
+        adapters,
+        recalla,
+        repos,
+        split,
+        out,
+        report,
+        mcp_command,
+        mcp_name,
+        mcp_store_tool,
+        mcp_recall_tool,
+        mcp_text_arg,
+        mcp_query_arg,
+    } = a;
+
+    let mcp = mcp_command.map(|c| mcp_adapter::Spec {
+        name: mcp_name,
+        command: c.split_whitespace().map(str::to_owned).collect(),
+        store_tool: mcp_store_tool,
+        recall_tool: mcp_recall_tool,
+        text_arg: mcp_text_arg,
+        query_arg: mcp_query_arg,
+    });
+    let split = match split.as_deref() {
+        None => None,
+        Some("holdout") => Some(suite::Split::Holdout),
+        Some("tune") => Some(suite::Split::Tune),
+        Some(o) => return Err(format!("unknown split {o}")),
+    };
+    let tmp = tempfile::TempDir::new().map_err(|e| e.to_string())?;
+    let base = tmp.path().to_path_buf();
+    let mut results = Vec::new();
+    let mut suites = Vec::new();
+    for path in &suite {
+        let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let s: suite::Suite =
+            serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
+        for name in &adapters {
+            let dir = run::scratch(&base, &s.name, name)?;
+            let mut a = run::make(name, recalla.as_deref(), mcp.as_ref(), &dir)?;
+            results.push(run::one(&s, a.as_mut(), split, &dir, repos.as_deref())?);
+        }
+        suites.push(s);
+    }
+    println!("{}", run::table(&results));
+    if let Some(p) = report {
+        std::fs::write(&p, report::render(&results, &suites))
+            .map_err(|e| format!("{}: {e}", p.display()))?;
+    }
+    if let Some(p) = out {
+        let json = serde_json::to_string_pretty(&results).map_err(|e| e.to_string())?;
+        std::fs::write(&p, json).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
