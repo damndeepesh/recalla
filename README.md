@@ -104,7 +104,7 @@ Measured on an Apple M2, reproducible from a checkout:
 
 ## Known limits
 
-- **Extraction is rule-based.** It is precise but misses implicit rules, and it can still pick up a stray sentence. Check what it found with `recalla search`. To drop a wrong memory, ask your agent to forget it through the MCP `review` tool (reversible with `recalla confirm <id>`); a standalone `recalla forget` command is the first post-release item. Please [open an issue](https://github.com/damndeepesh/recalla/issues) for anything it gets wrong.
+- **Extraction is rule-based.** It is precise but misses implicit rules, and it can still pick up a stray sentence. Check what it found with `recalla search`. To drop a wrong memory, run `recalla forget <id>` (reversible with `recalla confirm <id>`). Please [open an issue](https://github.com/damndeepesh/recalla/issues) for anything it gets wrong.
 - **Anchors need code to anchor to.** A memory is anchored when it names a symbol that exists in a file from the same session (or a file path in its text). Prose-only histories produce few anchors.
 - **Claude Code gets the hooks.** Codex is covered by `backfill` and by MCP; native Codex hooks are on the roadmap.
 - **English only** for extraction phrases.
@@ -125,7 +125,8 @@ recalla search "rate limit"   # inspect memories
 recalla why <id>              # where a memory came from
 recalla stats                 # what was injected, and its token cost
 recalla check                 # flag memories whose anchored code changed
-recalla confirm <id>          # re-verify a flagged memory
+recalla confirm <id>          # re-verify a flagged memory (also undoes forget)
+recalla forget <id>           # drop a wrong memory (archived, never deleted)
 recalla hooks uninstall       # remove only Recalla's hook entries
 recalla ui                    # local dashboard on 127.0.0.1 (Ctrl-C to stop; --port, --no-open)
 

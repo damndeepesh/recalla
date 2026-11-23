@@ -1,14 +1,13 @@
 updated: 2026-11-23
-milestone: v0.3.0
+milestone: v0.4 (dev)
 branch: feature/extractor-precision
-task: "release v0.3.0: bump, e2e, PR, tag"
+task: "0.4 on dev: extractor precision (#15-#17); then benchmark"
 status: review
 plan: null
 done:
-  - #42 scoped backfill and #43 landing fix merged; version bumped to 0.3.0
+  - v0.3.0 released (tag, crates.io); dev branch created; recalla forget implemented with tests
 next:
-  - extractor-precision (#15 #16 #17) done: push, PR into dev; merge #45 #46 into dev when CI green
-  - make e2e, PR + merge, then cargo publish (owner go) and tag v0.3.0
+  - merge #46 then #47 into dev (never main for now); then benchmark: /validate verdict was BUILD narrowed, neutral runnable harness, see conversation
 blockers: []
 notes:
   - this worktree (../recalla-ui) holds this branch; remove with `git worktree remove ../recalla-ui` when done
