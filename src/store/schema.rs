@@ -218,6 +218,20 @@ const MIGRATIONS: &[&str] = &[
     CREATE TRIGGER mirror_provenance_ad AFTER DELETE ON provenance BEGIN
         INSERT OR REPLACE INTO mirror_dirty (memory_id) VALUES (old.memory_id);
     END;",
+    // v8: dashboard. An injection now also records which session received it,
+    // the exact pack text, and the "dump everything" baseline (candidate
+    // count and tokens). All nullable: rows from before v8 stay valid.
+    "ALTER TABLE injections ADD COLUMN session_id TEXT;
+    ALTER TABLE injections ADD COLUMN pack_text TEXT;
+    ALTER TABLE injections ADD COLUMN candidate_count INTEGER;
+    ALTER TABLE injections ADD COLUMN candidate_tokens INTEGER;
+    CREATE INDEX injections_session ON injections (session_id);
+    -- Dashboard sorts: the exact ORDER BY (col DESC, id ASC) is index-ordered.
+    CREATE INDEX memories_updated ON memories (updated_at DESC, id);
+    CREATE INDEX memories_created ON memories (created_at DESC, id);
+    CREATE INDEX memories_seen ON memories (seen_count DESC, id);
+    CREATE INDEX memories_confidence ON memories (confidence DESC, id);
+    CREATE INDEX provenance_session ON provenance (session_id, harness);",
 ];
 
 /// Schema version this build produces.
@@ -534,5 +548,44 @@ mod tests {
         .unwrap();
         migrate(&mut conn).unwrap();
         assert_eq!(dirty(&conn), vec![1]);
+    }
+
+    #[test]
+    fn v7_injections_survive_v8_with_null_new_columns() {
+        let mut conn = Connection::open_in_memory().unwrap();
+        migrate_to(&mut conn, 7).unwrap();
+        conn.execute(
+            "INSERT INTO injections (at, project, budget, est_tokens, memory_uids, via)
+             VALUES (5, '/p', 1500, 100, '[\"a\"]', 'hook')",
+            [],
+        )
+        .unwrap();
+        migrate(&mut conn).unwrap();
+        assert_eq!(user_version(&conn), version());
+        let row: (
+            i64,
+            i64,
+            Option<String>,
+            Option<String>,
+            Option<i64>,
+            Option<i64>,
+        ) = conn
+            .query_row(
+                "SELECT at, est_tokens, session_id, pack_text, candidate_count, candidate_tokens
+                 FROM injections",
+                [],
+                |r| {
+                    Ok((
+                        r.get(0)?,
+                        r.get(1)?,
+                        r.get(2)?,
+                        r.get(3)?,
+                        r.get(4)?,
+                        r.get(5)?,
+                    ))
+                },
+            )
+            .unwrap();
+        assert_eq!(row, (5, 100, None, None, None, None));
     }
 }

@@ -193,6 +193,20 @@ enum Command {
         #[arg(long, value_name = "PROJECT")]
         project: Option<String>,
     },
+    /// Serve the local dashboard on 127.0.0.1 (Ctrl-C to stop).
+    #[command(
+        after_help = "Cookies are shared across ports on 127.0.0.1, so other local web servers could receive the session cookie: keep the dashboard closed when not in use."
+    )]
+    Ui {
+        /// Port to listen on (0 = pick a free one).
+        #[arg(long, default_value_t = 0)]
+        port: u16,
+        /// Don't open the browser.
+        #[arg(long)]
+        no_open: bool,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+    },
     /// Claude Code hook entry point; reads the hook JSON on stdin. Always exits 0.
     Hook {
         #[arg(value_enum)]
@@ -423,6 +437,7 @@ where
                 query,
                 no_log,
                 via: Via::Cli,
+                session_id: None,
             };
             run_pack(&args, format, data_dir, out, err)
         }
@@ -440,6 +455,11 @@ where
                 Err(e) => emit(err, &format!("error: mcp: {e}\n"), SOME_FAILED),
             }
         }
+        Command::Ui {
+            port,
+            no_open,
+            data_dir,
+        } => run_ui(port, !no_open, data_dir, out, err),
         Command::Hook {
             event,
             data_dir,
@@ -1072,6 +1092,124 @@ fn hit_json(h: &Hit) -> Value {
             "line": p.line,
         })).collect::<Vec<_>>(),
     })
+}
+
+/// `recalla ui`: serves the dashboard until Ctrl-C (default signal handling
+/// ends the process; the server holds nothing that needs flushing).
+fn run_ui(
+    port: u16,
+    open_browser: bool,
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    use crate::ui::UiHandler;
+    use crate::ui::security::{LOGIN_TTL, LoginCode, Token};
+    use crate::ui::server::{ServeOptions, Server};
+
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let upgrade = |v| {
+        let _ = writeln!(err, "Upgrading database to schema v{v}");
+    };
+    if let Err(e) = crate::ui::prepare(&data_dir, upgrade) {
+        return emit(err, &format!("error: {e}\n"), SOME_FAILED);
+    }
+    let secrets = Token::generate().and_then(|t| {
+        Token::generate().and_then(|c| LoginCode::generate(LOGIN_TTL).map(|l| (t, c, l)))
+    });
+    let (token, csrf, code) = match secrets {
+        Ok(s) => s,
+        Err(e) => return emit(err, &format!("error: no OS randomness: {e}\n"), SOME_FAILED),
+    };
+    let mut opts = ServeOptions::new(port, data_dir.clone());
+    opts.open_browser = open_browser;
+    let idle = opts.session_idle;
+    let server = match Server::bind(opts) {
+        Ok(s) => s,
+        Err(e) => {
+            return emit(
+                err,
+                &format!("error: cannot bind 127.0.0.1:{port}: {e}\n"),
+                USAGE,
+            );
+        }
+    };
+    let bound = match server.local_addr() {
+        Ok(a) => a.port(),
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    let url = crate::ui::login_url(bound, code.as_str());
+    let text = format!(
+        "Recalla is running at {url}\nThis link works once, for {} seconds. Run recalla ui again for a new one.\nPress Ctrl-C to stop\n",
+        LOGIN_TTL.as_secs()
+    );
+    if emit(out, &text, OK) != OK {
+        return SOME_FAILED;
+    }
+    let code = std::sync::Arc::new(code);
+    let run_dir = crate::ui::login::run_dir(&data_dir);
+    crate::ui::login::sweep_stale(&run_dir);
+    let cleanup = if open_browser {
+        open_login_page(&run_dir, bound, &code, err)
+    } else {
+        None
+    };
+    let handler = UiHandler::new(token, csrf, code, bound, data_dir).with_session_idle(idle);
+    let result = server.run(handler);
+    if let Some(c) = cleanup {
+        c.finish();
+    }
+    match result {
+        Ok(()) => OK,
+        Err(e) => emit(err, &format!("error: ui: {e}\n"), SOME_FAILED),
+    }
+}
+
+/// Writes the private redirect page and opens it (the login code never
+/// reaches the opener's argv). On failure the user still has the printed URL.
+fn open_login_page(
+    run_dir: &std::path::Path,
+    port: u16,
+    code: &std::sync::Arc<crate::ui::security::LoginCode>,
+    err: &mut impl Write,
+) -> Option<crate::ui::login::PageCleanup> {
+    use crate::ui::login;
+    let page = match login::write_page(run_dir, port, code.as_str()) {
+        Ok(p) => p,
+        Err(e) => {
+            let _ = writeln!(
+                err,
+                "note: cannot prepare the login page ({e}); open the URL above"
+            );
+            return None;
+        }
+    };
+    let cleanup = login::PageCleanup::spawn(page.clone(), std::sync::Arc::clone(code));
+    if !open_url(&page) {
+        let _ = writeln!(err, "note: could not open a browser; open the URL above");
+    }
+    Some(cleanup)
+}
+
+/// Opens `target` with the platform opener (no shell; one argv entry).
+fn open_url(target: &std::path::Path) -> bool {
+    let (opener, args) = crate::ui::opener_command(target);
+    let child = std::process::Command::new(opener)
+        .args(args)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn();
+    match child {
+        Ok(mut c) => {
+            std::thread::spawn(move || c.wait());
+            true
+        }
+        Err(_) => false,
+    }
 }
 
 /// Writes `text` and returns `code`; if even writing fails, the exit code is

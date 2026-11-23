@@ -601,3 +601,163 @@ fn mcp_recall_p95() {
         "{p_plain:?} {p_query:?}"
     );
 }
+
+/// 700 sessions (20k events) and 2k injections on top of the 100k-memory store.
+fn add_dashboard_rows(db: &Path) {
+    let conn = rusqlite::Connection::open(db).unwrap();
+    conn.execute_batch(
+        "INSERT INTO sources (id, harness, path, identity, size, next_offset, updated_at)
+         WITH RECURSIVE n(i) AS (SELECT 0 UNION ALL SELECT i + 1 FROM n WHERE i < 699)
+         SELECT i + 1, 'claude-code', '/s/' || i || '.jsonl', 'x', 1, 1, 1 FROM n;
+         INSERT INTO events (source_id, harness, session_id, line, seq, byte_offset, ts, cwd,
+                             sidechain, kind, text)
+         WITH RECURSIVE n(i) AS (SELECT 0 UNION ALL SELECT i + 1 FROM n WHERE i < 19999)
+         SELECT i % 700 + 1, 'claude-code', 's' || (i % 700), i, 0, 0, 1700000000 + i,
+                '/work/other' || (i % 50), 0, 'user_text', 'event text ' || i FROM n;
+         UPDATE provenance SET harness = 'claude-code';
+         INSERT INTO injections (at, project, budget, est_tokens, memory_uids, via, session_id,
+                                 pack_text, candidate_count, candidate_tokens)
+         WITH RECURSIVE n(i) AS (SELECT 0 UNION ALL SELECT i + 1 FROM n WHERE i < 1999)
+         SELECT 1700000000 + i, '/work/other' || (i % 50), 2000, 400, '[]', 'hook',
+                's' || (i % 700), 'pack', 900, 40000 FROM n;",
+    )
+    .unwrap();
+}
+
+/// Dashboard queries on the 100k-memory store plus 700 sessions (20k events)
+/// and 2k injections.
+#[test]
+#[ignore = "perf: run via `make perf`"]
+fn dashboard_queries_p95() {
+    use recalla::store::{InjectionFilter, MemoryFilter, MemorySort, SessionFilter};
+    let fx = build_store();
+    let db = paths::db_path(&fx.data);
+    add_dashboard_rows(&db);
+    let store = Store::open(&db).unwrap();
+    let limit = Duration::from_millis(100);
+    let time = |label: &str, f: &dyn Fn()| {
+        f(); // warm
+        let samples: Vec<_> = (0..50)
+            .map(|_| {
+                let t = Instant::now();
+                f();
+                t.elapsed()
+            })
+            .collect();
+        let p95 = report(label, samples);
+        assert!(p95 < limit, "{label} p95 {p95:?}");
+    };
+    let mem = MemoryFilter::default();
+    time("ui_memories first page", &|| {
+        assert_eq!(store.ui_memories(&mem, None, 50).unwrap().rows.len(), 50);
+    });
+    let filtered = MemoryFilter {
+        kinds: vec![Kind::Gotcha, Kind::Decision],
+        project: Some("/work/other7".to_owned()),
+        sort: MemorySort::Confidence,
+        ..MemoryFilter::default()
+    };
+    time("ui_memories filtered (kind+project+confidence)", &|| {
+        assert!(
+            !store
+                .ui_memories(&filtered, None, 50)
+                .unwrap()
+                .rows
+                .is_empty()
+        );
+    });
+    let seen = MemoryFilter {
+        sort: MemorySort::Seen,
+        harness: Some("claude-code".to_owned()),
+        ..MemoryFilter::default()
+    };
+    time("ui_memories sort=seen + harness", &|| {
+        assert_eq!(store.ui_memories(&seen, None, 50).unwrap().rows.len(), 50);
+    });
+    let fts = MemoryFilter {
+        q: Some(format!("{} {}", WORDS[1], WORDS[2])),
+        ..MemoryFilter::default()
+    };
+    time("ui_memories FTS", &|| {
+        store.ui_memories(&fts, None, 50).unwrap();
+    });
+    time("ui_sessions first page", &|| {
+        let page = store
+            .ui_sessions(&SessionFilter::default(), None, 50)
+            .unwrap();
+        assert_eq!(page.rows.len(), 50);
+    });
+    time("ui_sessions q+harness", &|| {
+        let f = SessionFilter {
+            harness: Some("claude-code".to_owned()),
+            q: Some("s12".to_owned()),
+            ..SessionFilter::default()
+        };
+        store.ui_sessions(&f, None, 50).unwrap();
+    });
+    time("ui_overview", &|| {
+        assert_eq!(store.ui_overview().unwrap().sessions, 700);
+    });
+    time("ui_injections", &|| {
+        let f = InjectionFilter {
+            via: Some("hook".to_owned()),
+            ..InjectionFilter::default()
+        };
+        assert_eq!(store.ui_injections(&f, None, 50).unwrap().rows.len(), 50);
+    });
+}
+
+/// `GET /api/memories` and `/api/sessions` through the real HTTP server on the
+/// 100k-memory store: under 150 ms p95.
+#[test]
+#[ignore = "perf: run via `make perf`"]
+fn dashboard_http_p95() {
+    use common::http;
+    use recalla::ui::UiHandler;
+    use recalla::ui::security::{LOGIN_TTL, LoginCode, Token};
+    use recalla::ui::server::{ServeOptions, Server};
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    let fx = build_store();
+    add_dashboard_rows(&paths::db_path(&fx.data));
+    let code = Arc::new(LoginCode::generate(LOGIN_TTL).unwrap());
+    let code_text = code.as_str().to_owned();
+    let stop = Arc::new(AtomicBool::new(false));
+    let mut opts = ServeOptions::new(0, fx.data.clone());
+    opts.stop = Some(Arc::clone(&stop));
+    let server = Server::bind(opts).unwrap();
+    let addr = server.local_addr().unwrap();
+    let handler = UiHandler::new(
+        Token::generate().unwrap(),
+        Token::generate().unwrap(),
+        code,
+        addr.port(),
+        fx.data.clone(),
+    );
+    let thread = std::thread::spawn(move || server.run(handler).unwrap());
+    let login = http::get(addr, &format!("/?c={code_text}"), &[]);
+    let cookie = http::cookie_pair(&login).unwrap();
+    let limit = Duration::from_millis(150);
+    for (label, target) in [
+        ("GET /api/memories", "/api/memories?limit=50"),
+        ("GET /api/sessions", "/api/sessions?limit=50"),
+    ] {
+        let fetch = || {
+            let r = http::get(addr, target, &[("Cookie", &cookie)]);
+            assert_eq!(r.status, 200, "{}", r.body);
+        };
+        fetch();
+        let samples: Vec<_> = (0..50)
+            .map(|_| {
+                let t = Instant::now();
+                fetch();
+                t.elapsed()
+            })
+            .collect();
+        let p95 = report(label, samples);
+        assert!(p95 < limit, "{label} p95 {p95:?}");
+    }
+    stop.store(true, Ordering::SeqCst);
+    thread.join().unwrap();
+}

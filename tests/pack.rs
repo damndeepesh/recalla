@@ -269,6 +269,18 @@ fn cli_pack_logs_an_injection_unless_no_log_and_stats_reflects_it() {
     assert_eq!(st.per_project[0].project.as_deref(), Some(WEB_API));
     assert!(!st.top_memories.is_empty());
 
+    let conn = rusqlite::Connection::open(paths::db_path(&env.data)).unwrap();
+    let (text, count, tokens, session): (String, i64, i64, Option<String>) = conn
+        .query_row(
+            "SELECT pack_text, candidate_count, candidate_tokens, session_id FROM injections",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+        )
+        .unwrap();
+    assert_eq!(text, md.trim_end());
+    assert!(count > 0 && tokens > 0 && session.is_none());
+    drop(conn);
+
     let (code, again, _) = env.cli(&["pack", "--project", WEB_API, "--budget", "600", "--no-log"]);
     assert_eq!((code, again.as_str()), (0, md.as_str()));
     assert_eq!(env.store().injection_stats().unwrap().injections, 1);

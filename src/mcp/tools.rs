@@ -129,6 +129,7 @@ fn recall(args: &Value, ctx: &McpCtx) -> Result<String, String> {
             query,
             no_log: false,
             via: Via::Mcp,
+            session_id: None,
         },
     )?;
     Ok(if built.markdown.is_empty() {

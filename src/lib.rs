@@ -20,6 +20,7 @@ pub mod pack;
 pub mod paths;
 pub mod redact;
 pub mod store;
+pub mod ui;
 
 /// Crate version, as reported by `recalla --version`.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

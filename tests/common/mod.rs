@@ -3,6 +3,8 @@
 
 #![allow(dead_code, clippy::unwrap_used)]
 
+pub mod http;
+
 use std::fs;
 use std::path::PathBuf;
 

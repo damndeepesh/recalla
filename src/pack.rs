@@ -182,6 +182,22 @@ fn item(m: &Memory) -> Option<(String, String)> {
     Some((format!("- {text}{seen}{reason} [{uid8}]"), text))
 }
 
+/// The "dump everything" baseline: estimated tokens if every candidate were
+/// injected. It is the sum of [`est_tokens`] of each candidate's rendered
+/// item line (the same line [`build`] emits, so uncapped by section caps and
+/// budget; memories with no visible text are skipped, as in a pack) plus the
+/// cost of a header with an empty project label. Section titles are not
+/// counted, so the baseline slightly understates the dump.
+#[must_use]
+pub fn unbounded_tokens(memories: &[Memory]) -> usize {
+    let lines: usize = memories
+        .iter()
+        .filter_map(item)
+        .map(|(line, _)| est_tokens(&line))
+        .sum();
+    lines + est_tokens(&header("", 0, 0))
+}
+
 /// Ranks `memories` and greedily fills `budget` estimated tokens, skipping
 /// any memory that doesn't fit so smaller ones can still be added. The
 /// header's cost counts toward the budget. `query_hits` maps uid to
@@ -294,6 +310,21 @@ fn pack_json(label: &str, budget: usize, est: usize, included: &[(&Memory, Strin
 
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn unbounded_tokens_counts_every_item_line_beyond_caps() {
+        let mems: Vec<Memory> = (0..20)
+            .map(|i| mem(&format!("{i:02x}"), Kind::Fact, &format!("fact number {i}")))
+            .collect();
+        let built = build(&mems, 4000, "p", &HashMap::new(), NOW);
+        assert_eq!(built.included_uids.len(), SECTION_CAP[5]);
+        let all = unbounded_tokens(&mems);
+        assert!(all > built.est_tokens, "{all} vs {}", built.est_tokens);
+        let one = unbounded_tokens(&mems[..1]);
+        let line = item(&mems[0]).unwrap().0;
+        assert_eq!(one, est_tokens(&line) + est_tokens(&header("", 0, 0)));
+        assert_eq!(unbounded_tokens(&[]), est_tokens(&header("", 0, 0)));
+    }
 
     #[test]
     fn one_line_strips_control_chars() {

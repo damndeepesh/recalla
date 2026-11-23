@@ -15,6 +15,63 @@ pub const MIN_PREFIX: usize = 4;
 /// How many most-injected memories `injection_stats` reports.
 const TOP_INJECTED: usize = 10;
 
+/// Largest `pack_text` stored per injection.
+pub const MAX_PACK_TEXT: usize = 64 * 1024;
+const TRUNCATED: &str = "\n[truncated]";
+
+fn cap_pack_text(text: &str) -> String {
+    if text.len() <= MAX_PACK_TEXT {
+        return text.to_owned();
+    }
+    let mut end = MAX_PACK_TEXT - TRUNCATED.len();
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{}{TRUNCATED}", &text[..end])
+}
+
+/// One ledger row to record (see [`Store::record_injection`]).
+#[derive(Debug, Clone)]
+pub struct NewInjection<'a> {
+    pub project: Option<&'a str>,
+    pub budget: usize,
+    pub est_tokens: usize,
+    pub memory_uids: &'a [String],
+    pub via: Via,
+    /// Harness session that received the pack (hook only).
+    pub session_id: Option<&'a str>,
+    /// The exact pack markdown that was output.
+    pub pack_text: Option<&'a str>,
+    /// Memories considered for the pack.
+    pub candidate_count: Option<usize>,
+    /// Estimated tokens had every candidate been injected.
+    pub candidate_tokens: Option<usize>,
+}
+
+impl<'a> NewInjection<'a> {
+    /// A row with only the original fields; the dashboard fields are unset.
+    #[must_use]
+    pub const fn new(
+        project: Option<&'a str>,
+        budget: usize,
+        est_tokens: usize,
+        memory_uids: &'a [String],
+        via: Via,
+    ) -> Self {
+        Self {
+            project,
+            budget,
+            est_tokens,
+            memory_uids,
+            via,
+            session_id: None,
+            pack_text: None,
+            candidate_count: None,
+            candidate_tokens: None,
+        }
+    }
+}
+
 /// What triggered an injection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Via {
@@ -108,30 +165,30 @@ impl Store {
         Ok(out)
     }
 
-    /// Appends a ledger row stamped with the store clock.
+    /// Appends a ledger row stamped with the store clock. `pack_text` is
+    /// capped at [`MAX_PACK_TEXT`] bytes (cut at a char boundary, with a marker).
     ///
     /// # Errors
     /// `Sqlite` on failure.
-    pub fn record_injection(
-        &mut self,
-        project: Option<&str>,
-        budget: usize,
-        est_tokens: usize,
-        memory_uids: &[String],
-        via: Via,
-    ) -> Result<(), StoreError> {
-        let uids = Value::from(memory_uids).to_string();
+    pub fn record_injection(&mut self, inj: &NewInjection<'_>) -> Result<(), StoreError> {
+        let uids = Value::from(inj.memory_uids).to_string();
         let to_i64 = |n: usize| i64::try_from(n).unwrap_or(i64::MAX);
+        let text = inj.pack_text.map(cap_pack_text);
         self.conn.execute(
-            "INSERT INTO injections (at, project, budget, est_tokens, memory_uids, via)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO injections (at, project, budget, est_tokens, memory_uids, via,
+                 session_id, pack_text, candidate_count, candidate_tokens)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
             params![
                 (self.clock)(),
-                project,
-                to_i64(budget),
-                to_i64(est_tokens),
+                inj.project,
+                to_i64(inj.budget),
+                to_i64(inj.est_tokens),
                 uids,
-                via.as_str()
+                inj.via.as_str(),
+                inj.session_id,
+                text,
+                inj.candidate_count.map(to_i64),
+                inj.candidate_tokens.map(to_i64)
             ],
         )?;
         Ok(())
@@ -312,12 +369,25 @@ mod tests {
         let mut s = Store::open_in_memory().unwrap();
         assert_eq!(s.injection_stats().unwrap(), InjectionStats::default());
         let u = |x: &str| x.to_owned();
-        s.record_injection(Some("/a"), 1500, 100, &[u("aa"), u("bb")], Via::Cli)
+        s.record_injection(&NewInjection::new(
+            Some("/a"),
+            1500,
+            100,
+            &[u("aa"), u("bb")],
+            Via::Cli,
+        ))
+        .unwrap();
+        s.record_injection(&NewInjection::new(
+            Some("/a"),
+            1500,
+            50,
+            &[u("aa")],
+            Via::Hook,
+        ))
+        .unwrap();
+        s.record_injection(&NewInjection::new(None, 800, 10, &[], Via::Mcp))
             .unwrap();
-        s.record_injection(Some("/a"), 1500, 50, &[u("aa")], Via::Hook)
-            .unwrap();
-        s.record_injection(None, 800, 10, &[], Via::Mcp).unwrap();
-        s.record_injection(Some("/b"), 800, 5, &[u("cc")], Via::Cli)
+        s.record_injection(&NewInjection::new(Some("/b"), 800, 5, &[u("cc")], Via::Cli))
             .unwrap();
 
         let st = s.injection_stats().unwrap();
@@ -335,10 +405,40 @@ mod tests {
     }
 
     #[test]
+    fn dashboard_fields_are_stored_and_pack_text_is_capped() {
+        let mut s = Store::open_in_memory().unwrap();
+        let big = "é".repeat(MAX_PACK_TEXT);
+        s.record_injection(&NewInjection {
+            session_id: Some("sess"),
+            pack_text: Some(&big),
+            candidate_count: Some(3),
+            candidate_tokens: Some(400),
+            ..NewInjection::new(None, 1, 1, &[], Via::Hook)
+        })
+        .unwrap();
+        let (sid, text, n, t): (String, String, i64, i64) = s
+            .conn
+            .query_row(
+                "SELECT session_id, pack_text, candidate_count, candidate_tokens FROM injections",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            )
+            .unwrap();
+        assert_eq!((sid.as_str(), n, t), ("sess", 3, 400));
+        assert!(
+            text.len() <= MAX_PACK_TEXT && text.ends_with(TRUNCATED),
+            "{}",
+            text.len()
+        );
+        assert_eq!(cap_pack_text("short"), "short");
+    }
+
+    #[test]
     fn top_memories_capped_at_ten() {
         let mut s = Store::open_in_memory().unwrap();
         let uids: Vec<String> = (0..15).map(|i| format!("u{i:02}")).collect();
-        s.record_injection(None, 1, 1, &uids, Via::Cli).unwrap();
+        s.record_injection(&NewInjection::new(None, 1, 1, &uids, Via::Cli))
+            .unwrap();
         assert_eq!(s.injection_stats().unwrap().top_memories.len(), 10);
     }
 

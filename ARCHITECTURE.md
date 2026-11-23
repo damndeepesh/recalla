@@ -244,8 +244,155 @@ Use WAL.
 | session-start, spawned binary | same | p50 15.6 ms, p95 18.0 ms, p99 21.0 ms (first exec ~210 ms, one-off OS cost) | |
 | `mcp_recall_p95`, no query | same | p50 11.3 ms, p95 11.7 ms | |
 | `mcp_recall_p95`, FTS query | same | p50 32.8 ms, p95 40.2 ms | |
+| `dashboard_queries_p95` | same + 700 sessions, 20k events, 2k injections | `ui_memories` first page p95 0.7 ms, filtered 2.4 ms, FTS 16 ms; `ui_sessions` 12 ms; `ui_overview` 48 ms; `ui_injections` <1 ms | p95 <100 ms |
 
 - Fix from the first run: `memories_for_project` and `anchors_for_project` scanned the whole `memories` table. Migration v6 adds `memories(scope_project, status)`. Session-start p95 28.7 ms to 11.7 ms.
 - Peak RSS is reported on Linux only (`/proc/self/status`); no new dependency for macOS.
 - Corpus: user directives, assistant prose with decision/gotcha phrases, build/test Bash calls (15% failing, 5% with 5-50 KB logs), Read/Edit calls, base64 blobs, multibyte text, runtime-built fake secrets.
 
+## Dashboard server (`ui`)
+
+`recalla ui` runs a short-lived local HTTP server (std::net + httparse, ADR D-022): `ui/server.rs` (bounded HTTP core), `ui/security.rs` (pure checks), `ui/assets.rs` (embedded files, fixed table), `ui/router.rs` (`/api` route table), `ui/mod.rs` (`UiHandler`). New routes: add a `Route { method, pattern, handler }` to `default_routes()` in `ui/mod.rs`.
+
+Security model:
+- Binds 127.0.0.1 only; random port by default. 32 concurrent connections, 5 s deadline to read a whole request, 30 s total deadline to write a response (single `write` calls with the socket timeout recomputed from the time left, so a client reading slowly is cut off), 16 KiB head, 64 KiB body, one request per connection.
+- Two secrets per run, both 256-bit from OS randomness. The session token is private to the process: never printed, never in argv or a URL, only in the `recalla_<port>` cookie (HttpOnly, SameSite=Strict, Path=/; no `Secure`, because Safari rejects it on http). The name carries the port, so a cookie from another run is never accepted. The session also ends server-side after 12 h without an authenticated request (`ServeOptions::session_idle`): everything then answers 401 and the page shows "Session ended". Login uses a separate one-time code: `recalla ui` prints `http://127.0.0.1:<port>/?c=<code>` and, unless `--no-open`, opens a private redirect page instead of that URL: `<data dir>/run/login-<random>.html` (dir 0700, refused when group/world accessible; file 0600; a `<meta refresh>` plus a link to the URL; `file://` pages are outside our CSP). The opener's argv holds only the file path, never the code. The file is deleted when the code is redeemed or expires (watcher thread), when the server stops, and stale `login-*.html` are swept at startup (a SIGINT kill leaves it at most 60 s, until the next start).  the code works once and for 60 s (`LOGIN_TTL`), consumed atomically under a mutex. `GET /?c=<code>` sets the cookie and answers 302 to `/`; a wrong, used or expired code is the same 401. `/`, `/assets/*` and `/api/*` need the cookie (no Bearer, no `?t=`). Compared in constant time.
+- `Host` must be `127.0.0.1:<port>` or `localhost:<port>` (DNS rebinding). No CORS headers; `OPTIONS` is 405.
+- POST also needs `Origin` equal to the server origin and `X-Recalla-Csrf` equal to the per-run value from `GET /api/session`.
+- Targets: origin-form only; `..`, empty segments, encoded `/` `\` NUL, control and non-ASCII bytes are 400. Assets come from a fixed table, never the filesystem.
+- Every response: strict CSP, nosniff, no-referrer, frame deny, CORP same-origin, no-store. Handler panics become a bare 500.
+- Known limits: the one-time code is in stdout (and the 0600 page) for at most 60 s and one use; no TLS (loopback only). Residual: cookies are shared across ports of the same host name, so another local web server on 127.0.0.1 can receive the session cookie (it cannot know the CSRF value or use it from a page on another origin, but it can replay the cookie). Keep the dashboard closed when not in use; `recalla ui --help` says so too.
+
+## Dashboard data layer (`store/ui.rs`)
+
+All dashboard SQL lives in `store/ui.rs` (`impl Store`, read-only, parameterized; `ORDER BY` columns come from the closed `MemorySort` enum). Lists use keyset pagination with an opaque `Cursor` (`Page { rows, next }`); `limit` is clamped to 1..=200. Every log-derived string goes through `ui::security::sanitize` (or `sanitize_multiline` for event text, memory full text and pack text). Project and scope paths are returned in full as stored (e.g. `/work/proj`); `data_dir`, `mirror_dir` and `settings_path` are shown in full with the home directory as `~`. Only source file names (`sources`, `first_source.file`, provenance `file`) are basenames; anchors keep their repo-relative path.
+
+- Schema v8: `injections` gains nullable `session_id`, `pack_text` (exact pack markdown), `candidate_count`, `candidate_tokens` (tokens had every candidate been injected). Rows from before v8 keep NULLs. Recorded by hook `session-start` (has the session id), CLI `pack` and MCP recall. Indexes: `injections(session_id)`, `provenance(session_id, harness)`, and `memories(<col> DESC, id)` for the updated/created/seen/confidence sorts (the keyset `ORDER BY col DESC, id` is then index-ordered; without them a sort over many equal values scanned and sorted the whole table).
+- Session: a distinct `(harness, session_id)` in `events`. Project is the cwd of its earliest event; `memory_count` counts distinct memories whose provenance names the pair; `injection_count` counts injections with that `session_id`.
+- `saved_pct = (1 - est_tokens / candidate_tokens) * 100` when `candidate_tokens > 0`, otherwise `None` (est 100 vs candidates 400 gives 75).
+- Memory list: default statuses are `active` and `needs_reverify`; `q` reuses the FTS query builder of `search`. Memory detail resolves a unique uid prefix and finds injections through `json_each(memory_uids)` (newest 20).
+
+## Dashboard API (`ui/api.rs`, `ui/actions.rs`)
+
+Contract for the frontend. All responses are `application/json; charset=utf-8` with `Cache-Control: no-store`; every string is already sanitized (no control or invisible characters; `\n` and `\t` survive only in fields named `text_full`, `pack_text`, event `text`, `markdown`). Render with `textContent`. Timestamps are unix milliseconds (integers). Auth: the `recalla_<port>` cookie (see the security model above); POSTs also send `Origin` (the page does this by itself) and `X-Recalla-Csrf: <csrf from GET /api/session>`.
+
+Errors are `{"error": "<short generic text>"}`: 400 invalid input (bad limit, cursor, enum, over-long or control-character value), 401 not logged in, 403 Host/Origin/CSRF refused, 404 unknown id or route, 405 wrong method, 409 conflict (ambiguous id prefix, running sync, unusable settings file), 503 database busy or `database needs upgrading`, 500 `internal error` (details only on the server's stderr). Requests the HTTP core itself rejects (bad target, oversize) answer 4xx in plain text.
+
+Conventions: `Page` = `{"items": [...], "next": "<cursor>" | null}`; pass `next` back as `cursor`, unchanged, until it is `null` (`limit` 1..200, default 50, clamped; non-numeric is 400). Filters: `q` at most 200 chars, other string filters at most 500, no control characters; an empty value means "no filter". Path parameters are percent-decoded, at most 500 chars. `*_at`/`*_ts` and counts are numbers; `null` means unknown or not applicable. `confidence` has two decimals; `saved_pct` has one decimal and can be negative (the pack was larger than the baseline).
+
+| Endpoint | Query | Returns |
+|---|---|---|
+| `GET /api/session` | | `{csrf, version}` |
+| `GET /api/overview` | | counts, injection totals, sizes, paths |
+| `GET /api/projects` | | `{items: [{project, memory_count}]}`: distinct projects owning active or needs-reverify memories, most first, at most 200 (for the test-recall picker) |
+| `GET /api/sessions` | `harness project q cursor limit` | Page of Session |
+| `GET /api/sessions/{harness}/{session_id}` | | `{session, memories[MemoryBrief], injections[InjectionBrief]}`; 404 if unknown |
+| `GET /api/sessions/{harness}/{session_id}/events` | `after limit` | Page of Event in id order; `after` is a non-negative id, `next` is the last id (string) |
+| `GET /api/events/{id}/text` | | `{id, text}` full stored text; 400 non-numeric id, 404 unknown |
+| `GET /api/memories` | `kind status project harness q sort cursor limit` | Page of Memory. `kind`/`status` are comma lists of enum names (kinds `decision fact procedure gotcha preference task`; statuses `active needs_reverify superseded archived`; unknown value is 400); default statuses `active,needs_reverify`; `sort` is `updated` (default) `confidence` `seen` `created`, always descending |
+| `GET /api/memories/{uid}` | | MemoryDetail; `uid` is a full id or a unique prefix of 4+ hex chars; 404 unknown or too short, 409 ambiguous |
+| `GET /api/injections` | `project via session cursor limit` | Page of Injection, newest first |
+| `GET /api/injections/{id}` | | InjectionDetail |
+| `GET /api/connect` | | Connect status |
+| `POST /api/hooks/install`, `POST /api/hooks/uninstall` | | `{changed, changes[string], backup: string \| null, hooks[{event, installed}]}`; 409 when settings.json is not a JSON object or has the wrong shape (file untouched) |
+| `POST /api/memories/{uid}/confirm`, `/forget`, `/restore` | | the updated Memory row; confirm re-anchors and reactivates, forget archives, restore sets active; Global memories allowed; 409 ambiguous, 404 unknown, 400 prefix shorter than 4 hex |
+| `POST /api/test-recall` | JSON body `{project?, query?, budget?}` | TestRecall; body at most 4 KiB; budget clamped 100..8000 (default 1500); read-only: no injection is logged and the anchor staleness check (which writes) is skipped, so memories show the freshness last stored by `recalla pack`/`check`; works on a read-only connection |
+| `POST /api/sync` | | 202 `{job}`; 409 `{error: "sync already running", job}` while one runs |
+| `GET /api/sync/status` | | SyncStatus |
+
+**Session**: `{harness, session_id, project: string|null, first_ts, last_ts, event_count, sidechain_event_count, memory_count, injection_count, sources: [file basename] (max 3)}`.
+
+**MemoryBrief**: `{uid, kind, text (one line, <=400 chars), status}`. **InjectionBrief**: `{id, at, est_tokens, via, session_id: string|null, harness: string|null}`. `harness` on injections (brief, row, detail) is derived from the session's events: set only when `session_id` occurs under exactly one harness, otherwise (no session, unknown session, or the same id under several harnesses) `null`; link to `#/sessions/<harness>/<id>` when set.
+
+**Event**: `{id, ts: number|null, kind (`user_text`, `assistant_text`, `tool_call`, `tool_result`, `summary`), tool_name: string|null, is_error, sidechain, text (<=2000 chars, newlines kept), truncated}`; when `truncated`, fetch the rest from `/api/events/{id}/text`.
+
+**Memory**: `{uid, kind, text (one line, <=400), scope_project: string|null (null = global), scope_path: string|null, status, confidence, importance, seen_count, created_at, updated_at, anchor_count, stale_reason: string|null, first_source: {harness, session_id, file, line} | null}` (each `first_source` field nullable; `file` is a basename).
+
+**MemoryDetail** = Memory plus `text_full` (newlines kept), `valid_from`, `valid_to: number|null`, `superseded_by: string|null`, `provenance: [{origin, harness, session_id, file, line, git_commit, excerpt}]` (all but `origin` nullable; `excerpt` is the start of the source event, <=300 chars), `anchors: [{path, symbol: string|null, stale_reason: string|null}]`, `injections: [InjectionBrief]` (newest 20).
+
+**Injection**: `{id, at, project: string|null, via ("cli"|"hook"|"mcp"), session_id: string|null, harness: string|null, budget, est_tokens, candidate_count: number|null, candidate_tokens: number|null, saved_pct: number|null, memory_count}`; null candidate fields and `saved_pct` mean the row predates schema v8. **InjectionDetail** = Injection plus `pack_text: string|null` (the exact pack the agent got) and `memories: [MemoryBrief]` (those that still exist).
+
+**Overview**: `memories {total, stale, by_kind{kind: n}, by_status{status: n}}` (only non-zero keys), `sessions`, `events`, `sources`, `injections {count, est_tokens, baselined_est_tokens, candidate_tokens, saved_pct: number|null, last_at: number|null, last_via: string|null}` (`saved_pct` compares `baselined_est_tokens` with `candidate_tokens`, i.e. only injections that recorded a baseline), `last_event_ts: number|null`, `db_bytes`, `archive_bytes` (sum of `archive/*.zst`), `data_dir`, `mirror_dir` (home shown as `~`), `version`, `schema_version`, `generated_at`.
+
+**Connect**: `hooks [{event: "SessionStart"|"Stop"|"PreCompact", installed}]`, `settings_path: string|null` (with `~`), `settings_exists`, `settings_error: string|null` (set when the file cannot be read; hooks then all read `installed: false`), `mcp {claude_code_command, codex_toml}` (copy-paste text; exact `claude mcp add --scope user recalla -- <exe> mcp` and the `[mcp_servers.recalla]` snippet), `binary_path`, `data_dir`, `db {exists, bytes, schema_version: number|null, expected_schema_version}`, `mirror_dir`, `last_capture_at: number|null` (newest event), `last_injection: {at, via, project: string|null} | null`, `hook_log_tail: [string]` (<=5 lines, <=300 chars each).
+
+**TestRecall**: `{markdown, est_tokens, candidate_count, candidate_tokens, saved_pct: number|null, memories: [{uid, kind, text}]}`. Without `project` it builds the global pack: only the Global memories (no project scope). With a project it adds that project's Project and Module memories; a key that owns none (or is not a directory) just yields the global ones, not an error.
+
+**Memories `harness` filter**: matches provenance harness exactly; values in practice are `claude-code`, `codex` (backfilled sessions) and `mcp` (saved through the `remember` tool); another value just matches nothing.
+
+**SyncStatus**: `{state: "idle"|"running"|"done"|"failed", job: string|null, started_at: number|null, finished_at: number|null}` plus `report` when done (`{ingest, extract, mirror}`, counts only; failed files by basename). `ingest` = `{files: {seen, new, resumed, restarted, unchanged, by_harness: {harness: n}, failed: [{path, error}]}, events_added, malformed_lines, redactions_by_rule: {rule: n}, archive_raw_bytes, archive_compressed_bytes, duration_ms}`; `extract` = `{events_processed, memories_new: {kind: n}, memories_duplicate: {kind: n}, tasks_archived, restarted, memories_archived_for_rebuild, duration_ms}`; `mirror` = mirror dir with `~`, or `null` when mirroring failed (warning on stderr) or `error` (generic text) when failed. One job at a time; a finished job leaves its state until the next one starts.
+
+Examples (real output, long values trimmed):
+
+```
+GET /api/overview
+{"memories":{"total":9,"stale":0,"by_kind":{"decision":1,"fact":2,"gotcha":1,"preference":3,"procedure":2},"by_status":{"active":9}},
+ "sessions":2,"events":20,"sources":2,
+ "injections":{"count":4,"est_tokens":682,"baselined_est_tokens":682,"candidate_tokens":566,"saved_pct":-20.5,"last_at":1795402977295,"last_via":"hook"},
+ "last_event_ts":1793530800000,"db_bytes":163840,"archive_bytes":1804,"data_dir":"~/.local/share/recalla","mirror_dir":"~/.local/share/recalla/mirror",
+ "version":"0.1.0","schema_version":8,"generated_at":1795403979793}
+
+GET /api/sessions?limit=1
+{"items":[{"harness":"claude-code","session_id":"sess1","project":"/work/proj","first_ts":1793527201000,"last_ts":1793530800000,
+  "event_count":9,"sidechain_event_count":0,"memory_count":5,"injection_count":0,"sources":["sess1.jsonl"]}],"next":"1793530800000:1"}
+
+GET /api/sessions/claude-code/sess1/events?limit=1
+{"items":[{"id":1,"ts":1793527201000,"kind":"user_text","tool_name":null,"is_error":false,"sidechain":false,
+  "text":"Never commit with failing tests.","truncated":false}],"next":"1"}
+
+GET /api/memories?limit=1
+{"items":[{"uid":"14431e208b4d48603b3441878049e13e","kind":"fact","text":"Concurrent fact after the rebuild.","scope_project":"/work/proj",
+  "scope_path":null,"status":"active","confidence":0.9,"importance":2,"seen_count":1,"created_at":1795402978496,"updated_at":1795402978496,
+  "anchor_count":0,"stale_reason":null,"first_source":{"harness":"mcp","session_id":null,"file":null,"line":null}}],"next":"1795402977447:8"}
+
+GET /api/memories/14431e20  (adds to the row above)
+{..., "text_full":"Concurrent fact after the rebuild.","valid_from":1795402978496,"valid_to":null,"superseded_by":null,
+ "provenance":[{"origin":"remember","harness":"mcp","session_id":null,"file":null,"line":null,"git_commit":null,"excerpt":null}],
+ "anchors":[],"injections":[]}
+
+GET /api/injections?limit=1
+{"items":[{"id":4,"at":1795402977295,"project":"/work/proj","via":"hook","session_id":"x","budget":1500,"est_tokens":181,
+  "candidate_count":6,"candidate_tokens":153,"saved_pct":-18.3,"memory_count":6}],"next":"3"}
+
+GET /api/connect
+{"hooks":[{"event":"SessionStart","installed":false},{"event":"Stop","installed":false},{"event":"PreCompact","installed":false}],
+ "settings_path":"~/.claude/settings.json","settings_exists":true,"settings_error":null,
+ "mcp":{"claude_code_command":"claude mcp add --scope user recalla -- /usr/local/bin/recalla mcp",
+        "codex_toml":"[mcp_servers.recalla]\ncommand = \"/usr/local/bin/recalla\"\nargs = [\"mcp\"]\n"},
+ "binary_path":"/usr/local/bin/recalla","data_dir":"~/.local/share/recalla",
+ "db":{"exists":true,"bytes":163840,"schema_version":8,"expected_schema_version":8},"mirror_dir":"~/.local/share/recalla/mirror",
+ "last_capture_at":1793530800000,"last_injection":{"at":1795402977295,"via":"hook","project":"/work/proj"},
+ "hook_log_tail":["1795402977 capture refused: transcript_path is outside the Claude root"]}
+
+POST /api/hooks/install
+{"changed":true,"changes":["SessionStart: added","Stop: added","PreCompact: added"],"backup":"settings.json.recalla-bak-1795403000",
+ "hooks":[{"event":"SessionStart","installed":true},{"event":"Stop","installed":true},{"event":"PreCompact","installed":true}]}
+
+POST /api/sync        -> 202 {"job":"j1"}
+GET /api/sync/status  -> {"state":"done","job":"j1","started_at":1795403001000,"finished_at":1795403001400,
+                          "report":{"ingest":{"files":{"seen":2,"new":2,...},"events_added":20,...},"extract":{"events_processed":20,...},"mirror":"~/.local/share/recalla/mirror"}}
+```
+
+Server-side behavior worth knowing: GETs use a per-request read-only SQLite connection (no migration; an older schema is 503 `database needs upgrading`). `recalla ui` creates the data dir and DB at startup and migrates once (`Upgrading database to schema vN` on stderr), so a first run shows empty lists. Writes (`confirm`/`forget`/`restore`) use a normal connection and then sync the markdown mirror; `test-recall` uses the read-only one. The sync job runs the `recalla backfill` path (archive on, extract, mirror) on one worker thread; its errors go to the server's stderr, the client only sees generic text.
+
+## Dashboard frontend (`ui/assets/`)
+
+Plain HTML, CSS and ES modules embedded with `include_bytes!` (table in `ui/assets.rs`; add a file there when you add one). No framework, no build step, no npm. About 85 KB uncompressed in total; the unit tests fail above 150 KB.
+
+| File | Role |
+|---|---|
+| `index.html`, `theme.js` | Static shell (skip link, nav, footer, live region); `theme.js` applies the saved theme before first paint |
+| `app.js` | Boot (`GET /api/session`), hash router, theme toggle, shortcuts (`/`, `g` then `o s m i c`, `?`), "Session ended" page on any 401 |
+| `router.js` | Hash parse/build (`#/memories?kind=fact`); filters live in the hash query; route table |
+| `api.js` | `fetch` wrapper: JSON errors, plain-text 4xx as a generic message, `X-Recalla-Csrf` on every POST |
+| `dom.js` | `h(tag, props, ...children)`, `icon()` (via `createElementNS`), number/time/byte formatting |
+| `ui.js`, `filters.js` | Components: badges, `pagedList` (cursor + "Load more", focus management), dialogs, copy button, token bar, filter forms |
+| `views/*.js` | One module per view, each exports `mount(ctx)` returning `{el, update?}`: `overview`, `sessions`, `memories`, `injections`, `connect` |
+
+Rules (enforced by tests in `ui/assets.rs`):
+- Render all data with `createElement` + `textContent`. No `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`.
+- No inline scripts, styles or handlers; no `http(s)://` URL except the SVG namespace id; every `import` and `/assets/...` reference must exist in the table. Dynamic widths go through CSS custom properties set with `style.setProperty` (allowed under the CSP).
+- Views must abort their requests on route change (`ctx.signal`) and register timers with `ctx.onCleanup`.
+- Overview polls every 5 s only while the tab is visible and backs off (x2, max 60 s) on errors.
+- Injection links use the API's `harness`; when it is `null` the route `#/sessions/any/<id>` tries each known harness. The Connect page's test-recall project field is a datalist filled from `GET /api/projects`.
+- Below 60rem the nav is a five-column grid (icon over label, wrapping), reachable without scrolling down to 320 px.

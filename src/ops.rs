@@ -14,7 +14,7 @@ use crate::anchor;
 use crate::model::{Scope, Status};
 use crate::pack;
 use crate::paths;
-use crate::store::{DEFAULT_BUSY, Filter, Store, StoreError, Via};
+use crate::store::{DEFAULT_BUSY, Filter, NewInjection, Store, StoreError, Via};
 
 #[derive(Clone)]
 pub struct PackArgs {
@@ -23,6 +23,8 @@ pub struct PackArgs {
     pub query: Option<String>,
     pub no_log: bool,
     pub via: Via,
+    /// Harness session receiving the pack (hook only).
+    pub session_id: Option<String>,
 }
 
 /// Builds the pack and, unless disabled, records it in the ledger. Nothing
@@ -39,10 +41,62 @@ pub fn pack_for(data_dir: &Path, args: &PackArgs) -> Result<pack::Pack, String> 
 /// # Errors
 /// A message naming the failure (SQLite error).
 pub fn pack_with(store: &mut Store, args: &PackArgs) -> Result<pack::Pack, String> {
+    pack_with_baseline(store, args).map(|(pack, _)| pack)
+}
+
+/// What a pack was chosen from: every active memory in scope.
+#[derive(Debug, Clone, Copy)]
+pub struct Baseline {
+    pub candidate_count: usize,
+    /// Tokens had every candidate been injected.
+    pub candidate_tokens: usize,
+}
+
+/// [`pack_with`] that also reports the baseline the pack saves against.
+///
+/// # Errors
+/// A message naming the failure (SQLite error).
+pub fn pack_with_baseline(
+    store: &mut Store,
+    args: &PackArgs,
+) -> Result<(pack::Pack, Baseline), String> {
     let project = args.project.as_deref();
     if let Some(key) = project.filter(|k| anchor::project_dir(k).is_some()) {
         anchor::check(store, key, Some(PACK_CHECK_BUDGET)).map_err(|e| e.to_string())?;
     }
+    let (built, baseline) = build_pack(store, args)?;
+    if !args.no_log && !built.included_uids.is_empty() {
+        store
+            .record_injection(&NewInjection {
+                session_id: args.session_id.as_deref(),
+                pack_text: Some(&built.markdown),
+                candidate_count: Some(baseline.candidate_count),
+                candidate_tokens: Some(baseline.candidate_tokens),
+                ..NewInjection::new(
+                    project,
+                    args.budget,
+                    built.est_tokens,
+                    &built.included_uids,
+                    args.via,
+                )
+            })
+            .map_err(|e| e.to_string())?;
+    }
+    Ok((built, baseline))
+}
+
+/// A side-effect free pack: no staleness check (which writes) and no ledger
+/// entry, whatever `args.no_log` says. Works on a read-only store. Memories
+/// show the freshness the last real pack or `recalla check` stored.
+///
+/// # Errors
+/// A message naming the failure (SQLite error).
+pub fn pack_preview(store: &Store, args: &PackArgs) -> Result<(pack::Pack, Baseline), String> {
+    build_pack(store, args)
+}
+
+fn build_pack(store: &Store, args: &PackArgs) -> Result<(pack::Pack, Baseline), String> {
+    let project = args.project.as_deref();
     let memories = store
         .memories_for_project(project, &[Status::Active, Status::NeedsReverify])
         .map_err(|e| e.to_string())?;
@@ -68,18 +122,11 @@ pub fn pack_with(store: &mut Store, args: &PackArgs) -> Result<pack::Pack, Strin
         .and_then(|d| i64::try_from(d.as_millis()).ok())
         .unwrap_or(0);
     let built = pack::build(&memories, args.budget, label, &boosts, now);
-    if !args.no_log && !built.included_uids.is_empty() {
-        store
-            .record_injection(
-                project,
-                args.budget,
-                built.est_tokens,
-                &built.included_uids,
-                args.via,
-            )
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(built)
+    let baseline = Baseline {
+        candidate_count: memories.len(),
+        candidate_tokens: pack::unbounded_tokens(&memories),
+    };
+    Ok((built, baseline))
 }
 
 /// Time the staleness check may take before a pack is built.

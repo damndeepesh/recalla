@@ -332,6 +332,7 @@ fn pack_shows_the_reason_within_budget() {
             query: None,
             no_log: true,
             via: Via::Cli,
+            session_id: None,
         };
         // The pack itself runs the (budgeted) auto-check.
         let p = ops::pack_for(&fx.env.data, &args).unwrap();
