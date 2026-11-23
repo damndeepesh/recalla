@@ -201,4 +201,112 @@
   } else {
     detect();
   }
+
+  // Scroll motion: progress bar, nav state, reveals, count-up.
+  // Progressive: content is visible without JS, and with reduced motion nothing animates.
+  var top = document.querySelector(".top");
+  var bar = document.createElement("div");
+  bar.className = "progress";
+  bar.setAttribute("aria-hidden", "true");
+  top.appendChild(bar);
+  var ticking = false;
+  function onScroll() {
+    ticking = false;
+    var y = window.scrollY;
+    var max = document.documentElement.scrollHeight - innerHeight;
+    bar.style.setProperty("--p", max > 0 ? Math.min(y / max, 1) : 0);
+    top.classList.toggle("is-scrolled", y > 8);
+  }
+  addEventListener(
+    "scroll",
+    function () {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(onScroll);
+      }
+    },
+    { passive: true },
+  );
+  onScroll();
+
+  var still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (still || !("IntersectionObserver" in window)) return;
+  var groups = [
+    ".sec-head",
+    ".compare-wrap",
+    ".viewer",
+    ".diagram",
+    ".demo",
+    ".bento > li",
+    ".trio > li",
+    ".nums > li",
+    ".checks > li",
+    ".steps > li",
+    ".bins",
+    ".verify",
+    ".limits > li",
+    ".road",
+    ".qa",
+  ];
+  var els = [];
+  groups.forEach(function (sel) {
+    document.querySelectorAll("main " + sel).forEach(function (el) {
+      var sibs = el.parentNode.children;
+      var i = Array.prototype.indexOf.call(sibs, el);
+      el.classList.add("rv");
+      if (sibs.length > 1 && /li|qa/.test(sel)) el.style.setProperty("--i", Math.min(i, 6));
+      els.push(el);
+    });
+  });
+  root.classList.add("reveal");
+  var io = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.classList.add("in");
+        io.unobserve(en.target);
+        en.target.querySelectorAll(".fig").forEach(countUp);
+      });
+    },
+    { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
+  );
+  els.forEach(function (el) {
+    io.observe(el);
+  });
+
+  // Count-up keeps the final text for screen readers and reserves its width (no shift).
+  function countUp(fig) {
+    var node = fig.firstChild;
+    var m = node && node.nodeType === 3 && /^(~?)(\d+(?:\.\d+)?)$/.exec(node.nodeValue.trim());
+    if (!m) return;
+    var end = parseFloat(m[2]);
+    var dec = (m[2].split(".")[1] || "").length;
+    var sr = document.createElement("span");
+    sr.className = "sr";
+    sr.textContent = fig.textContent;
+    var range = document.createRange();
+    range.selectNodeContents(fig);
+    range.setEndAfter(node);
+    var w = range.getBoundingClientRect().width;
+    var vis = document.createElement("span");
+    vis.setAttribute("aria-hidden", "true");
+    var n = document.createElement("span");
+    n.className = "fig-n";
+    n.style.minWidth = w + "px";
+    fig.insertBefore(sr, node);
+    Array.prototype.slice.call(fig.childNodes, 1).forEach(function (c) {
+      vis.appendChild(c);
+    });
+    vis.insertBefore(n, vis.firstChild);
+    n.appendChild(vis.childNodes[1]);
+    fig.appendChild(vis);
+    var num = n.firstChild;
+    var t0 = performance.now();
+    (function step(now) {
+      var k = Math.min((now - t0) / 1100, 1);
+      var e = 1 - Math.pow(1 - k, 3);
+      num.nodeValue = m[1] + (end * e).toFixed(dec);
+      if (k < 1) requestAnimationFrame(step);
+    })(t0);
+  }
 })();
