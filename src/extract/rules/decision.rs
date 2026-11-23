@@ -23,7 +23,7 @@ const MAX_ADR_CHARS: usize = 400;
 
 static PHRASE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        r"(?is)\b(?:decided\b|decision:|we['\u{2019}]ll use\b|we will use\b|going with\b|chose\b.+\bover\b|switch(?:ed)? to\b|settled on\b|picked\b.+\bbecause\b)",
+        r"(?is)\b(?:decided\b|decision:|we['\u{2019}]ll use\b|we will use\b|going with\b|chose\b.+\bover\b|switch(?:ed)? to\b|^(?:we\s+)?switched\b(?:\s+[\w\-./`']+){1,6}?\s+to\b|settled on\b|picked\b.+\bbecause\b)",
     )
     .expect("valid regex")
 });
@@ -158,6 +158,25 @@ mod tests {
             },
             Some("/work/app"),
         )
+    }
+
+    #[test]
+    fn switched_with_an_object_phrase_before_to() {
+        for s in [
+            "Switched the default tags to the new cost-center key in providers.tf.",
+            "We switched the retry policy to exponential backoff.",
+        ] {
+            assert_eq!(run(StoredKind::AssistantText, s).len(), 1, "{s}");
+        }
+        for s in [
+            // First-person narration of an edit, not a stated choice.
+            "I switched the button and modal components to named exports.",
+            // Too far from "to" to be one clause.
+            "Switched one two three four five six seven to eight.",
+            "Have we switched the tags to the new key?",
+        ] {
+            assert!(run(StoredKind::AssistantText, s).is_empty(), "{s}");
+        }
     }
 
     fn tool(name: &str, input: &Value) -> Vec<Candidate> {

@@ -10,6 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 ## [0.3.0] - 2026-11-23
 
 ### Added
+- Extractor: bare imperatives with a scope or limit word ("Use terraform plan before any apply", "Keep the binary under 5 MB") are now preferences, and "Switched X to Y" (up to 6 words between) is a decision. Closes #13, #14. Eval on the synthetic corpus: recall 0.92 to 1.00, precision unchanged at 1.00.
 - `recalla backfill --dir PATH`, `--session ID|FILE` (both repeatable), `--list` and `--pick`: import one project or a few sessions instead of the whole history. `--pick` asks for Claude Code or Codex, lists that tool's sessions, and imports the numbers you choose. A selector that matches nothing is an error and writes nothing.
 
 ### Changed
