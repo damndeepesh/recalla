@@ -1,8 +1,13 @@
 //! `membench`: a neutral benchmark for coding-agent memory tools.
 
+mod adapter;
 mod git;
+mod matching;
+mod mcp;
 mod mine;
+mod score;
 mod suite;
+mod tokens;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
