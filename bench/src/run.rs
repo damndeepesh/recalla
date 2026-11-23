@@ -158,9 +158,7 @@ pub fn table(results: &[Result]) -> String {
             );
         }
     }
-    out.push_str(
-        "\n| adapter | extraction recall | unlabeled share | memories |\n|---|---|---|---|\n",
-    );
+    let mut rows = String::new();
     let mut seen: Vec<&str> = Vec::new();
     for r in results {
         if seen.contains(&r.adapter.as_str()) {
@@ -180,13 +178,19 @@ pub fn table(results: &[Result]) -> String {
             ex.iter().map(|e| g(e)).sum::<f64>() / ex.len() as f64
         };
         let _ = writeln!(
-            out,
+            rows,
             "| {} | {:.2} | {:.2} | {} |",
             r.adapter,
             m(|e| e.recall),
             m(|e| e.unlabeled_share),
             ex.iter().map(|e| e.memories).sum::<usize>()
         );
+    }
+    if !rows.is_empty() {
+        out.push_str(
+            "\n| adapter | extraction recall | unlabeled share | memories |\n|---|---|---|---|\n",
+        );
+        out.push_str(&rows);
     }
     out
 }

@@ -24,12 +24,12 @@ A neutral, runnable benchmark for coding-agent memory tools. Primary axis: what 
 
 ## Steps
 Done (wip commits on feature/bench): crate skeleton, miner + 18 suites, tokens/matching/score, adapters none/dump/file/grep/recalla/recalla-backfill, MCP client, session writer, `run` table incl. extraction, safe path names.
-- [ ] A. Probe quality: a required fact must share a content word with the task or files (flask/requests have none; drop or remint); report probe counts per suite
-- [ ] B. Provenance scoring wired into `run` (mid budget, with files) via adapter `source`
-- [ ] C. Generic MCP adapter (command + tool names via flags) and a fake MCP server in tests
-- [ ] D. Report: raw per-probe JSON, where-each-tool-loses, tune vs holdout, weighted total (3 pillars, equal)
-- [ ] E. Hand spot-check of ~20 mined facts/probes; record findings in bench/README.md
-- [ ] F. bench/SCORING.md (lock definitions + weights), bench/README.md, DESIGN_DECISIONS (tempfile), `make bench`, CI smoke, CHANGELOG, state
+- [x] A. Probe quality: a required fact must share a content word with the task or files (flask/requests have none; drop or remint); report probe counts per suite
+- [x] B. Provenance scoring wired into `run` (mid budget, with files) via adapter `source`
+- [x] C. Generic MCP adapter (command + tool names via flags) and a fake MCP server in tests
+- [x] D. Report: raw per-probe JSON, where-each-tool-loses, tune vs holdout, weighted total (3 pillars, equal)
+- [x] E. Hand spot-check of ~20 mined facts/probes; record findings in bench/README.md
+- [x] F. bench/SCORING.md (lock definitions + weights), bench/README.md, DESIGN_DECISIONS (tempfile), `make bench`, CI smoke, CHANGELOG, state
 - [ ] G. Real-data mode (`membench real`), local only
 - Deferred: agent-run tier (billed; needs approval); claude-mem/supermemory (need LLM/network; separate tier, needs approval)
 
