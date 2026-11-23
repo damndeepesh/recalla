@@ -290,94 +290,16 @@
       "split": "holdout"
     },
     {
-      "id": "p426a1e25",
-      "task": "fix pytest 7 warnings",
-      "files": [
-        "tests/test_basic.py",
-        "tests/test_reqctx.py"
-      ],
-      "commit": "426a1e25b77e760b4f54bf94aee3e3617850569f",
-      "required": [
-        "f705e5268-0",
-        "f8efea0cc-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pbeae1249",
-      "task": "add `exclude-patterns` option to `flask run`",
+      "id": "paa13521d",
+      "task": "lazy loading preserves click context",
       "files": [
         "src/flask/cli.py"
       ],
-      "commit": "beae1249f7e580779ae18d2d831f7ec51e5aff98",
+      "commit": "aa13521d42bfdb66bb0d89005cbe54a84eaa4fda",
       "required": [
         "f25357078-0"
       ],
       "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p6f79cb8a",
-      "task": "Fix typing on `app.session_interface`",
-      "files": [
-        "src/flask/app.py"
-      ],
-      "commit": "6f79cb8a23467aa01f94f6ad53790f468ba77c76",
-      "required": [
-        "f8efea0cc-0",
-        "fdc11cdb4-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "paf34b8c9",
-      "task": "Add better types for app decorators",
-      "files": [
-        "src/flask/scaffold.py"
-      ],
-      "commit": "af34b8c9e7adbf0b060738fee12f04c1e46a98fd",
-      "required": [
-        "f705e5268-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p88863288",
-      "task": "relax errorhandler function arg type",
-      "files": [
-        "src/flask/app.py",
-        "src/flask/blueprints.py",
-        "src/flask/scaffold.py",
-        "src/flask/typing.py"
-      ],
-      "commit": "88863288225d5ee13a79c463f2a39391b6a52c61",
-      "required": [
-        "f705e5268-0",
-        "f8efea0cc-0",
-        "fdc11cdb4-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p190dd4df",
-      "task": "don't use AnyStr for ResponseValue type",
-      "files": [
-        "src/flask/app.py",
-        "src/flask/helpers.py",
-        "src/flask/typing.py"
-      ],
-      "commit": "190dd4df86874495f56bb088fbd0cb1d9f0e77a0",
-      "required": [
-        "fdc11cdb4-0",
-        "f8efea0cc-0"
-      ],
-      "stale": [
-        "fcb13128c-0"
-      ],
       "split": "holdout"
     },
     {
@@ -394,75 +316,74 @@
       "split": "tune"
     },
     {
-      "id": "pa74e2664",
-      "task": "skip coverage for TYPE_CHECKING",
+      "id": "pe044b000",
+      "task": "avoid triggering setupmethod late in tests",
       "files": [
-        "src/flask/app.py",
-        "src/flask/blueprints.py",
-        "src/flask/ctx.py",
-        "src/flask/globals.py",
-        "src/flask/helpers.py",
-        "src/flask/json/__init__.py",
-        "src/flask/logging.py",
-        "src/flask/scaffold.py",
-        "src/flask/sessions.py",
-        "src/flask/templating.py",
-        "src/flask/testing.py",
-        "src/flask/typing.py"
+        "tests/test_basic.py"
       ],
-      "commit": "a74e266474f0981e9fc0d54d5dc430386823e4d7",
+      "commit": "e044b00047da9bf94e7eb88049a17fe1dcf78f4e",
       "required": [
-        "fdc11cdb4-0",
-        "f705e5268-0",
         "f8efea0cc-0"
       ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p82c2e036",
+      "task": "remove uses of LocalStack",
+      "files": [
+        "src/flask/app.py",
+        "src/flask/cli.py",
+        "src/flask/ctx.py",
+        "src/flask/debughelpers.py",
+        "src/flask/helpers.py",
+        "src/flask/templating.py",
+        "src/flask/testing.py",
+        "tests/conftest.py",
+        "tests/test_appctx.py",
+        "tests/test_basic.py",
+        "tests/test_reqctx.py",
+        "tests/test_session_interface.py"
+      ],
+      "commit": "82c2e0366ce6b74a3786a64631ce58b85b3a7d4e",
+      "required": [],
       "stale": [
-        "fc43edfc7-0",
         "fcb13128c-0"
       ],
       "split": "tune"
     },
     {
-      "id": "pfdab801f",
-      "task": "add redirect method to app",
+      "id": "p0a00e1b6",
+      "task": "use tmp_path instead of tmpdir",
       "files": [
-        "src/flask/__init__.py",
-        "src/flask/app.py",
-        "src/flask/helpers.py",
-        "tests/test_helpers.py"
+        "tests/conftest.py",
+        "tests/test_config.py",
+        "tests/test_helpers.py",
+        "tests/test_instance_config.py"
       ],
-      "commit": "fdab801fbbd9de5adbdb3320ca4a1cb116c892f5",
+      "commit": "0a00e1b6085f62fb776a95ef676ea661bff565f6",
       "required": [
-        "fdc11cdb4-0",
-        "f8efea0cc-0"
+        "f25357078-0"
       ],
       "stale": [
         "fb51ab3ff-0",
-        "fc367a86c-0",
         "fc43edfc7-0"
       ],
-      "split": "holdout"
+      "split": "tune"
     },
     {
-      "id": "peb5dd9f5",
-      "task": "add aborter object to app",
+      "id": "p84e11a1e",
+      "task": "use importlib instead of pkgutil",
       "files": [
-        "src/flask/__init__.py",
-        "src/flask/app.py",
         "src/flask/helpers.py",
-        "tests/test_helpers.py"
+        "src/flask/scaffold.py"
       ],
-      "commit": "eb5dd9f5ef255c578cbbe13c1cb4dd11389d5519",
+      "commit": "84e11a1e827c0f55f9b9ee15952eddcf8a6492e0",
       "required": [
-        "fdc11cdb4-0",
-        "f8efea0cc-0"
+        "f705e5268-0"
       ],
-      "stale": [
-        "fb51ab3ff-0",
-        "fc367a86c-0",
-        "fc43edfc7-0"
-      ],
-      "split": "holdout"
+      "stale": [],
+      "split": "tune"
     }
   ]
 }

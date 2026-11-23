@@ -497,52 +497,6 @@
   ],
   "probes": [
     {
-      "id": "p817fa605",
-      "task": "fs: avoid some copies in `tokio::fs::write` (#7199)",
-      "files": [
-        "tokio/src/fs/write.rs",
-        "tokio/src/util/as_ref.rs",
-        "tokio/src/util/mod.rs",
-        "tokio/src/util/typeid.rs"
-      ],
-      "commit": "817fa605ee6a2549fe8e6057ec23a8309d42d2e9",
-      "required": [
-        "fefe3ab67-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pce87dcfb",
-      "task": "runtime: document the queue behavior of `spawn_blocking` (#7269)",
-      "files": [
-        "tokio/src/runtime/builder.rs"
-      ],
-      "commit": "ce87dcfbf08dc5330386433c1e62229a3c4d5571",
-      "required": [
-        "fc84d0a14-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p0ce3a118",
-      "task": "metrics: stabilize `worker_park_count` and `worker_unpark_count` (#7276)",
-      "files": [
-        "tokio/src/runtime/metrics/batch.rs",
-        "tokio/src/runtime/metrics/runtime.rs",
-        "tokio/src/runtime/metrics/worker.rs",
-        "tokio/tests/rt_metrics.rs",
-        "tokio/tests/rt_unstable_metrics.rs"
-      ],
-      "commit": "0ce3a1188a56c4c133d5b789eb366c0752e9b22c",
-      "required": [
-        "fc84d0a14-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
       "id": "p1ae9434e",
       "task": "time: revert \"use sharding for timer implementation\" related changes (#7226)",
       "files": [
@@ -561,60 +515,11 @@
       "commit": "1ae9434e8e4a419ce25644e6c8d2b2e2e8c34750",
       "required": [
         "f1204da73-0",
-        "fc748f496-0",
-        "fc84d0a14-0"
+        "fc748f496-0"
       ],
       "stale": [
         "fa8b63535-0"
       ],
-      "split": "tune"
-    },
-    {
-      "id": "p327bec2c",
-      "task": "rt: add infrastructure code for io_uring (#7320)",
-      "files": [
-        "spellcheck.dic",
-        "tokio/src/io/mod.rs",
-        "tokio/src/macros/cfg.rs",
-        "tokio/src/runtime/driver.rs",
-        "tokio/src/runtime/driver/op.rs",
-        "tokio/src/runtime/io/driver.rs",
-        "tokio/src/runtime/io/driver/uring.rs",
-        "tokio/src/runtime/io/mod.rs"
-      ],
-      "commit": "327bec2caf92af5e2732f8fdfe2e4a20d349f67e",
-      "required": [
-        "fefe3ab67-0"
-      ],
-      "stale": [
-        "f30b2eb17-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p55e3ed2a",
-      "task": "runtime: eliminate unnecessary lfence while operating on `queue::Local<T>` (#7340)",
-      "files": [
-        "tokio/src/runtime/scheduler/multi_thread/queue.rs"
-      ],
-      "commit": "55e3ed2a3976020d8513d5276d2afbaf2ea53c4d",
-      "required": [],
-      "stale": [
-        "fa8b63535-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "pd7d4f7d0",
-      "task": "sync: update broadcast docs on allocation failure (#7352)",
-      "files": [
-        "tokio/src/sync/broadcast.rs"
-      ],
-      "commit": "d7d4f7d08bf75daf23bec676b03cb4c88993e5d0",
-      "required": [
-        "f3dd5f7ae-0"
-      ],
-      "stale": [],
       "split": "tune"
     },
     {
@@ -628,8 +533,7 @@
       ],
       "commit": "4380de9fe9e0938790a2c06f4bdaa8bd91c08ed1",
       "required": [
-        "fc748f496-0",
-        "fefe3ab67-0"
+        "fc748f496-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -644,20 +548,6 @@
       "commit": "2440d113ff9841060b1876628c1153f0bcf2945c",
       "required": [
         "f2d697fc9-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pc38de96b",
-      "task": "sync: add `same_channel` analogue to `OwnedPermit` (#7389)",
-      "files": [
-        "tokio/src/sync/mpsc/bounded.rs"
-      ],
-      "commit": "c38de96b9478c29a08805a4be7e351fdca8bb43a",
-      "required": [
-        "f0fe24fcf-0",
-        "f0fe24fcf-1"
       ],
       "stale": [],
       "split": "holdout"
@@ -687,27 +577,10 @@
       "commit": "714e5b571f2f6b329dfd830b9d3986fac7e7a0c8",
       "required": [
         "f1c8d22c1-0",
-        "f012c8484-0",
-        "f1204da73-0"
+        "f1204da73-0",
+        "fc748f496-0"
       ],
-      "stale": [
-        "fa8b63535-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "p9f848c9f",
-      "task": "rt: add check for io_uring availability at runtime (#7357)",
-      "files": [
-        "tokio/src/runtime/driver/op.rs",
-        "tokio/src/runtime/io/driver.rs",
-        "tokio/src/runtime/io/driver/uring.rs"
-      ],
-      "commit": "9f848c9f544a87f52ca406bad895a2b0ffa10e4b",
-      "required": [],
-      "stale": [
-        "f30b2eb17-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
@@ -729,9 +602,9 @@
       ],
       "commit": "3e890cc0171ddb210acdcfec831b7c7bcbb0d2d9",
       "required": [
-        "f1c8d22c1-0",
         "fc748f496-0",
-        "ff24b9824-0"
+        "f012c8484-0",
+        "f1204da73-0"
       ],
       "stale": [
         "fa8b63535-0",
@@ -740,83 +613,31 @@
       "split": "tune"
     },
     {
-      "id": "pa0d5b8ab",
-      "task": "runtime(unstable): fix task hook spawn locations for `tokio::spawn` (#7440)",
+      "id": "p0a3fe460",
+      "task": "sync: remove duplicated code in `OnceCell` tests (#7458)",
       "files": [
-        "tokio/src/runtime/handle.rs",
-        "tokio/src/runtime/scheduler/current_thread/mod.rs",
-        "tokio/src/runtime/scheduler/mod.rs",
-        "tokio/src/runtime/scheduler/multi_thread/handle.rs",
-        "tokio/src/runtime/task/harness.rs",
-        "tokio/src/runtime/task/mod.rs",
-        "tokio/src/runtime/task_hooks.rs",
-        "tokio/src/task/local.rs",
-        "tokio/src/task/spawn.rs",
-        "tokio/src/util/trace.rs",
-        "tokio/tests/task_hooks.rs"
+        "tokio/tests/sync_once_cell.rs"
       ],
-      "commit": "a0d5b8ab308bbeaa8090d411550d6c887d699096",
+      "commit": "0a3fe460862720d005b8fa39cdde30575a063785",
       "required": [
-        "f1204da73-0",
-        "f1c8d22c1-0",
-        "f731dde21-0"
-      ],
-      "stale": [
-        "fa8b63535-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "p911ab21d",
-      "task": "sync: add `SetOnce` (#7418)",
-      "files": [
-        "tokio/src/sync/mod.rs",
-        "tokio/src/sync/set_once.rs",
-        "tokio/src/sync/tests/loom_set_once.rs",
-        "tokio/src/sync/tests/mod.rs",
-        "tokio/tests/async_send_sync.rs",
-        "tokio/tests/sync_set_once.rs"
-      ],
-      "commit": "911ab21d7012a50e53971ad1292a9f18de22d4c8",
-      "required": [
-        "fcb1e10b7-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pd545aa26",
-      "task": "sync: add `sync::Notify::notified_owned()` (#7465)",
-      "files": [
-        "tokio/src/sync/mod.rs",
-        "tokio/src/sync/notify.rs",
-        "tokio/tests/async_send_sync.rs",
-        "tokio/tests/sync_notify_owned.rs"
-      ],
-      "commit": "d545aa2601e3008ce49c8c0191b0f172ce577452",
-      "required": [
-        "fcb1e10b7-0",
         "fefe3ab67-0"
       ],
       "stale": [],
       "split": "tune"
     },
     {
-      "id": "p46f7d879",
-      "task": "runtime: fix a typo in comment of `MAX_LIFO_POLLS_PER_TICK` (#7520)",
+      "id": "p37ca2f04",
+      "task": "sync: remove inner mutex in `SetOnce` (#7554)",
       "files": [
-        "tokio/src/runtime/scheduler/multi_thread/worker.rs"
+        "tokio/src/sync/notify.rs",
+        "tokio/src/sync/set_once.rs"
       ],
-      "commit": "46f7d87962c0c1273bc66aca99d3f3c08da93265",
+      "commit": "37ca2f049c552fde50a2535de6dfc61ee6e96eed",
       "required": [
-        "f012c8484-0",
-        "f1204da73-0",
-        "f1c8d22c1-0"
+        "fefe3ab67-0"
       ],
-      "stale": [
-        "fa8b63535-0"
-      ],
-      "split": "holdout"
+      "stale": [],
+      "split": "tune"
     },
     {
       "id": "pa99a3518",
@@ -827,24 +648,10 @@
       ],
       "commit": "a99a3518020e1c7ea6db6f9d2e7e567637a3d7e7",
       "required": [
-        "f7b555185-0",
-        "fefe3ab67-0"
+        "f7b555185-0"
       ],
       "stale": [],
       "split": "tune"
-    },
-    {
-      "id": "p8efd04e3",
-      "task": "sync: reword allocation failure paragraph in broadcast docs (#7595)",
-      "files": [
-        "tokio/src/sync/broadcast.rs"
-      ],
-      "commit": "8efd04e38284f2da2d1b3abc8496a511e131d1ce",
-      "required": [
-        "f3dd5f7ae-0"
-      ],
-      "stale": [],
-      "split": "holdout"
     },
     {
       "id": "p5f3f5b0b",
@@ -855,10 +662,33 @@
       ],
       "commit": "5f3f5b0be4ec933aed2290ea9d929b5daadae321",
       "required": [
-        "fcb1e10b7-0",
         "f453c7207-0"
       ],
       "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p3b5a15df",
+      "task": "fs: use the Cargo feature for io-uring support instead of cfg (#7621)",
+      "files": [
+        "tokio/src/fs/mod.rs",
+        "tokio/src/fs/open_options.rs",
+        "tokio/src/io/mod.rs",
+        "tokio/src/macros/cfg.rs",
+        "tokio/src/runtime/builder.rs",
+        "tokio/src/runtime/driver.rs",
+        "tokio/src/runtime/io/driver.rs",
+        "tokio/src/runtime/io/mod.rs",
+        "tokio/tests/fs_try_exists.rs",
+        "tokio/tests/fs_uring.rs"
+      ],
+      "commit": "3b5a15dfdfc5dc789dcb80cef0986fb2fa5cac0a",
+      "required": [
+        "fefe3ab67-0"
+      ],
+      "stale": [
+        "f30b2eb17-0"
+      ],
       "split": "holdout"
     },
     {
@@ -870,22 +700,7 @@
       ],
       "commit": "b9b532485bbb879042a1bd2ef40a50e6c1d15bb6",
       "required": [
-        "f453c7207-0",
-        "fcb1e10b7-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p35470bfc",
-      "task": "sync: clarify bounded channel panic behavior (#7641)",
-      "files": [
-        "tokio/src/sync/mpsc/bounded.rs"
-      ],
-      "commit": "35470bfc6e43dac2715009cc1adc0931944cf3b5",
-      "required": [
-        "f0fe24fcf-0",
-        "f0fe24fcf-1"
+        "f453c7207-0"
       ],
       "stale": [],
       "split": "tune"
@@ -926,24 +741,6 @@
       "split": "holdout"
     },
     {
-      "id": "p426a5627",
-      "task": "rt: remove `allow(dead_code)` after `JoinSet` stabilization (#7826)",
-      "files": [
-        "tokio/src/runtime/task/core.rs",
-        "tokio/src/runtime/task/list.rs",
-        "tokio/src/runtime/task/mod.rs",
-        "tokio/src/util/sharded_list.rs"
-      ],
-      "commit": "426a56278017c30e7da7b4c9365a2610f4695f76",
-      "required": [
-        "ff24b9824-0"
-      ],
-      "stale": [
-        "fa8b63535-0"
-      ],
-      "split": "holdout"
-    },
-    {
       "id": "p0d6c7af3",
       "task": "runtime: wake deferred tasks before entering `block_in_place` (#7879)",
       "files": [
@@ -956,65 +753,50 @@
         "f6e990eb2-0",
         "f1204da73-0"
       ],
-      "stale": [
-        "fa8b63535-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
-      "id": "pd83921bc",
-      "task": "runtime: fix double increment of `num_idle_threads` on shutdown (#7910)",
+      "id": "p7947fa4b",
+      "task": "rt: add runtime name (#7924)",
       "files": [
-        "tokio/src/runtime/blocking/pool.rs",
-        "tokio/tests/rt_unstable_metrics.rs"
+        "tests-build/tests/fail/macros_invalid_input.rs",
+        "tests-build/tests/fail/macros_invalid_input.stderr",
+        "tokio-macros/src/entry.rs",
+        "tokio-macros/src/lib.rs",
+        "tokio/src/runtime/builder.rs",
+        "tokio/src/runtime/handle.rs",
+        "tokio/src/runtime/scheduler/current_thread/mod.rs",
+        "tokio/src/runtime/scheduler/multi_thread/handle.rs",
+        "tokio/src/runtime/scheduler/multi_thread/mod.rs",
+        "tokio/src/runtime/scheduler/multi_thread/worker.rs",
+        "tokio/tests/macros_test.rs",
+        "tokio/tests/rt_basic.rs"
       ],
-      "commit": "d83921bc5181010be72704d1fe8fb9b6f10cb7e8",
-      "required": [],
-      "stale": [
-        "f35dd6356-0"
+      "commit": "7947fa4bd79d7345aa7e6b189fc1fbb6983a4351",
+      "required": [
+        "f1204da73-0",
+        "f1c8d22c1-0",
+        "fc748f496-0"
       ],
-      "split": "tune"
+      "stale": [],
+      "split": "holdout"
     },
     {
-      "id": "peeb55c73",
-      "task": "runtime: steal tasks from the LIFO slot (#7431)",
+      "id": "pfccc28f1",
+      "task": "runtime: optional eager I/O driver/timer handoff when polling tasks (#8010)",
       "files": [
         "tokio/src/runtime/builder.rs",
         "tokio/src/runtime/config.rs",
-        "tokio/src/runtime/mod.rs",
-        "tokio/src/runtime/scheduler/multi_thread/queue.rs",
+        "tokio/src/runtime/scheduler/multi_thread/park.rs",
         "tokio/src/runtime/scheduler/multi_thread/worker.rs",
-        "tokio/src/runtime/task/atomic_notified.rs",
-        "tokio/src/runtime/task/mod.rs",
-        "tokio/src/runtime/tests/loom_multi_thread/queue.rs",
-        "tokio/tests/rt_threaded.rs",
-        "tokio/tests/rt_unstable_metrics.rs"
+        "tokio/tests/rt_unstable_eager_driver_handoff.rs"
       ],
-      "commit": "eeb55c733ba9a83c51d08b1629dca6a5ec0f4b2b",
+      "commit": "fccc28f1d0041fc5bdd798dc2645dc3b5fc71ef1",
       "required": [
-        "fc84d0a14-0",
         "f012c8484-0",
+        "f1204da73-0",
         "f6e990eb2-0"
-      ],
-      "stale": [
-        "fa8b63535-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "pd7db722b",
-      "task": "io: AioSource now employs IO Safety (#7992)",
-      "files": [
-        "tokio/src/io/bsd/poll_aio.rs",
-        "tokio/tests/io_async_fd.rs",
-        "tokio/tests/io_async_fd_memory_leak.rs",
-        "tokio/tests/io_poll_aio.rs",
-        "tokio/tests/net_unix_pipe.rs"
-      ],
-      "commit": "d7db722bb47d29b81c9b98992813115dfaed491d",
-      "required": [
-        "f2d697fc9-0",
-        "fe929d0e8-0"
       ],
       "stale": [],
       "split": "holdout"

@@ -185,108 +185,27 @@
   ],
   "probes": [
     {
-      "id": "p6e1e3e03",
-      "task": "check FLASK_SKIP_DOTENV in app.run",
-      "files": [
-        "flask/app.py"
-      ],
-      "commit": "6e1e3e03ca188a4d9b3aef493e572157c8ae2313",
-      "required": [],
-      "stale": [
-        "f5da31f8a-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "pf7a3bdc6",
-      "task": "Fix blueprint route for \"\"",
-      "files": [
-        "flask/blueprints.py",
-        "tests/test_blueprints.py"
-      ],
-      "commit": "f7a3bdc6db7aefeeb974c0b9800bbe64d152f842",
-      "required": [
-        "f4dc2ef19-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "pb21b4d16",
-      "task": "add more merge cases",
-      "files": [
-        "flask/blueprints.py",
-        "tests/test_blueprints.py"
-      ],
-      "commit": "b21b4d1608f5d83d7d6f503672f7eff46ed28f95",
-      "required": [
-        "f4dc2ef19-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "pb4e09260",
-      "task": "Check whether exist registered routes",
-      "files": [
-        "flask/cli.py"
-      ],
-      "commit": "b4e092600dc2cfd5326a373b4b9fd757a5d8a61a",
-      "required": [],
-      "stale": [
-        "f7a7a163f-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "pa913b4da",
-      "task": "SSLContext was added in Python 2.7.9",
+      "id": "pc38499bb",
+      "task": "ignore colon with slash when split app_import_path Flask currently supports importing app through a combination of module path and app variable name, such as '/usr/app.py:my_app'. When the module path contains a colon, it will conflict with this import way and a `flask.cli.NoAppException` will be raised.",
       "files": [
         "flask/cli.py",
         "tests/test_cli.py"
       ],
-      "commit": "a913b4dafd1d85cfa1d8bafeea5417748de8d487",
+      "commit": "c38499bbf26cfa9683e30c52139a94dc5a50dcc4",
       "required": [],
       "stale": [
         "f7a7a163f-0"
       ],
-      "split": "tune"
-    },
-    {
-      "id": "pb51ab3ff",
-      "task": "encode filenames as ascii instead of latin-1 latin-1 is allowed by pep3333, but that breaks gunicorn",
-      "files": [
-        "flask/helpers.py",
-        "tests/test_helpers.py"
-      ],
-      "commit": "b51ab3ff2c4af7e592e649e0e97657154b79c11f",
-      "required": [],
-      "stale": [
-        "fd75d83de-0",
-        "feb961834-0"
-      ],
       "split": "holdout"
     },
     {
-      "id": "p8cdd01ea",
-      "task": "Test added for _AppCtxGlobals __repr__ method",
+      "id": "ped9775fb",
+      "task": "Handle errors during create_url_adapter",
       "files": [
-        "tests/test_appctx.py"
+        "flask/ctx.py",
+        "tests/test_reqctx.py"
       ],
-      "commit": "8cdd01ea5da2f92c0108803618b168e128084858",
-      "required": [
-        "f8482ce6b-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p8fa3ed13",
-      "task": "details fixed",
-      "files": [
-        "tests/test_appctx.py"
-      ],
-      "commit": "8fa3ed13bf362a71f942ed3d37efbdbdd5731375",
+      "commit": "ed9775fb77bc2291473c176937326aadd435f73c",
       "required": [
         "f8482ce6b-0"
       ],
@@ -294,116 +213,64 @@
       "split": "holdout"
     },
     {
-      "id": "paa7e15dc",
-      "task": "Reduce unnecessary function calls. When propagate exceptions, the function call of \"_find_error_handler\" makes no sense.",
+      "id": "p55ad09c9",
+      "task": "Move python properties to decorator syntax",
       "files": [
-        "flask/app.py"
-      ],
-      "commit": "aa7e15dcbab208ca404bcecd94cbe6fc583150dc",
-      "required": [],
-      "stale": [
-        "f5da31f8a-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p25de45cb",
-      "task": "Add support for PathLike objects in static file helpers",
-      "files": [
-        "flask/_compat.py",
-        "flask/helpers.py",
-        "tests/test_helpers.py"
-      ],
-      "commit": "25de45cbb6fc7304f67b685034151f9ac6ea0df5",
-      "required": [],
-      "stale": [
-        "fd75d83de-0",
-        "feb961834-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "p8590d65a",
-      "task": "Use Werkzeug's JSONMixin class and update tests",
-      "files": [
-        "flask/wrappers.py",
-        "setup.py",
-        "tests/test_helpers.py"
-      ],
-      "commit": "8590d65a57ad57c99a82fdf4e1c57921d7e1bdcd",
-      "required": [],
-      "stale": [
-        "f1df2788a-0",
-        "fd75d83de-0",
-        "feb961834-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "pb46f5942",
-      "task": "address flake8 issues",
-      "files": [
-        "flask/_compat.py",
         "flask/app.py",
-        "flask/cli.py",
-        "flask/helpers.py",
-        "flask/templating.py",
-        "flask/testing.py",
-        "flask/wrappers.py",
-        "scripts/make-release.py",
-        "tests/test_apps/helloworld/wsgi.py",
-        "tests/test_basic.py",
-        "tests/test_blueprints.py",
-        "tests/test_cli.py"
+        "flask/ctx.py",
+        "flask/helpers.py"
       ],
-      "commit": "b46f5942a528053034fecf210572ee04bc4a3284",
+      "commit": "55ad09c9024d2f0d23123c934e505042516cc796",
+      "required": [],
+      "stale": [
+        "f5da31f8a-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pdbd4520c",
+      "task": "fix tests failing with server name warnings",
+      "files": [
+        "tests/conftest.py",
+        "tests/test_basic.py",
+        "tests/test_helpers.py",
+        "tests/test_reqctx.py"
+      ],
+      "commit": "dbd4520ccbe0954d8ff4f926ba5f16c4f5291533",
       "required": [
         "f4dc2ef19-0"
       ],
-      "stale": [
-        "f1df2788a-0",
-        "f5da31f8a-0",
-        "f7a7a163f-0"
-      ],
+      "stale": [],
       "split": "tune"
     },
     {
-      "id": "p53c893b6",
-      "task": "fix string concats left over by black",
+      "id": "pa5ecdfa7",
+      "task": "Fixes for PEP451 import loaders and pytest 5.x",
       "files": [
-        "examples/tutorial/flaskr/blog.py",
-        "src/flask/app.py",
-        "src/flask/cli.py",
-        "src/flask/ctx.py",
-        "src/flask/helpers.py",
-        "src/flask/testing.py",
+        "examples/tutorial/tests/test_db.py",
+        "flask/helpers.py",
         "tests/test_basic.py",
-        "tests/test_config.py",
-        "tests/test_instance_config.py",
-        "tests/test_templating.py"
+        "tests/test_helpers.py"
       ],
-      "commit": "53c893b646252d610e877eb9385e9e250a1ae5e1",
+      "commit": "a5ecdfa7a57bf6bcba7391fc6d356e3f7de33e57",
       "required": [
-        "f4dc2ef19-0",
-        "f4d2a3ab2-0"
+        "f4dc2ef19-0"
       ],
       "stale": [],
-      "split": "tune"
+      "split": "holdout"
     },
     {
-      "id": "pdf470aec",
-      "task": "use app.name as app.logger name",
+      "id": "pc367a86c",
+      "task": "Test test_send_from_directory_bad_request no longer fails in Python 3.8.",
       "files": [
-        "src/flask/app.py",
-        "src/flask/logging.py",
-        "tests/test_logging.py",
-        "tests/test_templating.py"
+        "tests/test_helpers.py"
       ],
-      "commit": "df470aecb96efbcb17ca76e73196c25c38ce6d17",
-      "required": [
-        "f4d2a3ab2-0"
+      "commit": "c367a86cc5be70da4928b276d0218f98df6e854d",
+      "required": [],
+      "stale": [
+        "fd75d83de-0",
+        "feb961834-0"
       ],
-      "stale": [],
       "split": "tune"
     }
   ]

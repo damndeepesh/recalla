@@ -390,19 +390,6 @@
   ],
   "probes": [
     {
-      "id": "p9897ee95",
-      "task": "[bash] Strip trailing whitespace on kill completion",
-      "files": [
-        "shell/completion.bash"
-      ],
-      "commit": "9897ee959186f2c8d5908966c10cb6593df945a1",
-      "required": [
-        "f4ecb7f3a-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
       "id": "p9c293bb8",
       "task": "[bash] Put C-t items at point in vi mode (#1876)",
       "files": [
@@ -410,9 +397,7 @@
         "test/test_go.rb"
       ],
       "commit": "9c293bb82b6be333c857d288d10aab730220a0e7",
-      "required": [
-        "fc20954f0-0"
-      ],
+      "required": [],
       "stale": [
         "fce43ea9f-0"
       ],
@@ -432,24 +417,6 @@
       "split": "tune"
     },
     {
-      "id": "pdca56da0",
-      "task": "Add 'insert' key for --bind",
-      "files": [
-        "man/man1/fzf.1",
-        "src/options.go",
-        "src/tui/light.go",
-        "src/tui/tcell.go",
-        "src/tui/tui.go"
-      ],
-      "commit": "dca56da0ef8589d6e7d00c5aaa073d9adb2dd650",
-      "required": [
-        "f4ecb7f3a-0",
-        "fc20954f0-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
       "id": "p9f0626da",
       "task": "Add backward-delete-char/eof action (#1891)",
       "files": [
@@ -460,54 +427,26 @@
       ],
       "commit": "9f0626da643070455fb5d6bb11ff1f483a0c100f",
       "required": [
-        "fc20954f0-0",
-        "f4ecb7f3a-0",
-        "fc4185e81-0"
+        "fc20954f0-0"
       ],
       "stale": [],
       "split": "tune"
     },
     {
-      "id": "p4c9cab3f",
-      "task": "Fix prefix/suffix/equal matcher to trim whitespaces",
+      "id": "p7c447bbd",
+      "task": "[bash] Start C-r search with current command line (#1886)",
       "files": [
-        "src/algo/algo.go",
-        "src/algo/algo_test.go",
-        "src/pattern_test.go",
-        "src/util/chars.go"
+        "shell/key-bindings.bash",
+        "test/test_go.rb"
       ],
-      "commit": "4c9cab3f8ae7b55f7124d7c3cf7ac6b4cc3db210",
+      "commit": "7c447bbdc7adb1fe0c848e171780f68cacf3e80e",
       "required": [
-        "faeb957a2-0"
+        "fc20954f0-0"
       ],
-      "stale": [],
+      "stale": [
+        "fce43ea9f-0"
+      ],
       "split": "holdout"
-    },
-    {
-      "id": "p6db15e86",
-      "task": "[vim] Throw error when popup support is unavailable",
-      "files": [
-        "plugin/fzf.vim"
-      ],
-      "commit": "6db15e86937029b4a4565b2ae73a3c6bae5ef4ba",
-      "required": [],
-      "stale": [
-        "f27444d6b-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p242c0db2",
-      "task": "[vim] Fix height calculation",
-      "files": [
-        "plugin/fzf.vim"
-      ],
-      "commit": "242c0db26b9a14e164ea70bbe1b7b23594381829",
-      "required": [],
-      "stale": [
-        "f27444d6b-0"
-      ],
-      "split": "tune"
     },
     {
       "id": "pd9b12111",
@@ -522,7 +461,6 @@
       ],
       "commit": "d9b12111912a43e62f61051d40897a378a020cf5",
       "required": [
-        "fc20954f0-0",
         "f4ecb7f3a-0",
         "fc4185e81-0"
       ],
@@ -530,30 +468,56 @@
       "split": "holdout"
     },
     {
-      "id": "pf092e403",
-      "task": "Smart match of accented characters",
+      "id": "p0f5c6e8f",
+      "task": "[vim] Fix issue with multiple popups (#1927)",
       "files": [
-        "src/pattern.go",
-        "test/test_go.rb"
+        "plugin/fzf.vim"
       ],
-      "commit": "f092e4038fd1344bcd0a7c11f7ab7355734f7275",
+      "commit": "0f5c6e8f040833ca632bb5ff345542879769225c",
+      "required": [],
+      "stale": [
+        "f27444d6b-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p71e573d0",
+      "task": "[vim] Add 'tmux' layout option to use fzf-tmux",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "71e573d082ee4f0ee3935517d34e0556d81435d7",
+      "required": [],
+      "stale": [
+        "f27444d6b-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pc3292793",
+      "task": "[completion] Make kill completion more consistent with the others",
+      "files": [
+        "shell/completion.bash",
+        "shell/completion.zsh"
+      ],
+      "commit": "c329279339a5f49020f6cb43c714d54e68424700",
       "required": [
-        "faeb957a2-0",
-        "fc20954f0-0"
+        "f4ecb7f3a-0"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "pd2af3ff9",
-      "task": "Change how hl:-1 or hl+:-1 is applied to text with background color",
+      "id": "p9dc4b40d",
+      "task": "Add more preview window options and reduce vertical padding on noborder",
       "files": [
-        "src/result.go",
-        "src/tui/tui.go"
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go"
       ],
-      "commit": "d2af3ff98d427d797be809505661aeb84e65e4c7",
+      "commit": "9dc4b40d7a185b0448a15f2e2c6f7c46be738550",
       "required": [
-        "ffcf63c74-0"
+        "fc4185e81-0"
       ],
       "stale": [],
       "split": "holdout"

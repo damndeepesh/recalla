@@ -769,23 +769,8 @@
       ],
       "commit": "9f0e88bcb14e02da1b88872435b17d74786640b5",
       "required": [
-        "f52d7f474-0",
-        "f6f2b79f5-0",
-        "f718a00f6-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "pe95254a8",
-      "task": "deps: remove ignore's dependency on crossbeam-utils",
-      "files": [
-        "crates/ignore/src/walk.rs"
-      ],
-      "commit": "e95254a86f484eec663be4714924d91d3cf39cb8",
-      "required": [
-        "f139f186e-0",
-        "ff314b0d5-0"
+        "f718a00f6-0",
+        "f9c940b45-0"
       ],
       "stale": [],
       "split": "tune"
@@ -798,85 +783,137 @@
       ],
       "commit": "36194c27427a6df76963da472b13c36f47410824",
       "required": [
-        "f52d7f474-0",
-        "f6f2b79f5-0",
-        "f718a00f6-0"
+        "f718a00f6-0",
+        "f9268ff8e-0",
+        "f9c940b45-0"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "pdb6bb21a",
-      "task": "windows: attempt to enable long path support for MSVC targets",
+      "id": "p341a19e0",
+      "task": "regex: fix fast path for -w/--word-regexp flag (#2576)",
       "files": [
-        "build.rs",
-        "pkg/windows/Manifest.xml"
+        "crates/regex/src/word.rs",
+        "tests/regression.rs"
       ],
-      "commit": "db6bb21a629d5b1ec1bfe89c693b280497c9eedc",
-      "required": [],
-      "stale": [
-        "f0eef0514-0"
+      "commit": "341a19e0d05bc6f0cabeb2dc756b37cfc047f8f0",
+      "required": [
+        "f718a00f6-0",
+        "f9268ff8e-0",
+        "fadb9332f-0"
       ],
+      "stale": [],
       "split": "tune"
     },
     {
-      "id": "p6abb962f",
-      "task": "cli: fix non-path sorting behavior",
+      "id": "pcad1f5fa",
+      "task": "ignore: fix filtering when searching subdirectories",
       "files": [
-        "crates/core/args.rs",
-        "crates/core/main.rs",
-        "tests/feature.rs",
-        "tests/misc.rs"
+        "crates/ignore/src/dir.rs",
+        "tests/regression.rs"
       ],
-      "commit": "6abb962f0d655a186972462d88d2de4e5caf4a33",
+      "commit": "cad1f5fae2e4b48d8942add9dc4c950a170b5d2e",
       "required": [
-        "f241bc8f8-0"
+        "f6f2b79f5-0",
+        "f718a00f6-0",
+        "f9268ff8e-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p9626f167",
+      "task": "progress",
+      "files": [
+        "crates/regex/src/ast.rs",
+        "crates/regex/src/config.rs",
+        "crates/regex/src/error.rs",
+        "crates/regex/src/lib.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/regex/src/non_matching.rs",
+        "crates/regex/src/word.rs",
+        "tests/misc.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9626f167573527858f9736a3054882de87d6cd79",
+      "required": [
+        "f718a00f6-0",
+        "f9c940b45-1",
+        "fadb9332f-0"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "p3bfa125b",
-      "task": "ci: replace mips with powerpc64, aarch64 and s390x",
+      "id": "p9ed7565f",
+      "task": "cli: error when searching for NUL",
+      "files": [
+        "crates/core/flags/hiargs.rs",
+        "crates/regex/src/ban.rs",
+        "crates/regex/src/config.rs",
+        "crates/regex/src/error.rs",
+        "crates/regex/src/lib.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/searcher/src/line_buffer.rs",
+        "crates/searcher/src/searcher/mod.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9ed7565fcb47d02e76398d41f24ba0817f6b9c2f",
+      "required": [
+        "f6f2b79f5-0",
+        "f718a00f6-0",
+        "f9268ff8e-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p827082a3",
+      "task": "ci: add more ARM build configurations to CI and release workflows",
       "files": [
         "tests/feature.rs",
         "tests/misc.rs",
+        "tests/regression.rs",
         "tests/util.rs"
       ],
-      "commit": "3bfa125b2ea8175947360322f1429a0205be6c76",
+      "commit": "827082a33ae7d86846a103ef14fb9ff297587049",
       "required": [
-        "f241bc8f8-0",
-        "fee21897e-0"
+        "f718a00f6-0",
+        "fa2e6aec7-0"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "p6cd94796",
-      "task": "ignore: implement FusedIterator for Walk",
+      "id": "pc8e4a845",
+      "task": "cli: prefix all non-fatal error messages with 'rg: '",
+      "files": [
+        "crates/core/messages.rs",
+        "tests/feature.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "c8e4a84519ede79b330f9a9e2b072110d5bd0c8c",
+      "required": [
+        "f718a00f6-0",
+        "f9268ff8e-0",
+        "f9c940b45-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p3ad0e834",
+      "task": "ignore/walk: correct build_parallel() documentation",
       "files": [
         "crates/ignore/src/walk.rs"
       ],
-      "commit": "6cd947963420360d8e4fe7f9eff93f4636d037a1",
+      "commit": "3ad0e83471588d8802d5747d0cc9accec76f7ccf",
       "required": [
-        "f139f186e-0",
         "ff314b0d5-0"
       ],
       "stale": [],
       "split": "tune"
-    },
-    {
-      "id": "p5b88515f",
-      "task": "build: a bit of clean-up",
-      "files": [
-        "build.rs"
-      ],
-      "commit": "5b88515faf67b1a9e5541a2130a6bebf3bd21c89",
-      "required": [],
-      "stale": [
-        "f0eef0514-0"
-      ],
-      "split": "holdout"
     },
     {
       "id": "p9d738ad0",

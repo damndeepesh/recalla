@@ -452,59 +452,6 @@
   ],
   "probes": [
     {
-      "id": "peafc875e",
-      "task": "chore: fix some typos in comments (#6243)",
-      "files": [
-        "admin.go",
-        "caddytest/integration/stream_test.go",
-        "modules/caddyhttp/app.go",
-        "modules/caddyhttp/fileserver/staticfiles.go"
-      ],
-      "commit": "eafc875ea9f6238fce24b23af47a1d7162fd27a5",
-      "required": [
-        "fda8b7fe5-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p70953e87",
-      "task": "caddyhttp: Support multiple logger names per host (#6088)",
-      "files": [
-        "caddyconfig/httpcaddyfile/httptype.go",
-        "caddytest/integration/caddyfile_adapt/import_args_snippet.caddyfiletest",
-        "caddytest/integration/caddyfile_adapt/log_except_catchall_blocks.caddyfiletest",
-        "caddytest/integration/caddyfile_adapt/log_multi_logger_name.caddyfiletest",
-        "caddytest/integration/caddyfile_adapt/log_override_hostname.caddyfiletest",
-        "caddytest/integration/caddyfile_adapt/log_override_name_multiaccess.caddyfiletest",
-        "caddytest/integration/caddyfile_adapt/log_override_name_multiaccess_debug.caddyfiletest",
-        "caddytest/integration/caddyfile_adapt/log_skip_hosts.caddyfiletest",
-        "modules/caddyhttp/logging.go",
-        "modules/caddyhttp/server.go"
-      ],
-      "commit": "70953e873a559553e97c985a13db897ab9f573ff",
-      "required": [
-        "f431adc09-0",
-        "fa58f240d-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pe0daa39c",
-      "task": "caddyhttp: record num. bytes read when response writer is hijacked (#6173)",
-      "files": [
-        "modules/caddyhttp/responsewriter.go",
-        "modules/caddyhttp/server.go"
-      ],
-      "commit": "e0daa39cd3373d26dcf78ae0d30ac24d1df5dd57",
-      "required": [
-        "f431adc09-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
       "id": "p9cd472c0",
       "task": "caddyfile: Populate regexp matcher names by default (#6145)",
       "files": [
@@ -523,38 +470,7 @@
       ],
       "commit": "9cd472c0313b01e71d1f142769c3653058d75c86",
       "required": [
-        "fa58f240d-0",
         "f9cde7155-0"
-      ],
-      "stale": [
-        "fac14b64e-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "pc6673ad4",
-      "task": "staticresp: Use the evaluated response body for sniffing JSON content-type (#6249)",
-      "files": [
-        "caddytest/integration/handler_test.go",
-        "modules/caddyhttp/staticresp.go"
-      ],
-      "commit": "c6673ad4d8c3253179d697f06aac458e48e56546",
-      "required": [
-        "fda8b7fe5-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p613d544a",
-      "task": "reverseproxy: Accept EOF when buffering",
-      "files": [
-        "modules/caddyhttp/reverseproxy/reverseproxy.go"
-      ],
-      "commit": "613d544a4775b831595f223028fee76b980aa003",
-      "required": [
-        "fab045592-0",
-        "fc7d6c4cb-0"
       ],
       "stale": [],
       "split": "tune"
@@ -567,29 +483,21 @@
       ],
       "commit": "d93e027e01905406671ed8df295d5e48d16645c2",
       "required": [
-        "fab045592-0",
         "fc7d6c4cb-0"
       ],
       "stale": [],
       "split": "tune"
     },
     {
-      "id": "p6d97d8d8",
-      "task": "caddyhttp: Address some Go 1.20 features (#6252)",
+      "id": "p868af6a0",
+      "task": "reverse_proxy: Add grace_period for SRV upstreams to Caddyfile (#6264)",
       "files": [
-        "cmd/x509rootsfallback.go",
-        "go.mod",
-        "go.sum",
-        "modules/caddyhttp/caddyhttp.go",
-        "modules/caddyhttp/caddyhttp_test.go",
-        "modules/caddyhttp/requestbody/caddyfile.go",
-        "modules/caddyhttp/requestbody/requestbody.go",
-        "modules/caddyhttp/responsewriter_test.go"
+        "caddytest/integration/caddyfile_adapt/reverse_proxy_dynamic_upstreams_grace_period.caddyfiletest",
+        "modules/caddyhttp/reverseproxy/caddyfile.go"
       ],
-      "commit": "6d97d8d87beb788d19a4084d07ec9157e5705b13",
+      "commit": "868af6a062290b82fb1d4d70697739974e814e50",
       "required": [
-        "fd0b608af-0",
-        "fd9b1d463-0"
+        "fab045592-0"
       ],
       "stale": [],
       "split": "tune"
@@ -606,9 +514,7 @@
       ],
       "commit": "76c4cf5a56b4ee576001e649e72d6e7fdf730364",
       "required": [
-        "fd9b1d463-0",
-        "fd0b608af-0",
-        "fa58f240d-0"
+        "fd9b1d463-0"
       ],
       "stale": [],
       "split": "tune"
@@ -622,7 +528,21 @@
       ],
       "commit": "c6eb186064091c79f46d03fd0fc5c233c686566f",
       "required": [
-        "f9cde7155-0",
+        "f9cde7155-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pd129ae6a",
+      "task": "caddytls: Evict internal certs from cache based on issuer (#6266)",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "modules/caddytls/tls.go"
+      ],
+      "commit": "d129ae6aec6af2182217ee8a235f4df8cd2bbfde",
+      "required": [
         "fd9b1d463-0"
       ],
       "stale": [],
@@ -636,110 +556,75 @@
       ],
       "commit": "fab6375a8bebd952abc80e63fa31b648ae1ebc0b",
       "required": [
-        "f40b193fb-0",
-        "f40b193fb-1",
         "f48598e1f-0"
       ],
       "stale": [],
       "split": "tune"
     },
     {
-      "id": "p99dcdf7e",
-      "task": "caddyhttp: Convert IDNs to ASCII when provisioning Host matcher",
+      "id": "p630c62b3",
+      "task": "fixed bug in resolving ip version in dynamic upstreams (#6448)",
       "files": [
-        "modules/caddyhttp/matchers.go",
-        "modules/caddyhttp/matchers_test.go"
+        "modules/caddyhttp/reverseproxy/upstreams.go",
+        "modules/caddyhttp/reverseproxy/upstreams_test.go"
       ],
-      "commit": "99dcdf7e426f0dcbdffe510f241ae8a4fd5a56e6",
-      "required": [],
-      "stale": [
-        "fac14b64e-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "pc3fb5f4d",
-      "task": "caddyhttp: Reject 0-RTT early data in IP matchers and set Early-Data header when proxying (#6427)",
-      "files": [
-        "listeners.go",
-        "modules/caddyhttp/ip_matchers.go",
-        "modules/caddyhttp/matchers.go",
-        "modules/caddyhttp/replacer.go",
-        "modules/caddyhttp/reverseproxy/reverseproxy.go"
-      ],
-      "commit": "c3fb5f4d3fb3eed9136f766cb88f2d8ac54de685",
+      "commit": "630c62b3137abf688aa1a698a614fa28c08e43dd",
       "required": [
-        "f119e8794-0",
-        "f536c28d4-0",
-        "f536c28d4-1"
+        "fab045592-0"
       ],
-      "stale": [
-        "fac14b64e-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
-      "id": "p8ccfedf2",
-      "task": "cmd: Use a factory to create the caddy root command (#6533)",
+      "id": "p54a0c8f9",
+      "task": "reverseproxy: Active health checks request body option (#6520)",
       "files": [
-        "cmd/cobra.go",
-        "cmd/commandfactory.go",
-        "cmd/commands.go",
-        "cmd/main.go"
+        "caddytest/integration/caddyfile_adapt/reverse_proxy_health_reqbody.caddyfiletest",
+        "modules/caddyhttp/reverseproxy/caddyfile.go",
+        "modules/caddyhttp/reverseproxy/healthchecks.go"
       ],
-      "commit": "8ccfedf2bb0a1759aa68d4989f05d9a52ba41a34",
+      "commit": "54a0c8f94821f393edec1a1bc9459f2363c95117",
       "required": [
-        "f078f130a-0"
+        "fc7d6c4cb-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p2028da4e",
+      "task": "ci: build and test with Go 1.23 (#6526)",
+      "files": [
+        "caddyconfig/caddyfile/dispenser.go",
+        "go.mod",
+        "modules/caddyhttp/celmatcher.go"
+      ],
+      "commit": "2028da4e74cd41f0f7f94222c6599da1a371d4b8",
+      "required": [
+        "f9cde7155-0",
+        "fd0b608af-0"
       ],
       "stale": [],
       "split": "tune"
     },
     {
-      "id": "pff67b971",
-      "task": "caddyhttp: enable qlog, controlled by QLOGDIR env (#6581)",
+      "id": "p388c7e89",
+      "task": "metrics: move `metrics`  up, outside `servers` (#6606)",
       "files": [
-        "go.mod",
-        "go.sum",
-        "listeners.go",
+        "caddyconfig/httpcaddyfile/httptype.go",
+        "caddyconfig/httpcaddyfile/options.go",
+        "caddyconfig/httpcaddyfile/serveroptions.go",
+        "caddytest/integration/caddyfile_adapt/metrics_merge_options.caddyfiletest",
+        "caddytest/integration/caddyfile_adapt/metrics_perhost.caddyfiletest",
+        "modules/caddyhttp/app.go",
+        "modules/caddyhttp/metrics.go",
         "modules/caddyhttp/server.go"
       ],
-      "commit": "ff67b971267abb24774d18f323b0d6d43bfcdb3b",
+      "commit": "388c7e898c6cbcddd2c59e8a902238a0b4f06857",
       "required": [
-        "fd0b608af-0",
-        "fd9b1d463-0",
-        "f119e8794-0"
+        "fda8b7fe5-0"
       ],
       "stale": [],
       "split": "holdout"
-    },
-    {
-      "id": "p0e829bc4",
-      "task": "caddyhttp: Fix listener wrapper regression from #6573 (#6599)",
-      "files": [
-        "listeners.go",
-        "modules/caddyhttp/app.go"
-      ],
-      "commit": "0e829bc4187e265d1e4ccb1bec24996088acf0a5",
-      "required": [
-        "f119e8794-0",
-        "f536c28d4-0",
-        "f536c28d4-1"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p01be1b54",
-      "task": "ci: install xcaddy to fix release flow (#6602)",
-      "files": [
-        "cmd/commands.go"
-      ],
-      "commit": "01be1b54a8c9b7e6ea52af8165c583d4d2ebe7e3",
-      "required": [
-        "f078f130a-0"
-      ],
-      "stale": [],
-      "split": "tune"
     },
     {
       "id": "p825fe48e",
@@ -750,9 +635,33 @@
       ],
       "commit": "825fe48e0654dc6e4e065df364a51ea79488e44b",
       "required": [
-        "f40b193fb-0",
-        "f40b193fb-1",
         "f48598e1f-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pb3ce2603",
+      "task": "cmd: ignore missing keys during storage export (#6697)",
+      "files": [
+        "cmd/storagefuncs.go"
+      ],
+      "commit": "b3ce260389a88a35c9b0e0a19a93abfe92fb6e9f",
+      "required": [
+        "f078f130a-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pb06a9496",
+      "task": "caddyhttp: Document side effect of HTTP/3 early data (close #6936)",
+      "files": [
+        "modules/caddyhttp/app.go"
+      ],
+      "commit": "b06a9496d130cb06466156d53138a9691342e5a2",
+      "required": [
+        "fda8b7fe5-0"
       ],
       "stale": [],
       "split": "tune"

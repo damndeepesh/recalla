@@ -183,35 +183,6 @@
   ],
   "probes": [
     {
-      "id": "p3f86e22a",
-      "task": "Make sure session cookies do not overwrite explicit request cookies Implement RequestsCookieJar.copy Use RequestsCookieJar.update when merging cookiejars",
-      "files": [
-        "requests/cookies.py",
-        "requests/sessions.py",
-        "requests/utils.py"
-      ],
-      "commit": "3f86e22a07fb1bd91c70d3c487efbadb55f6b36a",
-      "required": [],
-      "stale": [
-        "f06e4971f-0",
-        "fb2867336-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "pa788cb72",
-      "task": "Missing line was allowing redirects with HEAD",
-      "files": [
-        "requests/api.py"
-      ],
-      "commit": "a788cb72719a6bd3cd103c0df762d5f983cda134",
-      "required": [],
-      "stale": [
-        "fb2867336-0"
-      ],
-      "split": "tune"
-    },
-    {
       "id": "pbe62645d",
       "task": "Revert \"If Content-Length is already set..\"[1]",
       "files": [
@@ -220,35 +191,37 @@
       "commit": "be62645dd56580dd7576032b348cf79d880851d8",
       "required": [],
       "stale": [
-        "fb2867336-0",
         "fc485928a-0"
       ],
       "split": "holdout"
     },
     {
-      "id": "pb80f8aa4",
-      "task": "URLError doesn't exist anymore",
+      "id": "p796d3225",
+      "task": "[kennethreitz/requests#1208] adding a max_retries argument",
       "files": [
-        "requests/models.py"
+        "requests/adapters.py",
+        "requests/api.py",
+        "requests/sessions.py"
       ],
-      "commit": "b80f8aa47502d43a5e8d2654558e1e2db53a0ac2",
+      "commit": "796d3225ddf08a9ebaa429209b9d077c3a8f99b8",
       "required": [],
       "stale": [
-        "fb2867336-0",
-        "fc485928a-0"
+        "fb2867336-0"
       ],
-      "split": "tune"
+      "split": "holdout"
     },
     {
-      "id": "p03a3ca50",
-      "task": "get_auth_from_url return None if nothing is found",
+      "id": "p23d85222",
+      "task": "Revert \"[kennethreitz/requests#1208] adding a max_retries argument\"",
       "files": [
-        "requests/utils.py"
+        "requests/adapters.py",
+        "requests/api.py",
+        "requests/sessions.py"
       ],
-      "commit": "03a3ca500491ed55c90255398fa514be017efe10",
+      "commit": "23d8522285bd7d7b4a1da46325aeac8814d87076",
       "required": [],
       "stale": [
-        "f06e4971f-0"
+        "fb2867336-0"
       ],
       "split": "tune"
     },
@@ -277,6 +250,19 @@
       "stale": [
         "f488a51d6-0",
         "f62a23bfb-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pbea20601",
+      "task": "'or content' does us no good.",
+      "files": [
+        "requests/models.py"
+      ],
+      "commit": "bea206018211ef77955dfeb1e982bd3530b1fe60",
+      "required": [],
+      "stale": [
+        "fc485928a-0"
       ],
       "split": "holdout"
     }

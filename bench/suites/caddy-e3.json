@@ -367,36 +367,6 @@
   ],
   "probes": [
     {
-      "id": "p03243e42",
-      "task": "go.mod: Upgrade dependencies",
-      "files": [
-        "go.mod",
-        "go.sum"
-      ],
-      "commit": "03243e42fe46f6bf276cbbf5dcdc7e18fde461d7",
-      "required": [
-        "f792f1c7e-0",
-        "fd129ae6a-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p76b198f5",
-      "task": "http: Sort auto-HTTPS redirect routes by host specificity (fixes #7390) (#7502)",
-      "files": [
-        "caddytest/integration/autohttps_test.go",
-        "modules/caddyhttp/autohttps.go"
-      ],
-      "commit": "76b198f586e4e2482a0278ba52c176cff70af8cf",
-      "required": [
-        "f88fd5f34-0",
-        "f88fd5f34-1"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
       "id": "p72eaf258",
       "task": "chore: Enable modernize linter (#7519)",
       "files": [
@@ -420,34 +390,6 @@
       "split": "tune"
     },
     {
-      "id": "peac02ee9",
-      "task": "caddyhttp: Limit empty Host check to HTTP/1.1",
-      "files": [
-        "modules/caddyhttp/server.go"
-      ],
-      "commit": "eac02ee98f9f61d79ae774aa49aa102ddf2076ba",
-      "required": [],
-      "stale": [
-        "f431adc09-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "pce203aa9",
-      "task": "go.mod: Upgrade x/net",
-      "files": [
-        "go.mod",
-        "go.sum"
-      ],
-      "commit": "ce203aa9e1ff2686777019f45c36c283debb7986",
-      "required": [
-        "f792f1c7e-0",
-        "fd129ae6a-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
       "id": "p06a05e38",
       "task": "Revert \"encode: Implement Flush for legacy compatibility\"",
       "files": [
@@ -461,32 +403,6 @@
       "split": "tune"
     },
     {
-      "id": "pcd9e1660",
-      "task": "cmd: Pass configFile, not configFlag, for reload command (#7532)",
-      "files": [
-        "cmd/commandfuncs.go"
-      ],
-      "commit": "cd9e1660aa454e6536ad740c9d1aaecf3c3552ed",
-      "required": [
-        "f787f6b25-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p2ab043b8",
-      "task": "reverseproxy: query escape request urls when proxy protocol is enabled (#7537)",
-      "files": [
-        "modules/caddyhttp/reverseproxy/reverseproxy.go"
-      ],
-      "commit": "2ab043b8903db4574b2fc7a625619018a072f082",
-      "required": [
-        "f9c0c71e5-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
       "id": "pf283062d",
       "task": "cmd: Custom binary names through `CustomBinaryName` and `CustomLongDescription` (#7513)",
       "files": [
@@ -495,8 +411,7 @@
       ],
       "commit": "f283062d37c50627d53ca682ebae2ce219b35515",
       "required": [
-        "f5a6b2f8d-0",
-        "f787f6b25-0"
+        "f5a6b2f8d-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -540,66 +455,40 @@
       "commit": "d935a6956c16902623b8e8f6d1aafec4f6124f46",
       "required": [
         "f88fd5f34-0",
-        "f88fd5f34-1",
-        "fdb3e19b7-0"
+        "f88fd5f34-1"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "p45cf61b1",
-      "task": "logging: Ensure `slog` error level logs don't print stack traces (#7512)",
+      "id": "p7b34e310",
+      "task": "core: Check whether @id is unique (#7002)",
       "files": [
-        "caddytest/integration/acme_test.go",
-        "cmd/main.go",
-        "context.go"
+        "caddy.go",
+        "caddytest/caddytest_test.go"
       ],
-      "commit": "45cf61b1276b2cf79ce0147df8fa48c96e8e5356",
+      "commit": "7b34e3107eb6071fea3a3f94a5c913c32a55afd0",
       "required": [
         "f5a6b2f8d-0",
         "f787f6b25-0"
       ],
       "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pdb298602",
-      "task": "reverseproxy: Track dynamic upstreams, enable passive healthchecking (#7539)",
-      "files": [
-        "modules/caddyhttp/reverseproxy/admin.go",
-        "modules/caddyhttp/reverseproxy/admin_test.go",
-        "modules/caddyhttp/reverseproxy/dynamic_upstreams_test.go",
-        "modules/caddyhttp/reverseproxy/hosts.go",
-        "modules/caddyhttp/reverseproxy/passive_health_test.go",
-        "modules/caddyhttp/reverseproxy/reverseproxy.go"
-      ],
-      "commit": "db2986028fc573ae3add0a9a3381268dd7599267",
-      "required": [
-        "f9c0c71e5-0",
-        "fb2492f85-0"
-      ],
-      "stale": [],
       "split": "tune"
     },
     {
-      "id": "p6e5e08cf",
-      "task": "Wire up Cause for most context cancels (#7538)",
+      "id": "p1fbb2872",
+      "task": "Fix lint errors",
       "files": [
-        "admin.go",
-        "caddy.go",
-        "context.go",
-        "listeners.go",
-        "modules/caddyhttp/app.go",
-        "modules/caddyhttp/reverseproxy/httptransport.go"
+        "cmd/commandfuncs.go",
+        "modules/caddytls/connpolicy.go",
+        "modules/caddytls/folderloader.go"
       ],
-      "commit": "6e5e08cf582649b4eb46fa201ea05e6131870363",
+      "commit": "1fbb28720b5d20d54074593b3c5d12f3549f371b",
       "required": [
-        "f5a6b2f8d-0",
-        "f787f6b25-0",
-        "ff11c780f-0"
+        "f787f6b25-0"
       ],
       "stale": [],
-      "split": "holdout"
+      "split": "tune"
     },
     {
       "id": "pdf65455b",
@@ -609,23 +498,7 @@
       ],
       "commit": "df65455b1f0d230a34d4bd7111213fe6917abe98",
       "required": [
-        "f792f1c7e-0",
         "fd1325842-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p5d189aff",
-      "task": "caddytls: Avoid default issuers for implicit tailscale policies (#7577)",
-      "files": [
-        "modules/caddytls/automation.go",
-        "modules/caddytls/automation_test.go"
-      ],
-      "commit": "5d189aff40dcfd6e8245310eb696e0de3775a690",
-      "required": [
-        "fdb3e19b7-0",
-        "fdb3e19b7-1"
       ],
       "stale": [],
       "split": "holdout"
@@ -641,8 +514,6 @@
       ],
       "commit": "e98ed6232d65790d27bacd13fb49fa5474b9ec93",
       "required": [
-        "f792f1c7e-0",
-        "fd129ae6a-0",
         "f74949fb0-0"
       ],
       "stale": [],
@@ -656,24 +527,10 @@
       ],
       "commit": "5de1565ff6182fbb191b5a2d3949b977ed536d57",
       "required": [
-        "f792f1c7e-0",
         "fd1325842-0"
       ],
       "stale": [],
       "split": "holdout"
-    },
-    {
-      "id": "p24bebd0a",
-      "task": "caddyhttp: Document missing placeholders for escaped URI and prefixed query (#7659)",
-      "files": [
-        "modules/caddyhttp/app.go"
-      ],
-      "commit": "24bebd0a07cef434ec9c807bdb3a5a2d5f5ae9c1",
-      "required": [
-        "ff11c780f-0"
-      ],
-      "stale": [],
-      "split": "tune"
     },
     {
       "id": "p355c1782",
@@ -694,32 +551,40 @@
         "f787f6b25-0",
         "ff11c780f-0"
       ],
-      "stale": [
-        "f431adc09-0"
-      ],
+      "stale": [],
       "split": "tune"
     },
     {
-      "id": "pd2172bea",
-      "task": "chore: Fix golangci-lint 2.12.1 findings (#7690)",
+      "id": "p5e76b5ee",
+      "task": "tls: add alpn to managed HTTPS records (#7653)",
       "files": [
-        "cmd/packagesfuncs.go",
-        "context.go",
-        "modules/caddyhttp/fileserver/browse.go",
-        "modules/caddyhttp/fileserver/staticfiles.go",
-        "modules/caddyhttp/reverseproxy/selectionpolicies.go",
-        "modules/caddyhttp/routes.go",
-        "modules/caddyhttp/server.go"
+        "modules/caddyhttp/app.go",
+        "modules/caddyhttp/autohttps.go",
+        "modules/caddyhttp/autohttps_test.go",
+        "modules/caddyhttp/server.go",
+        "modules/caddytls/connpolicy.go",
+        "modules/caddytls/ech.go",
+        "modules/caddytls/ech_dns_test.go",
+        "modules/caddytls/tls.go"
       ],
-      "commit": "d2172bea61414635c55554b42714af94a3c9cefd",
+      "commit": "5e76b5ee43e8ec9e78d07665cdd75515b4c07acd",
       "required": [
-        "f5a6b2f8d-0",
-        "f787f6b25-0",
-        "f45132c5b-0"
+        "ff11c780f-0"
       ],
-      "stale": [
-        "f431adc09-0"
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p761347aa",
+      "task": "templates: Explicitly warn about misconfigurations",
+      "files": [
+        "modules/caddyhttp/templates/templates.go"
       ],
+      "commit": "761347aa635e14bf7a937e88d45a40e671d325c5",
+      "required": [
+        "f792f1c7e-0"
+      ],
+      "stale": [],
       "split": "tune"
     },
     {
@@ -742,52 +607,53 @@
       "commit": "88037f1666eb9ce1b26453d32dc861cb3a87a4c7",
       "required": [
         "f787f6b25-0",
-        "f792f1c7e-0",
-        "f1bd598e9-0"
+        "f1bd598e9-0",
+        "ff4840cfe-0"
       ],
       "stale": [],
       "split": "tune"
     },
     {
-      "id": "p39c9a85f",
-      "task": "fileserver: append repeated `hide` subdirectives instead of overwriting (#7817)",
+      "id": "pe2eee6a7",
+      "task": "templates: Patch for GHSA-vcc4-2c75-vc9v (#7785)",
       "files": [
-        "caddytest/integration/caddyfile_adapt/file_server_hide_repeated.caddyfiletest",
-        "modules/caddyhttp/fileserver/caddyfile.go"
+        "modules/caddyhttp/templates/tplcontext.go",
+        "modules/caddyhttp/templates/tplcontext_test.go"
       ],
-      "commit": "39c9a85f80a3a2b1aff710c6cbd1190b2aab1b83",
+      "commit": "e2eee6a7fce366321294c9c2a79f3146891dcbdf",
       "required": [
-        "f45132c5b-0"
+        "f792f1c7e-0"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "p0cf03d32",
-      "task": "caddyhttp: mitigate slowloris via idle read/write deadlines (#7913)",
+      "id": "pd2e0ad1e",
+      "task": "reverseproxy: log status 499 instead of 0 when client disconnects (#7827)",
       "files": [
-        "caddyconfig/httpcaddyfile/directives.go",
-        "caddyconfig/httpcaddyfile/serveroptions.go",
-        "modules/caddyhttp/app.go",
-        "modules/caddyhttp/idletimeout.go",
-        "modules/caddyhttp/idletimeout_test.go",
-        "modules/caddyhttp/requestbody/caddyfile.go",
-        "modules/caddyhttp/requestbody/requestbody.go",
-        "modules/caddyhttp/server.go",
-        "modules/caddyhttp/standard/imports.go",
-        "modules/caddyhttp/timeouts/caddyfile.go",
-        "modules/caddyhttp/timeouts/timeouts.go",
-        "modules/caddyhttp/timeouts/timeouts_test.go"
+        "modules/caddyhttp/reverseproxy/client_disconnect_test.go",
+        "modules/caddyhttp/reverseproxy/reverseproxy.go"
       ],
-      "commit": "0cf03d32f7d99cf160d5375e8a40fbe3d910d515",
+      "commit": "d2e0ad1e92329d841a3a12e9ec7935afb30ce246",
       "required": [
-        "f8c3dd3de-0",
-        "ff11c780f-0"
+        "f9c0c71e5-0"
       ],
-      "stale": [
-        "f431adc09-0"
-      ],
+      "stale": [],
       "split": "tune"
+    },
+    {
+      "id": "p945d1997",
+      "task": "reverseproxy: fix misleading handle_response error for extra matcher args (#7869)",
+      "files": [
+        "caddytest/integration/caddyfile_adapt/reverse_proxy_handle_response_too_many_args.caddyfiletest",
+        "modules/caddyhttp/reverseproxy/caddyfile.go"
+      ],
+      "commit": "945d199724f17f313c7fbc90eceba70fe37f47e6",
+      "required": [
+        "fb2492f85-0"
+      ],
+      "stale": [],
+      "split": "holdout"
     },
     {
       "id": "p81a0b6d8",
@@ -804,44 +670,60 @@
       "split": "tune"
     },
     {
-      "id": "pc8492563",
-      "task": "caddyhttp: presize buffers in hot paths to reduce allocations (#7842)",
+      "id": "p90ccea76",
+      "task": "build: bump all dependencies - (Go 1.26 floor) (#8056)",
       "files": [
-        "modules/caddyhttp/caddyhttp.go",
-        "modules/caddyhttp/caddyhttp_bench_test.go",
-        "modules/caddyhttp/headers/headers.go",
-        "modules/caddyhttp/headers/headers_bench_test.go",
-        "modules/caddyhttp/matchers.go",
-        "modules/caddyhttp/reverseproxy/selectionpolicies.go",
-        "modules/caddyhttp/reverseproxy/selectionpolicies_bench_test.go",
-        "modules/caddyhttp/rewrite/rewrite.go",
-        "modules/caddyhttp/rewrite/rewrite_bench_test.go"
+        "cmd/main.go",
+        "cmd/storagefuncs.go",
+        "go.mod",
+        "go.sum",
+        "modules/caddyhttp/app.go",
+        "modules/caddyhttp/errors.go",
+        "modules/caddyhttp/fileserver/staticfiles.go",
+        "modules/caddyhttp/logging.go",
+        "modules/caddyhttp/metrics.go",
+        "modules/caddyhttp/requestbody/requestbody.go",
+        "modules/caddyhttp/reverseproxy/httptransport.go",
+        "modules/caddyhttp/templates/templates.go"
       ],
-      "commit": "c8492563eefcb3c5afbc00f25e7b001ffc6c7d11",
+      "commit": "90ccea768fc192ba0feff7a8df4344916eb7331f",
       "required": [
-        "f74949fb0-0",
         "f792f1c7e-0",
-        "ff8a2c602-0"
+        "f787f6b25-0",
+        "f8c3dd3de-0"
       ],
       "stale": [],
-      "split": "holdout"
+      "split": "tune"
     },
     {
-      "id": "pebfc03a7",
-      "task": "caddyhttp: preserve invalid UTF-8 bytes throughout path matching",
+      "id": "p30d3bd2a",
+      "task": "caddyhttp: only bound HTTP/2 body reads in flight with the idle timeout (#8125)",
       "files": [
-        "modules/caddyhttp/caddyhttp.go",
-        "modules/caddyhttp/caddyhttp_test.go",
-        "modules/caddyhttp/matchers.go",
-        "modules/caddyhttp/matchers_test.go"
+        "modules/caddyhttp/idletimeout.go",
+        "modules/caddyhttp/idletimeout_test.go",
+        "modules/caddyhttp/server.go",
+        "modules/caddyhttp/timeouts/timeouts.go"
       ],
-      "commit": "ebfc03a7b6c8ffd14b70e8d353104c0e05f43cce",
-      "required": [
-        "ff8a2c602-0",
-        "f792f1c7e-0"
+      "commit": "30d3bd2a8959d4d00ca72446f23a59a09f02a83b",
+      "required": [],
+      "stale": [
+        "f431adc09-0"
       ],
-      "stale": [],
-      "split": "holdout"
+      "split": "tune"
+    },
+    {
+      "id": "pc4d8caa2",
+      "task": "caddyhttp: reject invalid and dots-only hosts on every protocol (#8328)",
+      "files": [
+        "modules/caddyhttp/server.go",
+        "modules/caddyhttp/server_test.go"
+      ],
+      "commit": "c4d8caa2e7dade974f3e8c0e7a351198e0b5a306",
+      "required": [],
+      "stale": [
+        "f431adc09-0"
+      ],
+      "split": "tune"
     }
   ]
 }

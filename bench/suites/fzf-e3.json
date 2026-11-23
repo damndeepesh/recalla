@@ -454,34 +454,6 @@
   ],
   "probes": [
     {
-      "id": "paefb9a5b",
-      "task": "Nullify unwanted FZF_DEFAULT_* variables in tmux popup",
-      "files": [
-        "src/proxy.go"
-      ],
-      "commit": "aefb9a5bc41f92227e4bffa050caca0270b450ba",
-      "required": [
-        "f3dee8778-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p6c104d77",
-      "task": "Change 'interface{}' to 'any' (#4308)",
-      "files": [
-        "src/terminal_test.go",
-        "src/tui/tcell_test.go",
-        "src/util/eventbox.go"
-      ],
-      "commit": "6c104d771e382f499025a35b10f39d997ce83b7d",
-      "required": [
-        "f3dee8778-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
       "id": "p4298c0b1",
       "task": "Add `--ghost=TEXT` to display a ghost text when the input is empty",
       "files": [
@@ -494,11 +466,9 @@
       "required": [
         "f587df594-0",
         "f587df594-1",
-        "f0eee95af-0"
+        "f3277e8c8-0"
       ],
-      "stale": [
-        "f66dbee10-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
@@ -514,9 +484,7 @@
         "f3277e8c8-0",
         "f3dee8778-0"
       ],
-      "stale": [
-        "f66dbee10-0"
-      ],
+      "stale": [],
       "split": "tune"
     },
     {
@@ -539,9 +507,7 @@
         "shell/completion.bash"
       ],
       "commit": "923c3a814de39ff906d675834af634252b3d2b3f",
-      "required": [
-        "f1dbdb943-0"
-      ],
+      "required": [],
       "stale": [
         "ff103aa47-0",
         "ff103aa47-1"
@@ -556,13 +522,11 @@
       ],
       "commit": "7e4dbb5f3b93d38b20545a1e5a668e44cab440ce",
       "required": [
-        "f0eee95af-0",
         "f3277e8c8-0",
-        "f3dee8778-0"
+        "f3dee8778-0",
+        "f587df594-0"
       ],
-      "stale": [
-        "f66dbee10-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
@@ -579,7 +543,23 @@
       "required": [
         "f587df594-0",
         "f587df594-1",
-        "f0eee95af-0"
+        "f3277e8c8-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p0dce561e",
+      "task": "Fix header window not updated on change-header",
+      "files": [
+        "src/terminal.go",
+        "test/test_core.rb"
+      ],
+      "commit": "0dce561ec9894781bb356e12f4adef0686421bb7",
+      "required": [
+        "f3277e8c8-0",
+        "f3dee8778-0",
+        "f587df594-0"
       ],
       "stale": [
         "f66dbee10-0"
@@ -587,45 +567,20 @@
       "split": "tune"
     },
     {
-      "id": "p1a8f6336",
-      "task": "[fish] Fix for file/dir names containing newlines",
+      "id": "p0edb5d5e",
+      "task": "Fix trailing ␊ not rendered with '--read0 --no-multi-line'",
       "files": [
-        "shell/key-bindings.fish"
+        "src/terminal.go",
+        "test/test_core.rb"
       ],
-      "commit": "1a8f63361193446370eb0aec8206091afceaac76",
-      "required": [],
-      "stale": [
-        "fed76f076-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "pa41be615",
-      "task": "[fish] Fix whitespace/regex characters in command line",
-      "files": [
-        "shell/key-bindings.fish"
-      ],
-      "commit": "a41be61506541fd583e56d8b16f5b65af1517a32",
-      "required": [],
-      "stale": [
-        "fed76f076-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "pd2c662e5",
-      "task": "Reset coordinator delay on 'reload'",
-      "files": [
-        "src/core.go"
-      ],
-      "commit": "d2c662e54f7d5d011d42915c543c265c0f555d97",
+      "commit": "0edb5d5ebb22b160cb289b36fea475073813a1a2",
       "required": [
-        "f587df594-0",
-        "f587df594-1",
-        "fd4216b0d-0"
+        "f0eee95af-0",
+        "f3277e8c8-0",
+        "f3dee8778-0"
       ],
       "stale": [],
-      "split": "holdout"
+      "split": "tune"
     },
     {
       "id": "pb81696fb",
@@ -644,53 +599,21 @@
       "split": "holdout"
     },
     {
-      "id": "p2c638149",
-      "task": "[neovim] Respect winborder of Neovim 0.11+ (#4389)",
+      "id": "p835906d3",
+      "task": "--no-color: Keep ANSI attributes in preview window",
       "files": [
-        "plugin/fzf.vim"
+        "src/terminal.go"
       ],
-      "commit": "2c6381499c8bfb3f1604f61f3e2eb0eadcfc2728",
+      "commit": "835906d392aa6a3c8596d2c81414f0d73eaf99aa",
       "required": [
-        "f685fb71d-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p54fd92b7",
-      "task": "--no-color: Keep ANSI attributes in the list",
-      "files": [
-        "src/core.go",
-        "src/result.go"
-      ],
-      "commit": "54fd92b7ddb22647170110790391d39a1065a863",
-      "required": [
-        "f587df594-0",
-        "f587df594-1",
-        "fd4216b0d-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p09194c24",
-      "task": "[bash,zsh] Work around a quirk of macOS awk",
-      "files": [
-        "shell/completion.bash",
-        "shell/completion.zsh",
-        "shell/key-bindings.bash",
-        "shell/key-bindings.zsh"
-      ],
-      "commit": "09194c24f275d9387b31e50b38cf7f3a94b1f0fa",
-      "required": [
-        "f1dbdb943-0",
-        "fe1fcdbc3-0"
+        "f3277e8c8-0",
+        "f3dee8778-0",
+        "f587df594-0"
       ],
       "stale": [
-        "ff103aa47-0",
-        "ff103aa47-1"
+        "f66dbee10-0"
       ],
-      "split": "tune"
+      "split": "holdout"
     },
     {
       "id": "pc166eaba",
@@ -703,14 +626,28 @@
       ],
       "commit": "c166eaba6d5e74d39a68c45804a01417d707a304",
       "required": [
-        "f1dbdb943-0",
-        "fe1fcdbc3-0"
+        "f1dbdb943-0"
       ],
       "stale": [
         "ff103aa47-0",
         "ff103aa47-1"
       ],
       "split": "tune"
+    },
+    {
+      "id": "p531dd6fb",
+      "task": "Update copyright year",
+      "files": [
+        "man/man1/fzf-tmux.1",
+        "man/man1/fzf.1",
+        "plugin/fzf.vim"
+      ],
+      "commit": "531dd6fb4f8cbc981fbeb2a1649bbb5bb9e701a4",
+      "required": [
+        "f685fb71d-0"
+      ],
+      "stale": [],
+      "split": "holdout"
     }
   ]
 }

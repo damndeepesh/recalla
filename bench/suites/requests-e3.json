@@ -99,45 +99,16 @@
   ],
   "probes": [
     {
-      "id": "p75c57985",
-      "task": "update json param's description to avoid confusion",
+      "id": "p3331e2ae",
+      "task": "Strip Authorization header whenever root URL changes",
       "files": [
-        "requests/api.py"
-      ],
-      "commit": "75c57985b02b98c897994e81afcf88b69b33f528",
-      "required": [
-        "fead8fba8-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p8546a155",
-      "task": "The library raises NoneType error when file-pointer (fp) resolves to None.",
-      "files": [
-        "requests/models.py",
+        "requests/sessions.py",
         "tests/test_requests.py"
       ],
-      "commit": "8546a15587b2a240c1d1404d3ef99365b911bf13",
+      "commit": "3331e2aecdbf575dd60abef4df79c52d78610a83",
       "required": [
         "f0d7de50d-0",
-        "f0d7de50d-1",
-        "fead8fba8-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pc1b828bc",
-      "task": "Response.content minor perf improvement",
-      "files": [
-        "requests/models.py"
-      ],
-      "commit": "c1b828bc95b8ed0407511b93ee260aa1032f4f8c",
-      "required": [
-        "f0d7de50d-0",
-        "f0d7de50d-1",
-        "fead8fba8-0"
+        "f0d7de50d-1"
       ],
       "stale": [],
       "split": "tune"

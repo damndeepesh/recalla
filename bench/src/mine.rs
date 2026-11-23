@@ -396,6 +396,24 @@ fn limit_reuse(probes: Vec<Probe>) -> Vec<Probe> {
         .collect()
 }
 
+/// A fact is only ground truth for a task when it is about the same thing:
+/// sharing a file is not enough, it must also share a content word with the
+/// task subject or a file path. Keeps incidental co-edits out of the labels.
+fn related(fact: &Fact, subject: &str, files: &[String]) -> bool {
+    let words = |t: &str| -> std::collections::HashSet<String> {
+        t.split(|c: char| !c.is_alphanumeric() && c != '_')
+            .filter(|w| w.chars().count() >= 4)
+            .map(str::to_lowercase)
+            .collect()
+    };
+    let fw = words(&fact.text);
+    let mut tw = words(subject);
+    for f in files {
+        tw.extend(words(f));
+    }
+    !fw.is_disjoint(&tw)
+}
+
 fn probe_for(c: &Commit, facts: &[Fact]) -> Option<Probe> {
     let files: Vec<String> = code_files(c).into_iter().take(MAX_PROBE_FILES).collect();
     if files.is_empty() {
@@ -406,7 +424,7 @@ fn probe_for(c: &Commit, facts: &[Fact]) -> Option<Probe> {
             .iter()
             .filter(|f| f.state == state)
             .map(|f| (f.files.iter().filter(|x| files.contains(x)).count(), f))
-            .filter(|(n, _)| *n > 0)
+            .filter(|(n, f)| *n > 0 && related(f, &c.subject, &files))
             .collect();
         // Most shared files first; ties broken by id so the suite is stable.
         hits.sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.id.cmp(&b.1.id)));
@@ -434,6 +452,28 @@ fn probe_for(c: &Commit, facts: &[Fact]) -> Option<Probe> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn related_needs_a_shared_content_word() {
+        let mut f = Fact {
+            id: "x".into(),
+            kind: "gotcha".into(),
+            text: "The glob builder drops separators".into(),
+            files: vec!["a.rs".into()],
+            commit: "c".into(),
+            split: Split::Tune,
+            state: State::Live,
+            survival: 1.0,
+        };
+        assert!(related(&f, "glob: fix repeated use of **", &[]));
+        assert!(related(&f, "unrelated", &["src/builder.rs".into()]));
+        f.text = "Windows console needs vt flag".into();
+        assert!(!related(
+            &f,
+            "globset: fix repeated use of **",
+            &["src/glob.rs".into()]
+        ));
+    }
 
     #[test]
     fn sentences_join_wrapped_lines_and_drop_noise() {

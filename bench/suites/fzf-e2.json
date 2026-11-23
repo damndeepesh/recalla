@@ -244,109 +244,6 @@
   ],
   "probes": [
     {
-      "id": "p863a1256",
-      "task": "Trigger focus actions synchronously",
-      "files": [
-        "src/terminal.go"
-      ],
-      "commit": "863a12562b876bac87c9e06c9434251e59a11484",
-      "required": [],
-      "stale": [
-        "fb7bb9731-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "pd210660c",
-      "task": "Add actions: show-header and hide-header",
-      "files": [
-        "man/man1/fzf.1",
-        "src/actiontype_string.go",
-        "src/options.go",
-        "src/terminal.go"
-      ],
-      "commit": "d210660ce8302fa54836f8682db213c1fac877ba",
-      "required": [
-        "ff0bfeba7-0"
-      ],
-      "stale": [
-        "fb7bb9731-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p20240101",
-      "task": "0.45.0",
-      "files": [
-        "install.ps1",
-        "main.go",
-        "man/man1/fzf-tmux.1",
-        "man/man1/fzf.1",
-        "plugin/fzf.vim"
-      ],
-      "commit": "20240101197348a78db5a1dac945a2dff6a4e654",
-      "required": [
-        "ff0bfeba7-0",
-        "f1ed25d76-0"
-      ],
-      "stale": [
-        "fb7bb9731-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "p2671259f",
-      "task": "[zsh] Make CTRL-R compatible with accept-or-print-query (#3557)",
-      "files": [
-        "shell/key-bindings.zsh"
-      ],
-      "commit": "2671259fdb3094a5eac528f291c1fdadbcf9eda9",
-      "required": [],
-      "stale": [
-        "f37708ad9-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "pe47dc758",
-      "task": "Fix focus event not triggered in certain cases",
-      "files": [
-        "src/terminal.go",
-        "test/test_go.rb"
-      ],
-      "commit": "e47dc758c90fc151ef86dc5f189fdea19383d962",
-      "required": [
-        "f52594355-0",
-        "ff0bfeba7-0",
-        "ff6ce624c-0"
-      ],
-      "stale": [
-        "fb7bb9731-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p250496c9",
-      "task": "Add 'result' event that is triggered when the result list is ready",
-      "files": [
-        "man/man1/fzf.1",
-        "src/options.go",
-        "src/terminal.go",
-        "src/tui/tui.go",
-        "test/test_go.rb"
-      ],
-      "commit": "250496c953f8e36cb70ca99d58034bd79a1d0670",
-      "required": [
-        "ff0bfeba7-0",
-        "f52594355-0",
-        "ff6ce624c-0"
-      ],
-      "stale": [
-        "fb7bb9731-0"
-      ],
-      "split": "holdout"
-    },
-    {
       "id": "p1a9ea6f7",
       "task": "Remove 'replace' directive for 'go install' compatibility",
       "files": [
@@ -359,52 +256,86 @@
         "src/util/util.go"
       ],
       "commit": "1a9ea6f738cfafab83a5e0e828e60f0bf68bffee",
-      "required": [
-        "f4271e9cf-0",
-        "fca43f95f-0",
-        "ff0bfeba7-0"
-      ],
+      "required": [],
       "stale": [
         "fb7bb9731-0"
       ],
       "split": "holdout"
     },
     {
-      "id": "pe90bb716",
-      "task": "[zsh] Handle '*' suffix in history line numbers",
+      "id": "pcdfaf761",
+      "task": "Expose state information via environment variables to child processes",
       "files": [
-        "shell/key-bindings.zsh"
-      ],
-      "commit": "e90bb7169c04f5d5f1d19eba2bb41dc2b13391d0",
-      "required": [],
-      "stale": [
-        "f37708ad9-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p16f64739",
-      "task": "Change mattn/go-runewidth dependency to rivo/uniseg for accurate results",
-      "files": [
-        "go.mod",
-        "go.sum",
         "man/man1/fzf.1",
-        "src/options.go",
-        "src/terminal.go",
-        "src/tui/light.go",
-        "src/tui/tcell.go",
-        "src/tui/tui.go",
-        "src/util/util.go"
+        "src/terminal.go"
       ],
-      "commit": "16f647393838ea3eb0778a45178323aea21b67a0",
-      "required": [
-        "ff0bfeba7-0",
-        "f4271e9cf-0",
-        "fca43f95f-0"
-      ],
+      "commit": "cdfaf761df2e68503ca7c74c0aaa3e6fa4a46bda",
+      "required": [],
       "stale": [
         "fb7bb9731-0"
       ],
+      "split": "holdout"
+    },
+    {
+      "id": "p413c66be",
+      "task": "Fix tests for tcell build",
+      "files": [
+        "go.mod",
+        "go.sum",
+        "src/tui/tcell.go",
+        "test/test_go.rb"
+      ],
+      "commit": "413c66beba677d7492c1e61cd7d225227c012f9b",
+      "required": [
+        "ff6ce624c-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p2a1e5a97",
+      "task": "More test fixes for tcell on GitHub Actions",
+      "files": [
+        "test/test_go.rb"
+      ],
+      "commit": "2a1e5a9729eb9c9240d632fb40ac97924f013a45",
+      "required": [
+        "ff0bfeba7-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p88f4c167",
+      "task": "Make it possible to disable `Ctrl+T` / `Alt+C` / completions (#3678)",
+      "files": [
+        "shell/key-bindings.bash",
+        "shell/key-bindings.fish",
+        "shell/key-bindings.zsh",
+        "test/test_go.rb"
+      ],
+      "commit": "88f4c16755d8fb53e55adec84d60d4aeaf1e7d91",
+      "required": [
+        "f52594355-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p8a2df797",
+      "task": "Do not hide separator by default on --info=inline-right|hidden",
+      "files": [
+        "man/man1/fzf.1",
+        "src/options.go",
+        "src/terminal.go",
+        "test/test_go.rb"
+      ],
+      "commit": "8a2df7971186884b3115db68b751622f1f683481",
+      "required": [
+        "ff0bfeba7-0",
+        "ff6ce624c-0"
+      ],
+      "stale": [],
       "split": "holdout"
     },
     {
@@ -426,22 +357,18 @@
       ],
       "commit": "a4391aeedd4fec1865d2d646711f58d04058531b",
       "required": [
-        "ff0bfeba7-0",
-        "f52594355-0",
         "fedac9820-0"
       ],
-      "stale": [
-        "fb7bb9731-0"
-      ],
+      "stale": [],
       "split": "tune"
     },
     {
-      "id": "p159a37fa",
-      "task": "Restore CmdLine parameter when running commands using cmd.exe",
+      "id": "p7ed6c790",
+      "task": "Determine shell type once by the basename",
       "files": [
         "src/util/util_windows.go"
       ],
-      "commit": "159a37fa377ab7202ec67e1675a3e2a955c8291d",
+      "commit": "7ed6c7905c814d22e3c12cf161a054d3ecb7adde",
       "required": [
         "fedac9820-0"
       ],
@@ -449,17 +376,30 @@
       "split": "tune"
     },
     {
-      "id": "p835d2fb9",
-      "task": "[vim] Fix argument escaping for Windows batch file",
+      "id": "p0994d9c8",
+      "task": "Make :FZF work in Vim from Git Bash (#3798)",
       "files": [
         "plugin/fzf.vim"
       ],
-      "commit": "835d2fb98cedbb6384dfbeb41e4ba48c3c0a8081",
+      "commit": "0994d9c881f8380997b96bb0a4a7416b50bc2b0d",
       "required": [
         "f1ed25d76-0"
       ],
       "stale": [],
-      "split": "holdout"
+      "split": "tune"
+    },
+    {
+      "id": "p74f196ee",
+      "task": "[vim] Fix callback not run on exit code 1",
+      "files": [
+        "plugin/fzf.vim"
+      ],
+      "commit": "74f196eebbc6adfbb4d6423fbefe3c8cdeebe67e",
+      "required": [
+        "f1ed25d76-0"
+      ],
+      "stale": [],
+      "split": "tune"
     }
   ]
 }

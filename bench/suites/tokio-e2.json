@@ -762,9 +762,7 @@
       ],
       "commit": "e14ca72e68fbfa04f12408ed916bf5f857dfa232",
       "required": [
-        "f3a4f18b9-0",
-        "f8e0e56fd-0",
-        "f8e0e56fd-1"
+        "f3a4f18b9-0"
       ],
       "stale": [],
       "split": "tune"
@@ -834,21 +832,6 @@
       "split": "tune"
     },
     {
-      "id": "p048049f8",
-      "task": "rt: move task::Id into its own file (#5327)",
-      "files": [
-        "tokio/src/runtime/task/id.rs",
-        "tokio/src/runtime/task/mod.rs"
-      ],
-      "commit": "048049f8883f1bc73ee5d3fa3c94e61cf41d1e38",
-      "required": [
-        "f8e0e56fd-0",
-        "f8e0e56fd-1"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
       "id": "pc6552c56",
       "task": "rt: use internal ThreadId implementation (#5329)",
       "files": [
@@ -911,7 +894,6 @@
       ],
       "commit": "c390a62387fe7346951c8bc57ea2761614b83e82",
       "required": [
-        "f9d9488db-0",
         "f4daeea8c-0",
         "f4daeea8c-1"
       ],
@@ -1028,9 +1010,8 @@
       ],
       "commit": "018d0450c71f782f3833fde6346f7ef48fcb57a2",
       "required": [
-        "f218f2629-0",
-        "f218f2629-1",
-        "fb51aa8f6-0"
+        "fb51aa8f6-0",
+        "fb51aa8f6-1"
       ],
       "stale": [],
       "split": "tune"
@@ -1104,34 +1085,18 @@
       "split": "tune"
     },
     {
-      "id": "pd63d6590",
-      "task": "sync: fix typo in `tokio::sync::watch::Sender` docs (#5587)",
+      "id": "pf177aad6",
+      "task": "task: add `JoinHandle::abort_handle` (#5543)",
       "files": [
-        "tokio/src/sync/watch.rs"
+        "tokio/src/runtime/task/join.rs"
       ],
-      "commit": "d63d6590787c91ddb942e7f0d743b8c9433adcc0",
+      "commit": "f177aad6e4d141fe412bb8a16d96b2dc32a688df",
       "required": [
-        "f431ec68f-0",
-        "fcec1bc15-0"
+        "f8e0e56fd-0",
+        "f8e0e56fd-1"
       ],
       "stale": [],
       "split": "tune"
-    },
-    {
-      "id": "p16cdb109",
-      "task": "io: impl BufMut for ReadBuf (#5590)",
-      "files": [
-        "tokio/src/io/read_buf.rs",
-        "tokio/tests/io_read_buf.rs"
-      ],
-      "commit": "16cdb109f4417f28c6c57007ba943a94ff3355c8",
-      "required": [
-        "fb51aa8f6-0",
-        "fb51aa8f6-1",
-        "fc3fbaba1-0"
-      ],
-      "stale": [],
-      "split": "holdout"
     },
     {
       "id": "pd4afbad6",
@@ -1168,6 +1133,22 @@
       "split": "holdout"
     },
     {
+      "id": "p8497f379",
+      "task": "sync: avoid deadlocks in `broadcast` with custom wakers (#5578)",
+      "files": [
+        "tokio/src/sync/broadcast.rs",
+        "tokio/tests/sync_broadcast.rs"
+      ],
+      "commit": "8497f379b5c57d37db82db5dd74833998ae847a1",
+      "required": [
+        "f9d9488db-0",
+        "f4daeea8c-0",
+        "f4daeea8c-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
       "id": "pe789b614",
       "task": "stream: add `StreamExt::timeout_repeating` (#5577)",
       "files": [
@@ -1179,21 +1160,6 @@
       "required": [
         "f485ca3e3-0",
         "f485ca3e3-1"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "pc1778eda",
-      "task": "sync: add `watch::Receiver::wait_for` (#5611)",
-      "files": [
-        "tokio/src/sync/tests/loom_watch.rs",
-        "tokio/src/sync/watch.rs"
-      ],
-      "commit": "c1778eda38d5df316bc8356f2a7aa9f2d2e9abf0",
-      "required": [
-        "f431ec68f-0",
-        "fcec1bc15-0"
       ],
       "stale": [],
       "split": "tune"

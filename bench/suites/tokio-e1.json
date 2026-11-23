@@ -1068,19 +1068,6 @@
       "split": "tune"
     },
     {
-      "id": "pa9da2209",
-      "task": "oneshot: update closed() docs to use tokio::select! (#3050)",
-      "files": [
-        "tokio/src/sync/oneshot.rs"
-      ],
-      "commit": "a9da220923bbd329e367ac31de229cc56d470b8d",
-      "required": [
-        "f9f63911a-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
       "id": "p6d0ba19a",
       "task": "sync: make oneshot::Sender::poll_closed public again (#3032)",
       "files": [
@@ -1163,13 +1150,11 @@
       "commit": "fede3db76aef95c010c3e0c3da3b732380285097",
       "required": [
         "fb9e3d2ed-0",
-        "f04a28260-0",
         "f798e8682-0"
       ],
       "stale": [
         "f0e729aa3-0",
-        "f0e729aa3-1",
-        "f38e602f4-0"
+        "f524e6631-0"
       ],
       "split": "holdout"
     },
@@ -1196,32 +1181,12 @@
         "tokio/src/runtime/thread_pool/mod.rs"
       ],
       "commit": "0b3918bce956567cccc617213a56c339a5a21d6f",
-      "required": [
-        "f04a28260-0"
-      ],
+      "required": [],
       "stale": [
-        "f0e729aa3-0",
         "f0e729aa3-1",
         "f38e602f4-0"
       ],
       "split": "tune"
-    },
-    {
-      "id": "pf51ddc59",
-      "task": "net: add set_nonblocking to doc (#3100)",
-      "files": [
-        "tokio/src/net/tcp/listener.rs",
-        "tokio/src/net/tcp/stream.rs",
-        "tokio/src/net/udp/socket.rs",
-        "tokio/src/net/unix/datagram/socket.rs"
-      ],
-      "commit": "f51ddc595804002c1bd5d6a4ff9059507d5c3eb1",
-      "required": [
-        "f7f580071-0",
-        "fb559a0cd-0"
-      ],
-      "stale": [],
-      "split": "holdout"
     },
     {
       "id": "pa52f5071",
@@ -1231,66 +1196,7 @@
       ],
       "commit": "a52f5071bf5ecf31c44e8aba5d8611400c50eb71",
       "required": [
-        "facf8a7da-0",
         "facf8a7da-1"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pe1256d8c",
-      "task": "io: update AsyncFd to use Registration (#3113)",
-      "files": [
-        "tokio/src/io/async_fd.rs",
-        "tokio/src/io/driver/mod.rs",
-        "tokio/src/io/registration.rs",
-        "tokio/tests/io_async_fd.rs"
-      ],
-      "commit": "e1256d8ca4c510c8417874660e74760d87178445",
-      "required": [
-        "f8feebab7-0",
-        "f9f63911a-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "pce891a4d",
-      "task": "io: driver internal cleanup (#3124)",
-      "files": [
-        "tokio/src/io/async_fd.rs",
-        "tokio/src/io/driver/interest.rs",
-        "tokio/src/io/driver/mod.rs",
-        "tokio/src/io/driver/ready.rs",
-        "tokio/src/io/driver/registration.rs",
-        "tokio/src/io/driver/scheduled_io.rs",
-        "tokio/src/io/mod.rs",
-        "tokio/src/io/poll_evented.rs",
-        "tokio/src/macros/cfg.rs",
-        "tokio/src/net/tcp/listener.rs",
-        "tokio/src/net/tcp/stream.rs",
-        "tokio/src/net/udp/socket.rs"
-      ],
-      "commit": "ce891a4df17e632f7557dd0cd1f1e8da89bd6ae4",
-      "required": [
-        "f8feebab7-0",
-        "f7f580071-0",
-        "fb559a0cd-0"
-      ],
-      "stale": [
-        "f38e602f4-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "p6d5423f3",
-      "task": "stream: add docs regarding futures' StreamExt (#3128)",
-      "files": [
-        "tokio/src/stream/mod.rs"
-      ],
-      "commit": "6d5423f3e9b32ab02d6796ebfaafefd890a7593b",
-      "required": [
-        "fab24a655-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -1307,6 +1213,42 @@
       "commit": "685da8dadd8821d1053ce7ecaf01ab5ee231bef9",
       "required": [
         "f8fda5f19-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p02b1117d",
+      "task": "net: add TcpStream::ready and non-blocking ops (#3130)",
+      "files": [
+        "tokio/src/io/driver/interest.rs",
+        "tokio/src/io/driver/mod.rs",
+        "tokio/src/io/driver/ready.rs",
+        "tokio/src/io/driver/registration.rs",
+        "tokio/src/io/driver/scheduled_io.rs",
+        "tokio/src/io/mod.rs",
+        "tokio/src/macros/cfg.rs",
+        "tokio/src/net/tcp/stream.rs",
+        "tokio/src/signal/unix/driver.rs",
+        "tokio/tests/tcp_stream.rs"
+      ],
+      "commit": "02b1117dca1c1e1fcc700bff4d6a93c33bfbc7d8",
+      "required": [
+        "f7f580071-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p4e39c9b8",
+      "task": "net: restore TcpStream::{poll_read_ready, poll_write_ready} (#2743)",
+      "files": [
+        "tokio/src/net/tcp/stream.rs",
+        "tokio/tests/tcp_stream.rs"
+      ],
+      "commit": "4e39c9b818eb8af064bb9f45f47e3cfc6593de95",
+      "required": [
+        "f7f580071-0"
       ],
       "stale": [],
       "split": "tune"
@@ -1338,21 +1280,6 @@
       "split": "tune"
     },
     {
-      "id": "pa85fdb88",
-      "task": "runtime: test for shutdown_timeout(0) (#3196)",
-      "files": [
-        "tokio/tests/rt_common.rs"
-      ],
-      "commit": "a85fdb884d961bb87a2f3d446c548802868e54cb",
-      "required": [
-        "ffa4fe9ef-0"
-      ],
-      "stale": [
-        "f38e602f4-0"
-      ],
-      "split": "tune"
-    },
-    {
       "id": "pa6051a61",
       "task": "sync: make add_permits panic with usize::MAX >> 3 permits (#3188)",
       "files": [
@@ -1361,9 +1288,8 @@
       ],
       "commit": "a6051a61ec5c96113f4b543de3ec55431695347a",
       "required": [
-        "f00725f68-0",
-        "f00725f68-1",
-        "f9f63911a-0"
+        "f9f63911a-0",
+        "facf8a7da-1"
       ],
       "stale": [],
       "split": "holdout"
@@ -1383,21 +1309,6 @@
       "split": "holdout"
     },
     {
-      "id": "p57dffb9d",
-      "task": "rt: fix deadlock in shutdown (#3228)",
-      "files": [
-        "tokio/src/runtime/thread_pool/worker.rs",
-        "tokio/src/time/driver/mod.rs",
-        "tokio/tests/rt_threaded.rs"
-      ],
-      "commit": "57dffb9dfe9e4c0f12429246540add3975f4a754",
-      "required": [
-        "f0366a3e6-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
       "id": "p52cd2400",
       "task": "task: add missing feature flags for task_local and spawn_blocking (#3237)",
       "files": [
@@ -1409,23 +1320,6 @@
         "fb9e3d2ed-0"
       ],
       "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p69e62ef8",
-      "task": "sync: make TryAcquireError public (#3250)",
-      "files": [
-        "tokio/src/sync/mod.rs"
-      ],
-      "commit": "69e62ef89e481e0fb29ce3ef4ddce1eea4114000",
-      "required": [
-        "f187af2e6-0",
-        "facf8a7da-0",
-        "facf8a7da-1"
-      ],
-      "stale": [
-        "f38e602f4-0"
-      ],
       "split": "tune"
     },
     {
@@ -1453,25 +1347,6 @@
       "split": "tune"
     },
     {
-      "id": "pfcce78b3",
-      "task": "sync: add `Semaphore::close` (#3065)",
-      "files": [
-        "tokio/src/sync/batch_semaphore.rs",
-        "tokio/src/sync/mod.rs",
-        "tokio/src/sync/semaphore.rs"
-      ],
-      "commit": "fcce78b33ad67d0910f01ba4a2e79e5197e97aab",
-      "required": [
-        "facf8a7da-0",
-        "facf8a7da-1",
-        "f00725f68-0"
-      ],
-      "stale": [
-        "f38e602f4-0"
-      ],
-      "split": "holdout"
-    },
-    {
       "id": "pd74d1730",
       "task": "time: remove `Box` from `Sleep` (#3278)",
       "files": [
@@ -1490,13 +1365,10 @@
       ],
       "commit": "d74d17307dd53215061c4a8a1f20a0e30461e296",
       "required": [
-        "f187af2e6-0",
         "f6232c747-0",
-        "facf8a7da-0"
+        "facf8a7da-1"
       ],
-      "stale": [
-        "f38e602f4-0"
-      ],
+      "stale": [],
       "split": "tune"
     },
     {
@@ -1507,9 +1379,7 @@
       ],
       "commit": "fe2664a4e11df3f7938d5e6fc244a565906bcb46",
       "required": [
-        "f0605abac-0",
-        "facf8a7da-0",
-        "facf8a7da-1"
+        "f0605abac-0"
       ],
       "stale": [],
       "split": "tune"
@@ -1548,19 +1418,6 @@
       "split": "holdout"
     },
     {
-      "id": "p53707f5d",
-      "task": "sync: remove underused internal Borrow wrapper (#3363)",
-      "files": [
-        "tokio/src/sync/broadcast.rs"
-      ],
-      "commit": "53707f5d9dd271615c9191bf70cb2f68f1e500c8",
-      "required": [
-        "fcc8a6625-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
       "id": "p22c27b92",
       "task": "task: wake LocalSet on spawn_local (#3369)",
       "files": [
@@ -1575,7 +1432,7 @@
       "stale": [
         "f0e729aa3-0",
         "f0e729aa3-1",
-        "f38e602f4-0"
+        "f524e6631-0"
       ],
       "split": "tune"
     },
@@ -1617,23 +1474,32 @@
       ],
       "commit": "ecc32d1dca2317e555d8a6b29009cf19ef8f53e8",
       "required": [
-        "facf8a7da-0",
-        "facf8a7da-1",
         "f0605abac-0"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "p7d5b12c5",
-      "task": "sync: fix panic in broadcast::Receiver drop (#3434)",
+      "id": "pfdde5583",
+      "task": "runtime: consolidate errors for context missing (#3441)",
       "files": [
-        "tokio/src/sync/broadcast.rs",
-        "tokio/src/sync/tests/loom_broadcast.rs"
+        "tokio/src/io/driver/mod.rs",
+        "tokio/src/runtime/blocking/pool.rs",
+        "tokio/src/runtime/context.rs",
+        "tokio/src/runtime/handle.rs",
+        "tokio/src/task/spawn.rs",
+        "tokio/src/time/driver/handle.rs",
+        "tokio/src/util/error.rs",
+        "tokio/src/util/mod.rs",
+        "tokio/tests/io_driver.rs",
+        "tokio/tests/no_rt.rs",
+        "tokio/tests/rt_basic.rs"
       ],
-      "commit": "7d5b12c50947929326bdfaadb78155ee6593f209",
+      "commit": "fdde5583f853655fec57c44928b7d5f01621b754",
       "required": [
-        "fcc8a6625-0"
+        "fb9e3d2ed-0",
+        "f187af2e6-0",
+        "fab24a655-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -1650,23 +1516,33 @@
       "commit": "6f988728bb1b9156b78153461c8632e44cb21a21",
       "required": [
         "f2c53bebe-0",
-        "f58ba45a3-0",
-        "f9f63911a-0"
+        "f58ba45a3-0"
       ],
       "stale": [],
       "split": "tune"
     },
     {
-      "id": "p6919f7ce",
-      "task": "test: Make Mock both Send and Sync (#3594)",
+      "id": "pe4f76688",
+      "task": "runtime: fix memory leak/growth when creating many runtimes (#3564)",
       "files": [
-        "tokio-test/src/io.rs"
+        "tests-integration/src/bin/test-process-signal.rs",
+        "tokio/src/io/driver/interest.rs",
+        "tokio/src/io/driver/registration.rs",
+        "tokio/src/io/poll_evented.rs",
+        "tokio/src/process/unix/driver.rs",
+        "tokio/src/process/unix/reap.rs",
+        "tokio/src/signal/mod.rs",
+        "tokio/src/signal/registry.rs",
+        "tokio/src/signal/reusable_box.rs",
+        "tokio/src/signal/unix.rs",
+        "tokio/src/signal/windows.rs",
+        "tokio/src/sync/mod.rs"
       ],
-      "commit": "6919f7cede68dd5176525c24ad520af668bae37a",
-      "required": [
-        "fcf4cbc14-0"
+      "commit": "e4f76688a00fa2ce81ab6c074700995095c29e1e",
+      "required": [],
+      "stale": [
+        "f38e602f4-0"
       ],
-      "stale": [],
       "split": "tune"
     },
     {
@@ -1689,6 +1565,69 @@
         "f04a28260-0"
       ],
       "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pfee76ea7",
+      "task": "chore: try to avoid `noalias` attributes on intrusive linked list (#3654)",
+      "files": [
+        "tokio/src/util/linked_list.rs"
+      ],
+      "commit": "fee76ea7d5e1f24a155d3fcd319aa2893a095c4f",
+      "required": [
+        "f00725f68-0",
+        "f00725f68-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p3a02d34d",
+      "task": "sync: document that Semaphore is fair (#3693)",
+      "files": [
+        "tokio/src/sync/semaphore.rs"
+      ],
+      "commit": "3a02d34d3a223244d8f880d87936059935313b66",
+      "required": [
+        "facf8a7da-0",
+        "facf8a7da-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p0ba1e3c3",
+      "task": "sync: add a MutexGuard::map method that returns a MappedMutexGuard (#2472)",
+      "files": [
+        "tokio/src/sync/mod.rs",
+        "tokio/src/sync/mutex.rs"
+      ],
+      "commit": "0ba1e3c3e1a597b55998e3e99ebe98db1bb629bd",
+      "required": [
+        "facf8a7da-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pa39e6c24",
+      "task": "runtime: immediately drop new task when runtime is shut down (#3752)",
+      "files": [
+        "tokio/src/runtime/basic_scheduler.rs",
+        "tokio/src/runtime/queue.rs",
+        "tokio/src/runtime/tests/loom_shutdown_join.rs",
+        "tokio/src/runtime/tests/mod.rs",
+        "tokio/src/runtime/thread_pool/worker.rs",
+        "tokio/tests/rt_handle_block_on.rs"
+      ],
+      "commit": "a39e6c2439927ed9c73043401959b0b02d054630",
+      "required": [
+        "f0366a3e6-0",
+        "f58ba45a3-0"
+      ],
+      "stale": [
+        "f0e729aa3-0"
+      ],
       "split": "tune"
     }
   ]

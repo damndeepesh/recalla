@@ -94,12 +94,12 @@ impl Adapter for Recalla {
 
     fn recall(&mut self, query: &str, budget: usize) -> Result<Recall, String> {
         let b = budget.to_string();
+        let q = format!("--query={query}");
         let out = self.run(&[
             "pack",
             "--budget",
             &b,
-            "--query",
-            query,
+            &q,
             "--project",
             &self.project,
             "--format",

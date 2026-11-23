@@ -158,42 +158,7 @@
       "required": [
         "fd505b94f-0"
       ],
-      "stale": [
-        "feec44dbb-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "pfa91b0ab",
-      "task": "Fixed style",
-      "files": [
-        "test_requests.py",
-        "testserver/server.py"
-      ],
-      "commit": "fa91b0ab7ce45389357a4fc9f33785514b265b40",
-      "required": [
-        "f8d693a2a-0"
-      ],
-      "stale": [
-        "fc8916a08-0",
-        "feec44dbb-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "p24165635",
-      "task": "Changed whitespace in docstring",
-      "files": [
-        "test_requests.py"
-      ],
-      "commit": "241656355bbc03f24d04578e3e523bee9ca70269",
-      "required": [
-        "f8d693a2a-0"
-      ],
-      "stale": [
-        "fc8916a08-0",
-        "feec44dbb-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
@@ -220,9 +185,7 @@
       "required": [
         "fd505b94f-0"
       ],
-      "stale": [
-        "feec44dbb-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
@@ -234,24 +197,44 @@
       ],
       "commit": "b8a577050dc4345b87afc0cd67193537fac41350",
       "required": [
-        "f36093e69-0",
-        "fe3c7b43f-0"
+        "f36093e69-0"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "pfb230709",
-      "task": "Fix for the test ?",
+      "id": "p92fe51c0",
+      "task": "adding asserted_encoding check on None type encoding to match text() behavior (#3362)",
       "files": [
-        "requests/models.py"
+        "requests/utils.py",
+        "tests/test_requests.py"
       ],
-      "commit": "fb230709a8d35d8d2973eab3365cb8f9664cfa90",
+      "commit": "92fe51c0afd9239388d2c8bb17dc46babdf7881f",
+      "required": [
+        "fd505b94f-0"
+      ],
+      "stale": [
+        "feec44dbb-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p2669ab79",
+      "task": "check and test for headers containing return characters or leading whitespace",
+      "files": [
+        "requests/exceptions.py",
+        "requests/models.py",
+        "requests/utils.py",
+        "tests/test_requests.py"
+      ],
+      "commit": "2669ab797ce769ecedf5493b04cb976f33e37210",
       "required": [
         "f36093e69-0",
-        "fe3c7b43f-0"
+        "fd505b94f-0"
       ],
-      "stale": [],
+      "stale": [
+        "feec44dbb-0"
+      ],
       "split": "holdout"
     }
   ]

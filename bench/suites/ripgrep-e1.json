@@ -548,12 +548,9 @@
       "commit": "8eabe47b571d42992908e8ba17c525e6b58432d7",
       "required": [
         "fab64da73-0",
-        "fb64475ae-0",
         "fc50b8b41-0"
       ],
-      "stale": [
-        "f2dce0dc0-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
@@ -566,12 +563,9 @@
       "commit": "23be3cf850386ec0d4d8724fb9bf5ddeaab2c27d",
       "required": [
         "fab64da73-0",
-        "fb64475ae-0",
         "fc50b8b41-0"
       ],
-      "stale": [
-        "f2dce0dc0-0"
-      ],
+      "stale": [],
       "split": "tune"
     },
     {
@@ -585,12 +579,10 @@
       "commit": "aeaa5fc1b13bd5b903ef5660d3a6cb26b6745945",
       "required": [
         "fc50b8b41-0",
-        "f706323ad-0",
-        "fab64da73-0"
+        "fab64da73-0",
+        "fe2516ed0-0"
       ],
-      "stale": [
-        "f2dce0dc0-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
@@ -604,13 +596,10 @@
       ],
       "commit": "9c940b45f4f81b51eee7dcf5836fb3680cf6b62c",
       "required": [
-        "fab64da73-0",
         "fc50b8b41-0",
         "fe2516ed0-0"
       ],
-      "stale": [
-        "f507801c1-0"
-      ],
+      "stale": [],
       "split": "holdout"
     },
     {
@@ -620,13 +609,11 @@
         "src/args.rs"
       ],
       "commit": "4691d1103417a68905f0fa77adb1a6988c808fdc",
-      "required": [
-        "fcd575d99-0"
-      ],
+      "required": [],
       "stale": [
         "f0c298f60-0",
         "f27fc9f2f-0",
-        "fb187c1a8-0"
+        "fde5cb7d2-1"
       ],
       "split": "tune"
     },
@@ -639,13 +626,9 @@
         "tests/feature.rs"
       ],
       "commit": "12a6ca45f9dad30864715dfecd917bb571b687d4",
-      "required": [
-        "fcd575d99-0"
-      ],
+      "required": [],
       "stale": [
-        "f0c298f60-0",
-        "f27fc9f2f-0",
-        "fb187c1a8-0"
+        "f27fc9f2f-0"
       ],
       "split": "holdout"
     },
@@ -658,9 +641,7 @@
       "commit": "afb89bcdadf85d9c721739d004552ed3c8a9afa0",
       "required": [],
       "stale": [
-        "f0c298f60-0",
-        "f27fc9f2f-0",
-        "f4c78ca8b-0"
+        "ff2d1c582-0"
       ],
       "split": "holdout"
     },
@@ -676,102 +657,52 @@
         "tests/regression.rs"
       ],
       "commit": "f3164f2615ce18d3ea7b5ce122dfe2a381d1b3f4",
-      "required": [
-        "fcd575d99-0"
-      ],
+      "required": [],
       "stale": [
-        "fde5cb7d2-0",
-        "fde5cb7d2-1",
-        "fe8a30cb8-0"
+        "f4d341323-0"
       ],
       "split": "tune"
     },
     {
-      "id": "pf158a42a",
-      "task": "ignore: correctly detect hidden files on Windows",
+      "id": "pdf440020",
+      "task": "ripgrep: remove extra new-line after Clap output",
       "files": [
-        "ignore/src/dir.rs",
-        "ignore/src/pathutil.rs",
-        "ignore/src/walk.rs"
+        "src/args.rs"
       ],
-      "commit": "f158a42a715fb6470aa2924182cbf8e1e0fd9448",
-      "required": [
-        "f95cea776-0",
-        "fab64da73-0",
-        "fcd575d99-0"
-      ],
-      "stale": [
-        "f2dce0dc0-0",
-        "f507801c1-0",
-        "fbb70f967-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "pcd9815cb",
-      "task": "deps: update to aho-corasick 0.7",
-      "files": [
-        "globset/src/lib.rs"
-      ],
-      "commit": "cd9815cb376e4679af93a90a964cdb78173318da",
-      "required": [
-        "fab64da73-0",
-        "fc50b8b41-0",
-        "fe2516ed0-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p8a7f43b8",
-      "task": "globset: use bstr",
-      "files": [
-        "globset/src/glob.rs",
-        "globset/src/lib.rs",
-        "globset/src/pathutil.rs"
-      ],
-      "commit": "8a7f43b84dfd4b3e186804a29c66215b3cfeb8f7",
-      "required": [
-        "fc50b8b41-0",
-        "fe2516ed0-0",
-        "f706323ad-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p601f212a",
-      "task": "ripgrep: add -I as a short option for --no-filename",
-      "files": [
-        "src/app.rs"
-      ],
-      "commit": "601f212a0b64d5aa63dd9ef19c9409f5e9194181",
+      "commit": "df4400209afd7703baa6fa5524468f8459eb48bf",
       "required": [],
       "stale": [
         "f0c298f60-0",
         "f27fc9f2f-0",
-        "f4c78ca8b-0"
+        "fde5cb7d2-1"
       ],
       "split": "tune"
     },
     {
-      "id": "pda9d7204",
-      "task": "ripgrep: add --pcre2-version flag",
+      "id": "pa7d26c8f",
+      "task": "binary: rejigger ripgrep's handling of binary files",
       "files": [
+        "doc/rg.1.txt.tpl",
+        "grep-printer/src/standard.rs",
+        "grep-printer/src/summary.rs",
+        "grep-searcher/src/line_buffer.rs",
+        "grep-searcher/src/searcher/core.rs",
+        "grep-searcher/src/searcher/glue.rs",
+        "grep-searcher/src/searcher/mod.rs",
+        "grep-searcher/src/sink.rs",
         "src/app.rs",
         "src/args.rs",
-        "src/main.rs"
+        "src/search.rs",
+        "src/subject.rs"
       ],
-      "commit": "da9d7204315164e3740099aac4a4b88fb743e4d5",
-      "required": [
-        "fcd575d99-0"
-      ],
+      "commit": "a7d26c8f144a4957b75f71087a66692d0b25759a",
+      "required": [],
       "stale": [
-        "fe8a30cb8-0",
         "f0c298f60-0",
-        "f27fc9f2f-0"
+        "f27fc9f2f-0",
+        "fb187c1a8-0"
       ],
-      "split": "tune"
+      "split": "holdout"
     },
     {
       "id": "p03bf37ff",
@@ -783,98 +714,26 @@
       "required": [],
       "stale": [
         "f4d341323-0",
-        "f93943793-0",
-        "f9fc9f368-0"
+        "fe8a30cb8-0"
       ],
       "split": "holdout"
     },
     {
-      "id": "p5ce2d735",
-      "task": "ci: use cross for musl x86_64 builds",
+      "id": "pc2cb0a4d",
+      "task": "ripgrep: add --glob-case-insensitive",
       "files": [
-        "ci/before_deploy.sh",
-        "ci/script.sh",
-        "ci/utils.sh",
-        "src/main.rs"
+        "src/app.rs",
+        "src/args.rs",
+        "tests/misc.rs"
       ],
-      "commit": "5ce2d7351dba9c113318f4e43c041be7c25eaee4",
+      "commit": "c2cb0a4de4597c8f911c8ebece6aa0435ef5da6f",
       "required": [],
       "stale": [
-        "fe8a30cb8-0",
-        "f4d341323-0",
-        "f93943793-0"
+        "f0c298f60-0",
+        "f27fc9f2f-0",
+        "ff2d1c582-0"
       ],
       "split": "holdout"
-    },
-    {
-      "id": "p7b9972c3",
-      "task": "style: fix deprecations",
-      "files": [
-        "grep-cli/src/escape.rs",
-        "grep-matcher/src/interpolate.rs",
-        "grep-searcher/src/sink.rs",
-        "ignore/src/walk.rs",
-        "src/config.rs",
-        "src/main.rs"
-      ],
-      "commit": "7b9972c30876797103d6b51c14dd8f9bf1001c92",
-      "required": [
-        "f95cea776-0",
-        "fcd575d99-0"
-      ],
-      "stale": [
-        "f2dce0dc0-0",
-        "f4d341323-0",
-        "f93943793-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "p9801fae2",
-      "task": "ignore: support compilation on wasm",
-      "files": [
-        "ignore/src/walk.rs"
-      ],
-      "commit": "9801fae29f5a6d1c72a73e5f343f50130b09f646",
-      "required": [
-        "f95cea776-0",
-        "fcd575d99-0"
-      ],
-      "stale": [
-        "f2dce0dc0-0",
-        "fbb70f967-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p2263b8ac",
-      "task": "globset: add GlobMatcher::glob",
-      "files": [
-        "globset/src/glob.rs"
-      ],
-      "commit": "2263b8ac9293073dbf7bf29691889ade53042650",
-      "required": [
-        "f706323ad-0",
-        "fc50b8b41-0",
-        "fd09e2f6a-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p804b43ec",
-      "task": "globset: implement FromStr for Glob",
-      "files": [
-        "globset/src/glob.rs"
-      ],
-      "commit": "804b43ecd8bd37fde4fc81f49d1f9bb659aeac1c",
-      "required": [
-        "f706323ad-0",
-        "fc50b8b41-0",
-        "fd09e2f6a-0"
-      ],
-      "stale": [],
-      "split": "tune"
     },
     {
       "id": "p578e2d47",
@@ -886,8 +745,7 @@
       "required": [],
       "stale": [
         "f4d341323-0",
-        "f93943793-0",
-        "f9fc9f368-0"
+        "f93943793-0"
       ],
       "split": "holdout"
     }

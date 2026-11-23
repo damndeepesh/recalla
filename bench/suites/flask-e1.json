@@ -98,32 +98,6 @@
         "f3d67736e-0"
       ],
       "split": "holdout"
-    },
-    {
-      "id": "p29f7c10a",
-      "task": "Remove bad security advice about send_file.",
-      "files": [
-        "flask/helpers.py"
-      ],
-      "commit": "29f7c10a5dea499f64188e29a4e08161dbf14eff",
-      "required": [],
-      "stale": [
-        "fc4f2075f-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p94a3968d",
-      "task": "Untangle logic a bit",
-      "files": [
-        "flask/helpers.py"
-      ],
-      "commit": "94a3968d69c30c54ea60939a5a84c5bac33601bb",
-      "required": [],
-      "stale": [
-        "fc4f2075f-0"
-      ],
-      "split": "holdout"
     }
   ]
 }

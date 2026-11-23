@@ -839,35 +839,6 @@
   ],
   "probes": [
     {
-      "id": "p48362846",
-      "task": "ignore/gitignore: skip BOM at start of ignore file",
-      "files": [
-        "crates/ignore/src/gitignore.rs",
-        "crates/ignore/tests/gitignore_skip_bom.rs"
-      ],
-      "commit": "483628469a2580e4eab0edfbe7a7f3f8b1951848",
-      "required": [
-        "f9f0e88bc-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "pedafb612",
-      "task": "core: add \"total\" to --stats output",
-      "files": [
-        "crates/core/main.rs"
-      ],
-      "commit": "edafb612d2b93b0dc28531abf155bdd7e3bcfe63",
-      "required": [
-        "f286de956-0"
-      ],
-      "stale": [
-        "f28bff84a-0"
-      ],
-      "split": "tune"
-    },
-    {
       "id": "pda672f87",
       "task": "color: add italic to style attributes",
       "files": [
@@ -877,78 +848,10 @@
       ],
       "commit": "da672f87e853d239b2f562d70c0b34d3afea6dfc",
       "required": [
-        "f52d7f474-0",
-        "f656aa126-0",
-        "f656aa126-1"
+        "fefd9cfb2-0"
       ],
       "stale": [],
       "split": "holdout"
-    },
-    {
-      "id": "p380809f1",
-      "task": "ignore/types: add Makefile.*",
-      "files": [
-        "crates/ignore/src/default_types.rs"
-      ],
-      "commit": "380809f1e250035808170db2e9a2cbd09395f450",
-      "required": [
-        "fb3a6a69f-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p75970fd1",
-      "task": "ignore: don't process command line arguments in reverse order",
-      "files": [
-        "crates/ignore/src/walk.rs"
-      ],
-      "commit": "75970fd16b4d5f8ff9fb1d9c157467eb166acf23",
-      "required": [
-        "fd938e955-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pd869038c",
-      "task": "ignore: improve multithreading heuristic",
-      "files": [
-        "crates/ignore/src/walk.rs"
-      ],
-      "commit": "d869038cf610f10a8b7aca24284719e65a477e1a",
-      "required": [
-        "fd938e955-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p119407d0",
-      "task": "printer: use std::path::absolute on Windows",
-      "files": [
-        "crates/printer/src/hyperlink.rs"
-      ],
-      "commit": "119407d0a918ca54da1e0a5e8806dbb8cd7e2be0",
-      "required": [
-        "ff608d4d9-0",
-        "ff608d4d9-1"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p5be67c12",
-      "task": "ignore/types: include msbuild solution filters",
-      "files": [
-        "crates/ignore/src/default_types.rs"
-      ],
-      "commit": "5be67c1244f494414629f71be859e0e1552dd6fd",
-      "required": [
-        "fb3a6a69f-0"
-      ],
-      "stale": [],
-      "split": "tune"
     },
     {
       "id": "p292bc54e",
@@ -962,75 +865,9 @@
       "commit": "292bc54e64e55b69fec806bf3ee6481958e2946f",
       "required": [
         "fefd9cfb2-0",
-        "f656aa126-0",
         "f656aa126-1"
       ],
       "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p53279db4",
-      "task": "deps: switch to tikv-jemallocator",
-      "files": [
-        "crates/core/main.rs"
-      ],
-      "commit": "53279db4143f4307c2b1b27f2cd32a43b0496205",
-      "required": [
-        "f286de956-0"
-      ],
-      "stale": [
-        "f28bff84a-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p624bbf7d",
-      "task": "globset: add matches_all method",
-      "files": [
-        "crates/globset/src/lib.rs"
-      ],
-      "commit": "624bbf7dcee8d69949a447b4e4393e23d3e25b38",
-      "required": [
-        "f7f456404-0"
-      ],
-      "stale": [
-        "f1035f6b1-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "p861f6d37",
-      "task": "style: simplify string formatting",
-      "files": [
-        "build.rs",
-        "crates/core/flags/complete/powershell.rs",
-        "crates/core/search.rs",
-        "tests/json.rs",
-        "tests/util.rs"
-      ],
-      "commit": "861f6d374fa3d599dca86111e9b513772ca3de1a",
-      "required": [
-        "f229d1a8d-0",
-        "f3bfa125b-0",
-        "f3bfa125b-1"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p6f39f830",
-      "task": "globset: compact Debug impl for `GlobSetBuilder` and `Glob`",
-      "files": [
-        "crates/globset/src/glob.rs",
-        "crates/globset/src/lib.rs"
-      ],
-      "commit": "6f39f830cb9bc7b31c330d2c019c216477374371",
-      "required": [
-        "f7f456404-0"
-      ],
-      "stale": [
-        "f1035f6b1-0"
-      ],
       "split": "tune"
     },
     {
@@ -1043,27 +880,24 @@
       ],
       "commit": "d199058e77cbea419f072015373ab1beb0e508ee",
       "required": [
-        "f9ed7565f-0",
-        "f4b8aa91a-0",
-        "f4b8aa91a-1"
+        "f91afd421-0",
+        "f91afd421-1"
       ],
       "stale": [],
       "split": "tune"
     },
     {
-      "id": "p5e2d32fe",
-      "task": "printer: slightly simplify code",
+      "id": "p99b79571",
+      "task": "ignore/doc: explain that `require_git(false)` will ascend above git roots",
       "files": [
-        "crates/printer/src/standard.rs"
+        "crates/ignore/src/walk.rs"
       ],
-      "commit": "5e2d32fe7f3b7dcf768ffc1264dabe83e00ccaec",
+      "commit": "99b7957122454185dc5ea9e99bb1b56c8966f1a2",
       "required": [
-        "f656aa126-0",
-        "f656aa126-1",
-        "fefd9cfb2-0"
+        "fd938e955-0"
       ],
       "stale": [],
-      "split": "tune"
+      "split": "holdout"
     },
     {
       "id": "p4ab1862d",
@@ -1074,9 +908,9 @@
       ],
       "commit": "4ab1862dc04783b6615807d4b4511388c6b30364",
       "required": [
-        "f656aa126-0",
         "f656aa126-1",
-        "f52d7f474-0"
+        "f91afd421-0",
+        "fefd9cfb2-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -1089,115 +923,113 @@
       ],
       "commit": "60aa9f17276409257ad612fccefba13c26ed0d74",
       "required": [
-        "f3bfa125b-0",
         "f3bfa125b-1"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "p126bbeab",
-      "task": "printer: fix handling of `has_match` for summary printer",
+      "id": "p99fe8845",
+      "task": "colors: add `highlight` type support for matching lines",
       "files": [
-        "crates/core/flags/hiargs.rs",
-        "crates/printer/src/summary.rs",
-        "tests/regression.rs"
+        "crates/core/flags/complete/rg.zsh",
+        "crates/core/flags/defs.rs",
+        "crates/printer/src/color.rs",
+        "crates/printer/src/standard.rs"
       ],
-      "commit": "126bbeab8c1cbbc1d6cb36b4c2d560574233856d",
+      "commit": "99fe884536e18bcd9f3c57ce598791d5baa975b1",
       "required": [
-        "f9ed7565f-0",
+        "f656aa126-1",
         "fefd9cfb2-0",
-        "f52d7f474-0"
+        "ffc31aedc-0"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "p66aa4a63",
-      "task": "printer: deduplicate hyperlink alias names",
+      "id": "pa6e0be3c",
+      "task": "searcher: move \"max matches\" from printer to searcher",
       "files": [
         "crates/core/flags/defs.rs",
-        "crates/printer/src/hyperlink/aliases.rs",
-        "crates/printer/src/hyperlink/mod.rs",
-        "crates/printer/src/hyperlink_aliases.rs",
-        "crates/printer/src/lib.rs"
+        "crates/core/flags/hiargs.rs",
+        "crates/printer/src/standard.rs",
+        "crates/searcher/src/searcher/core.rs",
+        "crates/searcher/src/searcher/glue.rs",
+        "crates/searcher/src/searcher/mod.rs",
+        "tests/regression.rs"
       ],
-      "commit": "66aa4a63bb52468aa789cfa00c0643111ff03239",
+      "commit": "a6e0be3c909c5c09e5fb402c907f3beb88cfb4c4",
       "required": [
-        "ff608d4d9-0",
-        "ff608d4d9-1",
+        "f656aa126-1",
+        "f9ed7565f-0",
         "fefd9cfb2-0"
       ],
       "stale": [],
-      "split": "holdout"
+      "split": "tune"
     },
     {
-      "id": "pa60e62d9",
-      "task": "rust: move to Rust 2024",
+      "id": "p64174b8e",
+      "task": "printer: preserve line terminator when using `--crlf` and `--replace`",
       "files": [
-        "crates/core/flags/hiargs.rs",
-        "crates/printer/src/hyperlink/mod.rs",
-        "crates/regex/src/ban.rs"
+        "crates/printer/src/standard.rs",
+        "crates/printer/src/util.rs"
       ],
-      "commit": "a60e62d9ac559b1468d4dd27b80a7b662a600e0c",
+      "commit": "64174b8e68b59e560ad459f3c11cc9c4f00964bd",
       "required": [
-        "f9ed7565f-0",
-        "febb986e7-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "pf596a5d8",
-      "task": "globset: add `allow_unclosed_class` toggle",
-      "files": [
-        "crates/globset/src/glob.rs",
-        "crates/ignore/src/gitignore.rs",
-        "crates/ignore/src/overrides.rs",
-        "tests/regression.rs"
-      ],
-      "commit": "f596a5d8750a6a6db1b87ad95a78667322c06cbd",
-      "required": [
-        "f9f0e88bc-0",
-        "f52d7f474-0",
+        "fefd9cfb2-0",
+        "ff608d4d9-0",
         "f656aa126-0"
       ],
       "stale": [],
       "split": "tune"
     },
     {
-      "id": "pa7b7d81d",
-      "task": "lint: fix a few Clippy errors",
+      "id": "p8b5d3d1c",
+      "task": "printer: hack in a fix for `-l/--files-with-matches` when using `--pcre2 --multiline` with look-around",
       "files": [
-        "crates/cli/src/decompress.rs",
-        "crates/ignore/examples/walk.rs",
-        "crates/printer/src/json.rs",
-        "crates/printer/src/jsont.rs"
+        "crates/printer/src/summary.rs",
+        "tests/regression.rs"
       ],
-      "commit": "a7b7d81d66b6e2e4311d5dd0683022c2978650f1",
+      "commit": "8b5d3d1c1e3b0e32f22aa634d000b314f6d4d465",
       "required": [
-        "f229d1a8d-0",
-        "fefd9cfb2-0"
+        "fefd9cfb2-0",
+        "f52d7f474-0",
+        "f656aa126-1"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p1b07c661",
+      "task": "cli: document that `-c/--count` can be inconsistent with `-l/--files-with-matches`",
+      "files": [
+        "crates/core/flags/defs.rs",
+        "tests/binary.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "1b07c6616a5b06bd6c00f2a7d3418b9096f601f9",
+      "required": [
+        "f52d7f474-0",
+        "f656aa126-0",
+        "f656aa126-1"
       ],
       "stale": [],
       "split": "holdout"
     },
     {
-      "id": "p9d8016d1",
-      "task": "printer: finish removal of `max_matches`",
+      "id": "p293ef80e",
+      "task": "test: add another regression test for gitignore matching bug",
       "files": [
-        "crates/core/flags/hiargs.rs",
-        "crates/printer/src/json.rs",
-        "crates/printer/src/summary.rs"
+        "tests/regression.rs"
       ],
-      "commit": "9d8016d10c94a5af2768eb6dd0440386a7d317a0",
+      "commit": "293ef80eaf0641bcfa0206e1fc142017296bac8c",
       "required": [
-        "fefd9cfb2-0",
         "f9ed7565f-0",
-        "febb986e7-0"
+        "fefd9cfb2-0",
+        "ffbb2cfed-0"
       ],
       "stale": [],
-      "split": "holdout"
+      "split": "tune"
     },
     {
       "id": "pde2567a4",
@@ -1209,11 +1041,25 @@
       "commit": "de2567a4c76fa671005538d6cd841abc44932b9a",
       "required": [
         "f91afd421-0",
-        "f91afd421-1",
-        "fefd9cfb2-0"
+        "fefd9cfb2-0",
+        "ffbb2cfed-0"
       ],
       "stale": [],
       "split": "tune"
+    },
+    {
+      "id": "p5748f81b",
+      "task": "printer: use `doc_cfg` instead of `doc_auto_cfg`",
+      "files": [
+        "crates/printer/src/lib.rs"
+      ],
+      "commit": "5748f81bb107ce65f32cff330fe90dc639af262c",
+      "required": [
+        "fefd9cfb2-0",
+        "ff608d4d9-1"
+      ],
+      "stale": [],
+      "split": "holdout"
     },
     {
       "id": "p767086db",
@@ -1239,12 +1085,69 @@
       ],
       "commit": "e7b0f89e81811b295446404f02ca133fe8434054",
       "required": [
-        "f229d1a8d-0",
-        "f4b8aa91a-0",
-        "f4b8aa91a-1"
+        "f229d1a8d-0"
       ],
       "stale": [],
       "split": "tune"
+    },
+    {
+      "id": "p1752fb78",
+      "task": "globset: reject impossible literal lengths before hashing",
+      "files": [
+        "crates/globset/src/lib.rs"
+      ],
+      "commit": "1752fb78f1735e517f731944707a79eb064e8669",
+      "required": [
+        "f7f456404-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p7fa391dd",
+      "task": "perf: skip path resolution when hyperlinks are disabled (#3597)",
+      "files": [
+        "crates/printer/src/standard.rs"
+      ],
+      "commit": "7fa391dd8c628db7e3689267a877dbf67bf7138c",
+      "required": [
+        "fefd9cfb2-0",
+        "ffc31aedc-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pe8b49b67",
+      "task": "fix: `-g !DIRNAME/` couldn't match when the CWD is `DIRNAME` (#3581)",
+      "files": [
+        "crates/ignore/src/gitignore.rs",
+        "crates/ignore/src/overrides.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "e8b49b6758d49d67428d3510e3fc4270515f2b11",
+      "required": [
+        "f6f2b79f5-0",
+        "ffc31aedc-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p9ca85a37",
+      "task": "fix: don't report ignored broken symlinks when following links (#2552)",
+      "files": [
+        "crates/ignore/src/walk.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9ca85a37539f0f7d3246f2baf62fcd583aecb940",
+      "required": [
+        "f52d7f474-0",
+        "f6f2b79f5-0",
+        "ffc31aedc-0"
+      ],
+      "stale": [],
+      "split": "holdout"
     },
     {
       "id": "pe2b508de",
@@ -1257,29 +1160,66 @@
       ],
       "commit": "e2b508de363c9f16fff2a6bb50e8692287cba015",
       "required": [
-        "f9ed7565f-0",
         "fefd9cfb2-0",
-        "f52d7f474-0"
+        "f656aa126-0",
+        "f656aa126-1"
       ],
       "stale": [
         "f1035f6b1-0",
-        "f8ac66a9e-0",
-        "f9d62eb99-0"
+        "f9d62eb99-0",
+        "fa6dbff50-0"
       ],
       "split": "tune"
     },
     {
-      "id": "p9c49a258",
-      "task": "fix: fall back past MAX_LOOK_AHEAD in multi-line match discovery (#3503)",
+      "id": "p855d9d30",
+      "task": "chore: address clippy::clone_on_copy and clippy::search_is_some lints (#3238)",
       "files": [
-        "crates/printer/src/util.rs",
-        "tests/regression.rs"
+        "crates/core/flags/hiargs.rs",
+        "crates/printer/src/color.rs",
+        "crates/regex/src/ban.rs",
+        "crates/regex/src/strip.rs"
       ],
-      "commit": "9c49a258944543082630246983b373525bb9f851",
+      "commit": "855d9d30b551261d82912556897d0df1fe33936e",
+      "required": [],
+      "stale": [
+        "f1035f6b1-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p5302ffae",
+      "task": "feat: add `--max-bytes` flag to limit bytes per file (#3035)",
+      "files": [
+        "crates/core/flags/complete/rg.zsh",
+        "crates/core/flags/defs.rs",
+        "crates/core/flags/hiargs.rs",
+        "crates/core/flags/lowargs.rs",
+        "crates/searcher/src/searcher/mod.rs",
+        "tests/max_bytes.rs",
+        "tests/tests.rs",
+        "tests/util.rs"
+      ],
+      "commit": "5302ffaeb2d8b582603f5c88bf352d4c631cf684",
       "required": [
-        "f91afd421-0",
-        "f91afd421-1",
-        "fefd9cfb2-0"
+        "f9ed7565f-0",
+        "febb986e7-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pb6744106",
+      "task": "feat: support RIPGREP_THREADS environment variable (#3317)",
+      "files": [
+        "crates/core/flags/defs.rs",
+        "crates/core/flags/doc/template.rg.1",
+        "crates/core/flags/hiargs.rs",
+        "tests/feature.rs"
+      ],
+      "commit": "b674410666d5aa3fd66c9d4683791ae811fe4fae",
+      "required": [
+        "f3bfa125b-0"
       ],
       "stale": [],
       "split": "tune"
