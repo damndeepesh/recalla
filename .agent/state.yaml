@@ -1,6 +1,6 @@
 updated: 2026-11-23
 milestone: v0.3.0
-branch: chore/release-0.3.0
+branch: feature/extractor-recall
 task: "release v0.3.0: bump, e2e, PR, tag"
 status: review
 plan: null
