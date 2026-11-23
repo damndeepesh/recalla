@@ -296,23 +296,17 @@ function detail(d, { onChange, closeHref, wide }) {
     );
   }
   const full = d.text_full && d.text_full.trim() !== d.text.trim() ? d.text_full : null;
-  const close = h(
-    "a",
-    {
-      class: wide ? "icon-btn" : "link-btn",
-      href: closeHref,
-      "data-close-pane": "",
-      "aria-label": "Close memory",
-      title: "Close (Esc)",
-    },
-    wide ? icon("x", 18) : "Back to memories",
-  );
+  const close = wide
+    ? h("a", { class: "icon-btn", href: closeHref, "data-close-pane": "", "aria-label": "Close memory", title: "Close (Esc)" }, icon("x", 18))
+    : null;
+  const back = wide ? null : h("p", { class: "crumb" }, h("a", { href: closeHref, "data-close-pane": "" }, "All memories"));
   return h(
     "article",
     { class: "stack-lg", "aria-labelledby": "mem-title" },
     h(
       "div",
       { class: "mem-head" },
+      back,
       h(
         "div",
         { class: "pane-bar" },

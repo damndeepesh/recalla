@@ -416,7 +416,7 @@ function aside(d) {
       mems.length
         ? h(
             "div",
-            { class: "stack" },
+            { class: "stack card pad" },
             h("ul", { class: "side-list" }, shown.map(memItem)),
             mems.length > shown.length
               ? h(
@@ -441,7 +441,7 @@ function aside(d) {
       d.injections.length
         ? h(
             "ul",
-            { class: "side-list" },
+            { class: "side-list card pad" },
             d.injections.map((i) =>
               h(
                 "li",
