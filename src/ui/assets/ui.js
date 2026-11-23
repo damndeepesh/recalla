@@ -151,7 +151,7 @@ export function loading(label = "Loading") {
 
 /** Empty state with a small illustration and one action. */
 export function emptyState(title, body, action, art = "empty") {
-  return h("div", { class: "empty" }, illustration(art), h("h3", null, title), body ? h("p", null, body) : null, action);
+  return h("div", { class: "empty" }, illustration(art), h("h2", null, title), body ? h("p", null, body) : null, action);
 }
 
 /** A bento block: icon + title header, body, optional aside link. */

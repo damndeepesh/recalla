@@ -193,7 +193,7 @@ function firstRun(c, onChange) {
       "li",
       { class: "onboard-step" },
       h("span", { class: "onboard-n" }, String(n)),
-      h("h3", null, title),
+      h("h3", { class: "onboard-title" }, title),
       h("p", null, body),
       action,
     );
@@ -214,8 +214,8 @@ function firstRun(c, onChange) {
           "New here",
         ),
         h(
-          "h1",
-          { id: "status-title", tabindex: "-1" },
+          "h2",
+          { id: "status-title", class: "hero-title" },
           "Give your coding agents a memory",
         ),
         h(

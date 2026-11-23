@@ -65,7 +65,7 @@
   --ink: light-dark(#0c0f14, #eef0f3);
   --ink-2: light-dark(#323843, #c4c9d1);
   --muted: light-dark(#5d6573, #8d95a2);
-  --faint: light-dark(#8a919c, #5f6773);
+  --faint: light-dark(#6c7380, #858d99);
 
   /* Brand: amber. Fill for emphasis, text tone for words on surfaces. */
   --amber: #f5a524;
@@ -1216,7 +1216,7 @@ main {
   padding: var(--sp-7) var(--sp-5);
   text-align: center;
 }
-.empty h3 {
+.empty h2 {
   font-family: var(--display);
   font-size: var(--fs-xl);
   font-weight: 700;
@@ -2227,7 +2227,7 @@ dialog::backdrop {
   gap: var(--sp-3);
   --tone: var(--amber);
 }
-.first-run h1 {
+.first-run h2 {
   font-size: var(--fs-hero);
 }
 .onboard {
@@ -3010,4 +3010,7 @@ dialog::backdrop {
 }
 details > .recall-list {
   margin-top: var(--sp-2);
+}
+.pack-line[aria-pressed="true"] code {
+  color: var(--accent);
 }
