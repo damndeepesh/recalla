@@ -9,17 +9,20 @@ Plain HTML, CSS and a little vanilla JS. No build step, no dependencies, no thir
 - `assets/fonts/`: self-hosted fonts, see below.
 - Keep it free of external requests. A CSP `<meta>` in each page enforces same-origin only. Page weight budget: under 100 KB of HTML, CSS and JS; images in `assets/` are not counted, so keep each small (webp).
 - Releasing a new version: set `data-version` on `<html>` in `index.html` (the script rewrites the download links and version labels from it), then update the static fallback links so they work without JS: `sed -i '' 's/OLD_VERSION/X.Y.Z/g' index.html` with the old version's dots escaped (also updates `softwareVersion` in the JSON-LD).
-- The terminal demo is real output from the release binary on a synthetic project. Regenerate it when output formats change.
+- The terminal transcripts are real output from the release binary on synthetic projects (paths and the login token shortened). Regenerate them when output formats change.
+- Dashboard screenshots (`assets/dash-<view>-<dark|light>.webp`, 1440x900, webp quality 0.8) show synthetic data only: generate Claude Code sessions from `tests/fixtures/extract/sessions.json` into a scratch dir, `recalla backfill --root <scratch> --data-dir <scratch>/data`, run a few `recalla pack --project <p> --data-dir <scratch>/data` so the ledger has packs, then `recalla ui --no-open --data-dir <scratch>/data` and capture each view in both colour schemes with a headless browser. Never use a real data dir. Only the current theme's image is loaded (the other is `display: none` with `loading="lazy"`).
+- Theme: `color-scheme: light dark` with `light-dark()` tokens; `assets/theme.js` sets `data-theme` from the saved toggle choice before first paint. Terminals stay dark in both themes.
 
 ## Fonts
 
 | File | Family | Source | Licence |
 |---|---|---|---|
-| `assets/fonts/instrument-sans.woff2` | Instrument Sans (variable: weight 400-700, width 75-100%), latin subset | `@fontsource-variable/instrument-sans` 5.3.0 (`files/instrument-sans-latin-standard-normal.woff2`) | SIL OFL 1.1, `assets/fonts/OFL-InstrumentSans.txt` |
-| `assets/fonts/jetbrains-mono.woff2` | JetBrains Mono (variable: weight 100-800), latin subset | `@fontsource-variable/jetbrains-mono` 5.3.0 (`files/jetbrains-mono-latin-wght-normal.woff2`) | SIL OFL 1.1, `assets/fonts/OFL-JetBrainsMono.txt` |
+| `assets/fonts/bricolage-grotesque.woff2` | Bricolage Grotesque (variable, weight 500-800 used), latin subset: display type | same file as the dashboard, `src/ui/assets/fonts/` | SIL OFL 1.1, `assets/fonts/OFL-BricolageGrotesque.txt` |
+| `assets/fonts/geist.woff2` | Geist (variable, weight 400-700 used), latin subset: body type | same file as the dashboard, `src/ui/assets/fonts/` | SIL OFL 1.1, `assets/fonts/OFL-Geist.txt` |
+| `assets/fonts/geist-mono.woff2` | Geist Mono (variable, weight 400-600 used), latin subset: terminals and code | same file as the dashboard, `src/ui/assets/fonts/` | SIL OFL 1.1, `assets/fonts/OFL-GeistMono.txt` |
 
-- Both are served from this origin (`font-src 'self'`), with `font-display: swap`, a latin `unicode-range`, and metric-matched local fallbacks (`size-adjust`, `ascent-override`) in `app.css` so the swap does not shift layout. Instrument Sans is preloaded.
-- To update one: `npm pack @fontsource-variable/<name>` in a scratch directory outside the repo, copy only the latin woff2 and its `LICENSE` here, and keep the file names. `scripts/web-check.sh` fails on any font that is not same-origin woff2, not referenced by an `@font-face`, over 64 KB (120 KB total), or missing an OFL licence file.
+- All three are the dashboard's fonts, so the site and `recalla ui` look like one product. They are served from this origin (`font-src 'self'`), with `font-display: swap`, a latin `unicode-range`, and metric-matched local fallbacks (`size-adjust`, `ascent-override`) in `app.css` so the swap does not shift layout. Bricolage Grotesque and Geist are preloaded.
+- To update one: update it in `src/ui/assets/fonts/` first, then copy the woff2 and its OFL file here, keeping the file names. `scripts/web-check.sh` fails on any font that is not same-origin woff2, not referenced by an `@font-face`, over 64 KB (120 KB total), or missing an OFL licence file.
 
 ## Preview under the real subpath
 

@@ -94,7 +94,7 @@ print(f"ok    fonts: {n} same-origin woff2 files, {total} bytes, licences presen
 PY
 
 # 5a. The <base> that keeps assets working at /recalla (no trailing slash) is present.
-grep -q '<base href="/recalla/">' "$W/index.html" && ok "<base href=/recalla/> present" || bad "web/index.html lost its <base href=\"/recalla/\">"
+grep -qE '<base href="/recalla/" ?/?>' "$W/index.html" && ok "<base href=/recalla/> present" || bad "web/index.html lost its <base href=\"/recalla/\">"
 
 # 5. The version in the download links matches Cargo.toml.
 ver=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1)
