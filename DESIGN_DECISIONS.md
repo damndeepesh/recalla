@@ -165,3 +165,11 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Why: argv is visible to every local user via `ps`, a cookie name that carries the port stops one run's cookie being accepted by another, an idle expiry bounds a forgotten tab, and the write deadline stops a slow reader pinning a connection thread; a test that wrote to the ledger would pollute the numbers the dashboard shows.
 - Rejected: Bearer header or token in the URL (leaks via history, logs and `ps`); `Secure` cookie (Safari rejects it on http://127.0.0.1); cleaning the login page on SIGINT with a signal crate (new dependency for a 60 s file that the next start sweeps anyway).
 - Supersedes: the 10 s request deadline in D-022 (now 5 s to read a request, plus the 30 s total write deadline above).
+
+## D-024 SameSite=Lax for the dashboard session cookie (2026-11-23)
+
+- Context: v0.2.0 opens the browser on a local `file://` redirect page (D-023); the redirect chain `file:// -> /?c=<code> -> 302 /` is cross-site from the start, so browsers withheld the `SameSite=Strict` cookie on the final `GET /` and the dashboard answered 401 (reproduced in Chrome for Testing).
+- Decision: the session cookie is `SameSite=Lax` (still HttpOnly, Path=/, per-port name, 12 h idle); everything else in D-022/D-023 stands.
+- Why: Lax cookies ride top-level GET navigations, which is what the chain is, but never cross-site fetch/XHR/iframes; no GET mutates, and every POST still needs the Host allowlist, a matching Origin and the CSRF header, so a cross-site page can at most load the shell and cannot read a response.
+- Rejected: a 200 interstitial with meta refresh instead of the 302 (more moving parts, not needed once Lax works); a plain `http://` URL in argv (leaks the code, see D-023); keeping Strict and printing the link only (breaks the headline "opens your browser" flow).
+- Supersedes: the `SameSite=Strict` part of D-022/D-023.
