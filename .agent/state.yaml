@@ -1,17 +1,17 @@
-updated: 2026-11-23
+updated: 2026-11-24
 milestone: v0.4 (dev)
 branch: feature/extract-because
 task: "Gotchas from plain because-explanations (PR into dev)"
 status: review
-plan: .agent/plans/bench.md
 done:
-  - "dev has forget (#45), extractor recall/precision (#46, #47), pack --query any-word match (#48)"
-  - "#49: pack --query focuses on the task (file anchors, 25% cutoff, near-dup drop); make check green"
-  - "feature/bench (local, unpushed): membench miner, 18 suites, adapters, scorers, provenance, real worktree t0->t1"
+  - "dev has forget (#45), extractor recall/precision (#46, #47), pack --query any-word (#48) and task focus (#49)"
+  - "#50 membench merged into dev: miner, 18 suites, adapters (incl. generic MCP), report, make bench, CI job, membench real (local-only)"
+  - "#51 (open, CI pending): gotchas from plain because-explanations; bench extraction recall 0.05->0.08, extract_eval 52/0/0"
 next:
-  - merge #49 into dev when CI is green (never main for now)
-  - finish bench steps C-G in .agent/plans/bench.md (generic MCP adapter, report, hand spot-check, docs, make bench, real-data mode), then PR feature/bench into dev
-  - later: per-file PreToolUse recall hook; extraction from plain assistant explanations (6% recall on bench)
+  - merge #51 into dev when CI is green (never main for now)
+  - per-file PreToolUse recall hook (needs its own plan, measure with bench)
+  - owner decision: memorybench (supermemory, LongMemEval/LoCoMo) needs paid judge keys; offer to read its provider interface first
+  - later: separate repo for bench/, agent-run tier, claude-mem tier, real session logs in membench real
 blockers: []
 notes:
   - e2e has 2 pre-existing hooks failures (install/uninstall settings), unrelated to pack
