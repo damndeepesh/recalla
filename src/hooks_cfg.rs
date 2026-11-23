@@ -423,7 +423,9 @@ pub fn mcp_codex_toml(exe: &Path) -> String {
             c => path.push(c),
         }
     }
-    format!("[mcp_servers.recalla]\ncommand = \"{path}\"\nargs = [\"mcp\"]\n")
+    format!(
+        "[mcp_servers.recalla]\ncommand = \"{path}\"\nargs = [\"mcp\"]\n[mcp_servers.recalla.tools.recall]\napproval_mode = \"approve\"\n\n[mcp_servers.recalla.tools.why]\napproval_mode = \"approve\"\n"
+    )
 }
 
 /// Printed after `hooks install`: how to register the MCP server (not run).
@@ -466,7 +468,7 @@ mod tests {
         );
         assert_eq!(
             mcp_codex_toml(plain),
-            "[mcp_servers.recalla]\ncommand = \"/a/recalla\"\nargs = [\"mcp\"]\n"
+            "[mcp_servers.recalla]\ncommand = \"/a/recalla\"\nargs = [\"mcp\"]\n[mcp_servers.recalla.tools.recall]\napproval_mode = \"approve\"\n\n[mcp_servers.recalla.tools.why]\napproval_mode = \"approve\"\n"
         );
         let odd = Path::new("/my dir/a\"b\\c$/recalla");
         assert_eq!(

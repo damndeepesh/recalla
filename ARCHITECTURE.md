@@ -363,7 +363,7 @@ GET /api/connect
 {"hooks":[{"event":"SessionStart","installed":false},{"event":"Stop","installed":false},{"event":"PreCompact","installed":false}],
  "settings_path":"~/.claude/settings.json","settings_exists":true,"settings_error":null,
  "mcp":{"claude_code_command":"claude mcp add --scope user recalla -- /usr/local/bin/recalla mcp",
-        "codex_toml":"[mcp_servers.recalla]\ncommand = \"/usr/local/bin/recalla\"\nargs = [\"mcp\"]\n"},
+        "codex_toml":"[mcp_servers.recalla]\ncommand = \"/usr/local/bin/recalla\"\nargs = [\"mcp\"]\n[mcp_servers.recalla.tools.recall]\napproval_mode = \"approve\"\n\n[mcp_servers.recalla.tools.why]\napproval_mode = \"approve\"\n"},
  "binary_path":"/usr/local/bin/recalla","data_dir":"~/.local/share/recalla",
  "db":{"exists":true,"bytes":163840,"schema_version":8,"expected_schema_version":8},"mirror_dir":"~/.local/share/recalla/mirror",
  "last_capture_at":1793530800000,"last_injection":{"at":1795402977295,"via":"hook","project":"/work/proj"},
