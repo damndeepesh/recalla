@@ -37,7 +37,7 @@
     {
       "id": "fe8a30cb8-0",
       "kind": "decision",
-      "text": "This commit completely guts all of the color handling code and replaces most of it with two new crates: wincolor and termcolor.",
+      "text": "We instead switch to writing ANSI escape sequences directly and ignore the TERMINFO database.",
       "files": [
         "ci/script.sh",
         "doc/rg.1",
@@ -258,20 +258,6 @@
       "survival": 0.0
     },
     {
-      "id": "ff887bc1f-0",
-      "kind": "gotcha",
-      "text": "This is not a breaking change because the flags were previously set to conflict.",
-      "files": [
-        "src/app.rs",
-        "src/printer.rs",
-        "tests/tests.rs"
-      ],
-      "commit": "f887bc1f8673fea9969adae6e70b68e3761ba171",
-      "split": "holdout",
-      "state": "stale",
-      "survival": 0.0
-    },
-    {
       "id": "fcd575d99-0",
       "kind": "decision",
       "text": "The corresponding change in `walkdir` retains the `sort_by` name, but gives the comparator a pair of `&DirEntry` values instead of a pair of `&OsStr` values.",
@@ -414,23 +400,6 @@
       "survival": 1.0
     },
     {
-      "id": "f27fc9f2f-0",
-      "kind": "decision",
-      "text": "This commit introduces a new flag, --count-matches, which will cause ripgrep to report a total count of all matches instead of a count of total lines matched.",
-      "files": [
-        "src/app.rs",
-        "src/args.rs",
-        "src/search_buffer.rs",
-        "src/search_stream.rs",
-        "src/worker.rs",
-        "tests/tests.rs"
-      ],
-      "commit": "27fc9f2fd341bd3ed672f79d43bf983514188b96",
-      "split": "holdout",
-      "state": "stale",
-      "survival": 0.31
-    },
-    {
       "id": "f1f70e918-0",
       "kind": "decision",
       "text": "This update brings with it a new feature of the regex crate which will now use SIMD optimizations automatically at runtime with no necessary compile time flags.",
@@ -461,20 +430,6 @@
       "survival": 0.4
     },
     {
-      "id": "f42b8132d-0",
-      "kind": "decision",
-      "text": "This commit removes the previous smart case detection logic and replaces it with detection based on the regex AST.",
-      "files": [
-        "grep/src/lib.rs",
-        "grep/src/search.rs",
-        "grep/src/smart_case.rs"
-      ],
-      "commit": "42b8132d0ad1918c1c0dc677015d87c12819fa26",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.65
-    },
-    {
       "id": "f507801c1-0",
       "kind": "decision",
       "text": "This improves support for submodules, which seem to use a '.git' file instead of a '.git' directory to indicate a worktree.",
@@ -498,20 +453,6 @@
       "split": "tune",
       "state": "stale",
       "survival": 0.0
-    },
-    {
-      "id": "fab64da73-0",
-      "kind": "decision",
-      "text": "This commit makes Gitignore::empty a bit faster by avoiding allocation and manually specializing the implementation instead of routing it through the GitignoreBuilder.",
-      "files": [
-        "globset/src/lib.rs",
-        "ignore/src/dir.rs",
-        "ignore/src/gitignore.rs"
-      ],
-      "commit": "ab64da73ab3f73f50192459dfc1e49c6cabd9de8",
-      "split": "holdout",
-      "state": "live",
-      "survival": 1.0
     },
     {
       "id": "fb64475ae-0",
@@ -547,7 +488,6 @@
       ],
       "commit": "8eabe47b571d42992908e8ba17c525e6b58432d7",
       "required": [
-        "fab64da73-0",
         "fc50b8b41-0"
       ],
       "stale": [],
@@ -562,7 +502,6 @@
       ],
       "commit": "23be3cf850386ec0d4d8724fb9bf5ddeaab2c27d",
       "required": [
-        "fab64da73-0",
         "fc50b8b41-0"
       ],
       "stale": [],
@@ -579,7 +518,6 @@
       "commit": "aeaa5fc1b13bd5b903ef5660d3a6cb26b6745945",
       "required": [
         "fc50b8b41-0",
-        "fab64da73-0",
         "fe2516ed0-0"
       ],
       "stale": [],
@@ -612,8 +550,8 @@
       "required": [],
       "stale": [
         "f0c298f60-0",
-        "f27fc9f2f-0",
-        "fde5cb7d2-1"
+        "fde5cb7d2-1",
+        "ff2d1c582-0"
       ],
       "split": "tune"
     },
@@ -628,7 +566,7 @@
       "commit": "12a6ca45f9dad30864715dfecd917bb571b687d4",
       "required": [],
       "stale": [
-        "f27fc9f2f-0"
+        "fe8a30cb8-0"
       ],
       "split": "holdout"
     },
@@ -641,6 +579,7 @@
       "commit": "afb89bcdadf85d9c721739d004552ed3c8a9afa0",
       "required": [],
       "stale": [
+        "fe8a30cb8-0",
         "ff2d1c582-0"
       ],
       "split": "holdout"
@@ -673,7 +612,6 @@
       "required": [],
       "stale": [
         "f0c298f60-0",
-        "f27fc9f2f-0",
         "fde5cb7d2-1"
       ],
       "split": "tune"
@@ -699,24 +637,27 @@
       "required": [],
       "stale": [
         "f0c298f60-0",
-        "f27fc9f2f-0",
-        "fb187c1a8-0"
+        "fb187c1a8-0",
+        "fde5cb7d2-0"
       ],
       "split": "holdout"
     },
     {
-      "id": "p03bf37ff",
-      "task": "alloc: use jemalloc when building with musl",
+      "id": "pda9d7204",
+      "task": "ripgrep: add --pcre2-version flag",
       "files": [
+        "src/app.rs",
+        "src/args.rs",
         "src/main.rs"
       ],
-      "commit": "03bf37ff4a29361c47843369f7d3dc5689b8fdac",
+      "commit": "da9d7204315164e3740099aac4a4b88fb743e4d5",
       "required": [],
       "stale": [
-        "f4d341323-0",
-        "fe8a30cb8-0"
+        "f0c298f60-0",
+        "fde5cb7d2-1",
+        "f4d341323-0"
       ],
-      "split": "holdout"
+      "split": "tune"
     },
     {
       "id": "pc2cb0a4d",
@@ -730,8 +671,8 @@
       "required": [],
       "stale": [
         "f0c298f60-0",
-        "f27fc9f2f-0",
-        "ff2d1c582-0"
+        "ff2d1c582-0",
+        "f4c78ca8b-0"
       ],
       "split": "holdout"
     },

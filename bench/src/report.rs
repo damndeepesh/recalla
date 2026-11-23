@@ -24,6 +24,12 @@ pub struct Pillars {
 }
 
 impl Pillars {
+    /// Mean of the two pillars every tool can be scored on.
+    #[must_use]
+    pub fn core(&self) -> Option<f64> {
+        mean([self.usefulness, self.savings].into_iter().flatten())
+    }
+
     /// Equal-weight mean of the pillars that apply, and how many did.
     #[must_use]
     pub fn total(&self) -> (Option<f64>, usize) {
@@ -101,7 +107,7 @@ pub fn render(results: &[Result], suites: &[Suite]) -> String {
     );
     out.push_str("## Total (equal weight across the pillars that apply)\n\n");
     out.push_str(
-        "| adapter | usefulness | extraction | token savings | total | pillars |\n|---|---|---|---|---|---|\n",
+        "| adapter | usefulness | token savings | core | extraction | total | pillars |\n|---|---|---|---|---|---|---|\n",
     );
     for a in &names {
         let scores = headline(results, a, &split_of, Some(Split::Holdout));
@@ -114,15 +120,16 @@ pub fn render(results: &[Result], suites: &[Suite]) -> String {
         let (total, n) = p.total();
         let _ = writeln!(
             out,
-            "| {a} | {} | {} | {} | {} | {n}/3 |",
+            "| {a} | {} | {} | {} | {} | {} | {n}/3 |",
             fmt(p.usefulness),
-            fmt(p.extraction),
             fmt(p.savings),
+            fmt(p.core()),
+            fmt(p.extraction),
             fmt(total),
         );
     }
     out.push_str(
-        "\nA pillar a tool has no interface for is n/a and left out of its total, never scored as zero. Compare totals only between tools with the same pillar count.\n",
+        "\nA pillar a tool has no interface for is n/a and left out of its total, never scored as zero. `core` (usefulness and token savings) is the column every tool can be compared on. Extraction is measured only for tools that ingest session transcripts and extract memories themselves.\n",
     );
 
     out.push_str("\n## Tune vs holdout\n\nA large gap means the tool or miner was fitted to the tune split.\n\n");
@@ -203,6 +210,19 @@ mod tests {
         let (t, n) = p.total();
         assert_eq!(n, 2);
         assert!((t.unwrap() - 0.625).abs() < 1e-9);
+    }
+
+    #[test]
+    fn core_ignores_extraction() {
+        let a = ps(Some(1.0), None, Some(0.5));
+        let e = Extraction {
+            recall: 0.0,
+            unlabeled_share: 0.0,
+            memories: 1,
+        };
+        let p = pillars(&[&a], &[&e]);
+        assert_eq!(p.core(), Some(0.75));
+        assert!((p.total().0.unwrap() - 0.5).abs() < 1e-9);
     }
 
     #[test]

@@ -191,7 +191,7 @@
     {
       "id": "f03a93782-0",
       "kind": "decision",
-      "text": "This patch also changes `ThreadPool` to spawn its worker threads on the blocking pool rather than as free-standing threads.",
+      "text": "One downside of this change is that thread names are no longer \"semantic\".",
       "files": [
         "tokio-executor/src/blocking.rs",
         "tokio-executor/src/blocking/builder.rs",
@@ -341,18 +341,6 @@
       "survival": 0.88
     },
     {
-      "id": "f8bcbe78d-0",
-      "kind": "decision",
-      "text": "This PR removes no longer needed io workarounds from connect example.",
-      "files": [
-        "examples/connect.rs"
-      ],
-      "commit": "8bcbe78dbee1b8cd838034774a2c29861d677fc2",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.0
-    },
-    {
       "id": "f0e729aa3-0",
       "kind": "gotcha",
       "text": "This issue exists because the `Drop` impl for `task::local::Scheduler` does not drain the queue of tasks notified externally, the way the basic scheduler does.",
@@ -458,27 +446,6 @@
       ],
       "commit": "f0006006ed9938115011c42f26cff16842eb534f",
       "split": "tune",
-      "state": "unknown",
-      "survival": 0.75
-    },
-    {
-      "id": "fdcfa895b-0",
-      "kind": "decision",
-      "text": "chore: use just std instead of ::std in paths (#2049)",
-      "files": [
-        "tokio/src/io/split.rs",
-        "tokio/src/net/unix/ucred.rs",
-        "tokio/src/runtime/enter.rs",
-        "tokio/src/runtime/mod.rs",
-        "tokio/src/sync/mpsc/error.rs",
-        "tokio/src/sync/oneshot.rs",
-        "tokio/src/sync/semaphore_ll.rs",
-        "tokio/src/sync/watch.rs",
-        "tokio/tests/rt_common.rs",
-        "tokio/tests/sync_errors.rs"
-      ],
-      "commit": "dcfa895b512e3ed522b81b18baf3e33fd78a600c",
-      "split": "holdout",
       "state": "unknown",
       "survival": 0.75
     },

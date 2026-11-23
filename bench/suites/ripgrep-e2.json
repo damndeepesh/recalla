@@ -22,23 +22,6 @@
       "survival": 0.84
     },
     {
-      "id": "f27fc9f2f-0",
-      "kind": "decision",
-      "text": "This commit introduces a new flag, --count-matches, which will cause ripgrep to report a total count of all matches instead of a count of total lines matched.",
-      "files": [
-        "src/app.rs",
-        "src/args.rs",
-        "src/search_buffer.rs",
-        "src/search_stream.rs",
-        "src/worker.rs",
-        "tests/tests.rs"
-      ],
-      "commit": "27fc9f2fd341bd3ed672f79d43bf983514188b96",
-      "split": "holdout",
-      "state": "stale",
-      "survival": 0.16
-    },
-    {
       "id": "f1f70e918-0",
       "kind": "decision",
       "text": "This update brings with it a new feature of the regex crate which will now use SIMD optimizations automatically at runtime with no necessary compile time flags.",
@@ -69,20 +52,6 @@
       "survival": 0.37
     },
     {
-      "id": "f42b8132d-0",
-      "kind": "decision",
-      "text": "This commit removes the previous smart case detection logic and replaces it with detection based on the regex AST.",
-      "files": [
-        "grep/src/lib.rs",
-        "grep/src/search.rs",
-        "grep/src/smart_case.rs"
-      ],
-      "commit": "42b8132d0ad1918c1c0dc677015d87c12819fa26",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.65
-    },
-    {
       "id": "f507801c1-0",
       "kind": "decision",
       "text": "This improves support for submodules, which seem to use a '.git' file instead of a '.git' directory to indicate a worktree.",
@@ -106,20 +75,6 @@
       "split": "tune",
       "state": "stale",
       "survival": 0.0
-    },
-    {
-      "id": "fab64da73-0",
-      "kind": "decision",
-      "text": "This commit makes Gitignore::empty a bit faster by avoiding allocation and manually specializing the implementation instead of routing it through the GitignoreBuilder.",
-      "files": [
-        "globset/src/lib.rs",
-        "ignore/src/dir.rs",
-        "ignore/src/gitignore.rs"
-      ],
-      "commit": "ab64da73ab3f73f50192459dfc1e49c6cabd9de8",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.76
     },
     {
       "id": "fb64475ae-0",
@@ -236,19 +191,6 @@
       "split": "tune",
       "state": "unknown",
       "survival": 0.75
-    },
-    {
-      "id": "f2913fc4c-0",
-      "kind": "decision",
-      "text": "This commit improves the integration test setup by running tests inside the system's temporary directory instead of within ripgrep's `target` directory.",
-      "files": [
-        "tests/tests.rs",
-        "tests/workdir.rs"
-      ],
-      "commit": "2913fc4cd063f4d869f54497a313aafbf5330346",
-      "split": "tune",
-      "state": "stale",
-      "survival": 0.32
     },
     {
       "id": "f0eef0514-0",
@@ -605,18 +547,6 @@
       "split": "holdout",
       "state": "live",
       "survival": 0.9
-    },
-    {
-      "id": "f9f7c2ebc-0",
-      "kind": "gotcha",
-      "text": "This is not a breaking change because it strictly increases the number of allowed inputs to `WalkParallel::run`.",
-      "files": [
-        "ignore/src/walk.rs"
-      ],
-      "commit": "9f7c2ebc09caec2282065974725f9cd2326b2355",
-      "split": "tune",
-      "state": "unknown",
-      "survival": 0.66
     },
     {
       "id": "f322fc75a-0",

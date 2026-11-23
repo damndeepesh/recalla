@@ -42,6 +42,14 @@ static SKIP_SUBJECT: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)^(merge|bump|release|version|update dep|chore\(deps\)|typo|fix typo|update changelog|docs?:)")
         .expect("skip regex")
 });
+/// Sentences that only make sense inside their commit: they point back at
+/// "this change", or are a conventional-commit subject or a changelog bullet.
+static NEEDS_CONTEXT: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"(?i)^(because of this|as a result|this (change|commit|patch|pr|is not a breaking)\b|(fix|feat|chore|docs?|refactor|test|perf|build|ci|style)(\([^)]*\))?!?: |- )",
+    )
+    .expect("context regex")
+});
 static TRAILER: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)^(signed-off-by|co-authored-by|fixes|closes|resolves|ref|see)\b|^https?://")
         .expect("trailer regex")
@@ -202,6 +210,7 @@ fn usable(s: &str) -> bool {
         && s.chars().count() <= MAX_CHARS
         && !s.contains("http")
         && !s.ends_with(':')
+        && !NEEDS_CONTEXT.is_match(s)
 }
 
 /// The first causal and the first decision sentence of a commit, if any.
@@ -477,6 +486,22 @@ mod tests {
             &f,
             "globset: fix repeated use of **",
             &["src/glob.rs".into()]
+        ));
+    }
+
+    #[test]
+    fn sentences_that_need_their_commit_are_not_facts() {
+        for s in [
+            "Because of this, we actually get to remove one of the two uses of unsafe",
+            "This is not a breaking change because it only allows more inputs",
+            "This change adds track caller to all the non-unstable public APIs",
+            "fix(zsh): use the '=~' operator instead of grep and avoid forking a process",
+            "- Update install script to download Windows binary if TERM is cygwin",
+        ] {
+            assert!(!usable(s), "{s}");
+        }
+        assert!(usable(
+            "The Drop impl does not drain the queue of tasks notified externally, so they leak"
         ));
     }
 

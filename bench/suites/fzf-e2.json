@@ -127,18 +127,6 @@
       "survival": 1.0
     },
     {
-      "id": "f728f7352-0",
-      "kind": "decision",
-      "text": "- Replace fzf#shellescape with shellescape - Prepend command with '&' in powershell to deal with quoted exe",
-      "files": [
-        "plugin/fzf.vim"
-      ],
-      "commit": "728f73528192a24e01f63fed3f4215125543c937",
-      "split": "tune",
-      "state": "unknown",
-      "survival": 0.0
-    },
-    {
       "id": "ff0bfeba7-0",
       "kind": "gotcha",
       "text": "But we're not going to set it as the default because it is computationally more expensive.",

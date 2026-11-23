@@ -83,18 +83,6 @@
       "survival": 0.87
     },
     {
-      "id": "f9f7c2ebc-0",
-      "kind": "gotcha",
-      "text": "This is not a breaking change because it strictly increases the number of allowed inputs to `WalkParallel::run`.",
-      "files": [
-        "ignore/src/walk.rs"
-      ],
-      "commit": "9f7c2ebc09caec2282065974725f9cd2326b2355",
-      "split": "tune",
-      "state": "unknown",
-      "survival": 0.53
-    },
-    {
       "id": "f322fc75a-0",
       "kind": "gotcha",
       "text": "The serial walker does produce a successful entry for a directory that it cannot descend into due to insufficient permissions.",
@@ -549,19 +537,6 @@
     },
     {
       "id": "f4b8aa91a-0",
-      "kind": "gotcha",
-      "text": "Because of this, we actually get to remove one of the two uses of `unsafe` in ripgrep's `main` program.",
-      "files": [
-        "crates/core/args.rs",
-        "crates/pcre2/src/matcher.rs"
-      ],
-      "commit": "4b8aa91ae5b17bd988ed05ab5c7c387de9247b13",
-      "split": "tune",
-      "state": "live",
-      "survival": 1.0
-    },
-    {
-      "id": "f4b8aa91a-1",
       "kind": "decision",
       "text": "That means we no longer need to do transcoding or UTF-8 validity checks.",
       "files": [
@@ -587,20 +562,6 @@
       "split": "tune",
       "state": "stale",
       "survival": 0.4
-    },
-    {
-      "id": "f4782ebd5-0",
-      "kind": "decision",
-      "text": "This patch also replaces instances of eprintln with eprintln_locked to avoid interleaving lines.",
-      "files": [
-        "crates/core/logger.rs",
-        "crates/core/main.rs",
-        "crates/core/messages.rs"
-      ],
-      "commit": "4782ebd5e0773465ba2c32a328250253c2b55779",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.61
     },
     {
       "id": "f341a19e0-0",
@@ -644,7 +605,7 @@
     {
       "id": "f3bfa125b-1",
       "kind": "decision",
-      "text": "ci: replace mips with powerpc64, aarch64 and s390x",
+      "text": "We drop our MIPS target because it no longer works.[1] We were previously using it as a means of testing ripgrep in a big endian environment.",
       "files": [
         "tests/feature.rs",
         "tests/misc.rs",
@@ -911,19 +872,6 @@
         "f656aa126-1",
         "f91afd421-0",
         "fefd9cfb2-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p60aa9f17",
-      "task": "tests: increase sleep duration for sort file metadata tests on Windows AArch64",
-      "files": [
-        "tests/misc.rs"
-      ],
-      "commit": "60aa9f17276409257ad612fccefba13c26ed0d74",
-      "required": [
-        "f3bfa125b-1"
       ],
       "stale": [],
       "split": "holdout"
@@ -1219,7 +1167,8 @@
       ],
       "commit": "b674410666d5aa3fd66c9d4683791ae811fe4fae",
       "required": [
-        "f3bfa125b-0"
+        "f3bfa125b-0",
+        "f3bfa125b-1"
       ],
       "stale": [],
       "split": "tune"

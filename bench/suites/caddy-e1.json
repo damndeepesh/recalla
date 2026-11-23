@@ -56,23 +56,6 @@
       "survival": 0.86
     },
     {
-      "id": "f28fdf64d-0",
-      "kind": "decision",
-      "text": "- Create two default automation policies; if the TLS app is used in isolation with the 'automate' certificate loader, it will now use an internal issuer for internal-only names, and an ACME issuer for all other names by default.",
-      "files": [
-        "caddyconfig/httpcaddyfile/directives.go",
-        "caddyconfig/httpcaddyfile/directives_test.go",
-        "caddyconfig/httpcaddyfile/httptype.go",
-        "caddyconfig/httpcaddyfile/tlsapp.go",
-        "modules/caddytls/automation.go",
-        "modules/caddytls/tls.go"
-      ],
-      "commit": "28fdf64dc510472ccd9e6d46eb149d19cd70919a",
-      "split": "holdout",
-      "state": "live",
-      "survival": 0.83
-    },
-    {
       "id": "f97ed9e11-0",
       "kind": "gotcha",
       "text": "Previously if you had only two server blocks like \":443\" and another one at \":80\", the one at \":443\" could not create a TLS automation policy because it thought it would interfere with TLS automation for the block at \":80\", but obviously that key doesn't enable TLS because it is on the HTTP port.",
@@ -97,18 +80,6 @@
         "modules/caddyhttp/reverseproxy/healthchecks.go"
       ],
       "commit": "a507a5bbc72b70cba4e252b8ec7cbffdc09b4a86",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 1.0
-    },
-    {
-      "id": "fb814c0af-0",
-      "kind": "decision",
-      "text": "This patch fix this problem - first certificate is checked instead of last.",
-      "files": [
-        "modules/caddytls/connpolicy.go"
-      ],
-      "commit": "b814c0af9c2c20a92f86e4db9836fd6b127dcf5b",
       "split": "holdout",
       "state": "unknown",
       "survival": 1.0
@@ -290,22 +261,6 @@
       ],
       "commit": "b4f49e2962201a87037f451a0b68323524828a58",
       "split": "holdout",
-      "state": "live",
-      "survival": 1.0
-    },
-    {
-      "id": "fb0d5c2c8-0",
-      "kind": "gotcha",
-      "text": "- It removes the need to specify the header as \"deferred\" because it is already implicitely deferred by the use of the require handler.",
-      "files": [
-        "caddyconfig/httpcaddyfile/directives.go",
-        "modules/caddyhttp/headers/caddyfile.go",
-        "modules/caddyhttp/headers/headers_test.go",
-        "modules/caddyhttp/push/caddyfile.go",
-        "modules/caddyhttp/reverseproxy/caddyfile.go"
-      ],
-      "commit": "b0d5c2c8ae076393e7a3ad59ce875027f4c29304",
-      "split": "tune",
       "state": "live",
       "survival": 1.0
     },
@@ -504,19 +459,6 @@
       "survival": 1.0
     },
     {
-      "id": "ff9b54454-0",
-      "kind": "decision",
-      "text": "This commit changes the file_server directive to redirect using the original request's URL instead of the possibly trimmed URL.",
-      "files": [
-        "modules/caddyhttp/fileserver/browse.go",
-        "modules/caddyhttp/fileserver/staticfiles.go"
-      ],
-      "commit": "f9b54454a19e2b070159ce8d2af76d819658244e",
-      "split": "tune",
-      "state": "stale",
-      "survival": 0.0
-    },
-    {
       "id": "fe8ae80ad-0",
       "kind": "gotcha",
       "text": "A couple of benchmarks removed due to refactor, which is fine, since we know pooling helps here.",
@@ -612,21 +554,6 @@
         "fc6d6a775-0"
       ],
       "split": "tune"
-    },
-    {
-      "id": "p412dcc07",
-      "task": "caddytls: Reuse issuer between PreCheck and Issue (#4866)",
-      "files": [
-        "modules/caddytls/acmeissuer.go",
-        "modules/caddytls/tls.go",
-        "modules/caddytls/zerosslissuer.go"
-      ],
-      "commit": "412dcc07d3201561302bc20b6200d893aee69657",
-      "required": [
-        "f28fdf64d-0"
-      ],
-      "stale": [],
-      "split": "holdout"
     },
     {
       "id": "p54d1923c",
@@ -780,33 +707,6 @@
       "split": "tune"
     },
     {
-      "id": "pdc62d468",
-      "task": "fileserver: reset buffer before using it (#4962) (#4963)",
-      "files": [
-        "modules/caddyhttp/fileserver/browse.go"
-      ],
-      "commit": "dc62d468e9645f52a5e1b4f6093dff65137ab3fe",
-      "required": [],
-      "stale": [
-        "ff9b54454-0"
-      ],
-      "split": "tune"
-    },
-    {
-      "id": "p3aabbc49",
-      "task": "caddytls: Log error if ask request fails",
-      "files": [
-        "modules/caddytls/acmeissuer.go",
-        "modules/caddytls/automation.go"
-      ],
-      "commit": "3aabbc49a2eccc66a20d3223e9fb2925cbbdd0d4",
-      "required": [
-        "f28fdf64d-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
       "id": "pd4d8bbcf",
       "task": "events: Implement event system (#4912)",
       "files": [
@@ -825,7 +725,6 @@
       ],
       "commit": "d4d8bbcfc64d1194079cae35697709f6d267d02f",
       "required": [
-        "f28fdf64d-0",
         "f6ca58282-0",
         "fe2f913bb-0"
       ],
@@ -988,20 +887,6 @@
       "split": "holdout"
     },
     {
-      "id": "p33f60da9",
-      "task": "fileserver: stop listing dir when request context is cancelled (#5131)",
-      "files": [
-        "modules/caddyhttp/fileserver/browse.go",
-        "modules/caddyhttp/fileserver/browsetplcontext.go"
-      ],
-      "commit": "33f60da9f2d6edc5de550275f043c4262d23f6ca",
-      "required": [],
-      "stale": [
-        "ff9b54454-0"
-      ],
-      "split": "holdout"
-    },
-    {
       "id": "p3e1fd2a8",
       "task": "httpcaddyfile: Wrap site block in subroute if host matcher used (#5130)",
       "files": [
@@ -1011,8 +896,8 @@
       "commit": "3e1fd2a8d4d1463574033fbbdf5c27a693f9a86c",
       "required": [
         "f1c190b00-0",
-        "f28fdf64d-0",
-        "f6ca58282-0"
+        "f6ca58282-0",
+        "f97ed9e11-0"
       ],
       "stale": [
         "f904d9cab-0"
@@ -1084,6 +969,26 @@
       ],
       "commit": "be53e432fcac0a9b9accbc36885304639e8ca70b",
       "required": [
+        "fb6686a54-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p96919acc",
+      "task": "caddyhttp: Refactor cert Managers (fix #5415) (#5533)",
+      "files": [
+        "caddyconfig/httpcaddyfile/tlsapp.go",
+        "go.mod",
+        "go.sum",
+        "modules/caddyhttp/autohttps.go",
+        "modules/caddytls/automation.go",
+        "modules/caddytls/certmanagers.go"
+      ],
+      "commit": "96919acc9d583ef11ea1f9c72a9991fb3f8aab9f",
+      "required": [
+        "f6ca58282-0",
+        "f97ed9e11-0",
         "fb6686a54-0"
       ],
       "stale": [],

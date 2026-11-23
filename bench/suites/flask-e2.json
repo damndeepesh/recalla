@@ -9,31 +9,6 @@
   },
   "facts": [
     {
-      "id": "f93fe1d54-0",
-      "kind": "decision",
-      "text": "- a raises statement with multiple values is no longer allowed in python 3",
-      "files": [
-        "flask/helpers.py"
-      ],
-      "commit": "93fe1d54bd44b190aa0f58990bc397bf22324452",
-      "split": "tune",
-      "state": "unknown",
-      "survival": 0.0
-    },
-    {
-      "id": "f5da31f8a-0",
-      "kind": "gotcha",
-      "text": "- caused by changes in the execution model of python 3 where the alias of an except clause is cleared on exit of the except",
-      "files": [
-        "flask/app.py",
-        "flask/testsuite/basic.py"
-      ],
-      "commit": "5da31f8af36012a4f76c3bd0d536ae107e0519b5",
-      "split": "tune",
-      "state": "stale",
-      "survival": 0.27
-    },
-    {
       "id": "f4dc2ef19-0",
       "kind": "decision",
       "text": "Use pytest.raises() instead of try/catch with asser 0",
@@ -210,21 +185,6 @@
         "f8482ce6b-0"
       ],
       "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p55ad09c9",
-      "task": "Move python properties to decorator syntax",
-      "files": [
-        "flask/app.py",
-        "flask/ctx.py",
-        "flask/helpers.py"
-      ],
-      "commit": "55ad09c9024d2f0d23123c934e505042516cc796",
-      "required": [],
-      "stale": [
-        "f5da31f8a-0"
-      ],
       "split": "holdout"
     },
     {

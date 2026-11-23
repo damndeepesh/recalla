@@ -33,29 +33,6 @@
       "survival": 0.0
     },
     {
-      "id": "f37dc2731-0",
-      "kind": "decision",
-      "text": "- Make structs smaller - Introduce Result struct and use it to represent matched items instead of reusing Item struct for that purpose - Avoid unnecessary memory allocation - Avoid growing slice from the initial capacity - Code cleanup",
-      "files": [
-        "src/algo/algo.go",
-        "src/algo/algo_test.go",
-        "src/ansi.go",
-        "src/ansi_test.go",
-        "src/cache.go",
-        "src/cache_test.go",
-        "src/chunklist_test.go",
-        "src/core.go",
-        "src/item.go",
-        "src/item_test.go",
-        "src/matcher.go",
-        "src/merger.go"
-      ],
-      "commit": "37dc273148df0893053bf5cda0582a23f5c2b2d2",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.62
-    },
-    {
       "id": "faeb957a2-0",
       "kind": "gotcha",
       "text": "It is almost impossible to predict which entries will be filtered out due to a fuzzy inverse term.",
@@ -242,19 +219,6 @@
       "survival": 0.46
     },
     {
-      "id": "fca0b3b6f-0",
-      "kind": "decision",
-      "text": "- Update install script to download Windows binary if $TERM == cygwin - Unset TERM if $TERM == cygwin (#933) - Always use cmd.exe instead of $SHELL when running commands",
-      "files": [
-        "src/tui/tcell.go",
-        "src/util/util_windows.go"
-      ],
-      "commit": "ca0b3b6fd7517aaedcb7517804e2040a8a7aad95",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.67
-    },
-    {
       "id": "f39dbc8ac-0",
       "kind": "decision",
       "text": "Exit 2 instead of panic when failed to open /dev/tty",
@@ -332,20 +296,6 @@
       "split": "holdout",
       "state": "unknown",
       "survival": 0.75
-    },
-    {
-      "id": "fc4185e81-0",
-      "kind": "decision",
-      "text": "This commit also updates quoteEntry to use strings.Replace instead of strconv.Quote which escapes more than \\ and \".",
-      "files": [
-        "src/terminal.go",
-        "src/terminal_test.go",
-        "src/util/util_windows.go"
-      ],
-      "commit": "c4185e81e86e339ae2c18e5d9b596b7992ec179b",
-      "split": "holdout",
-      "state": "live",
-      "survival": 0.92
     },
     {
       "id": "f3af63bcf-0",
@@ -461,8 +411,7 @@
       ],
       "commit": "d9b12111912a43e62f61051d40897a378a020cf5",
       "required": [
-        "f4ecb7f3a-0",
-        "fc4185e81-0"
+        "f4ecb7f3a-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -503,21 +452,6 @@
       "commit": "c329279339a5f49020f6cb43c714d54e68424700",
       "required": [
         "f4ecb7f3a-0"
-      ],
-      "stale": [],
-      "split": "holdout"
-    },
-    {
-      "id": "p9dc4b40d",
-      "task": "Add more preview window options and reduce vertical padding on noborder",
-      "files": [
-        "man/man1/fzf.1",
-        "src/options.go",
-        "src/terminal.go"
-      ],
-      "commit": "9dc4b40d7a185b0448a15f2e2c6f7c46be738550",
-      "required": [
-        "fc4185e81-0"
       ],
       "stale": [],
       "split": "holdout"

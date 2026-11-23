@@ -38,7 +38,7 @@ pub fn write(suite: &Suite, root: &Path, cwd: &str) -> Result<(), String> {
     let dir = root.join("projects").join(cwd.replace('/', "-"));
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     for (n, f) in suite.facts.iter().enumerate() {
-        if !safe_name(&f.id) {
+        if !safe_name(&f.id) || !safe_name(&f.commit) {
             return Err(format!("unsafe fact id {:?}", f.id));
         }
         let lines = session(f, cwd, n);
@@ -57,7 +57,8 @@ fn rec(kind: &str, sid: &str, n: usize, cwd: &str, msg: &serde_json::Value) -> S
 }
 
 fn session(f: &Fact, cwd: &str, n: usize) -> String {
-    let sid = f.id.clone();
+    // The session carries the commit it came from, as a real log carries its own id.
+    let sid = format!("commit-{}", f.commit);
     let file = f.files.first().cloned().unwrap_or_default();
     let path = format!("{cwd}/{file}");
     let user = json!({"role": "user", "content": format!("Let's work on {file}.")});

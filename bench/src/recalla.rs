@@ -133,8 +133,10 @@ impl Adapter for Recalla {
         Ok(())
     }
 
+    /// Only transcript ingestion keeps a source. `remember` takes none, so
+    /// provenance is not measurable there and is reported n/a, not zero.
     fn has_provenance(&self) -> bool {
-        true
+        self.backfill
     }
 
     fn source(&mut self, item: &Item) -> Option<String> {
@@ -144,6 +146,11 @@ impl Adapter for Recalla {
 
     /// Reads the markdown mirror, Recalla's documented plain-file export.
     fn exported(&mut self) -> Result<Option<Vec<String>>, String> {
+        if !self.backfill {
+            // After `remember` the mirror only echoes what was fed in; that
+            // measures nothing about extraction.
+            return Ok(None);
+        }
         let mut out = Vec::new();
         let mut stack = vec![self.data.join("mirror")];
         while let Some(d) = stack.pop() {

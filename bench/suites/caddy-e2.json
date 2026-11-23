@@ -261,24 +261,6 @@
       "survival": 0.86
     },
     {
-      "id": "fe3e8aabb-0",
-      "kind": "decision",
-      "text": "- Use quic.ListenEarly instead of quic.ListenEarlyAddr; this gives us more flexibility (e.g.",
-      "files": [
-        "admin.go",
-        "listen.go",
-        "listen_unix.go",
-        "listeners.go",
-        "modules/caddyhttp/app.go",
-        "modules/caddyhttp/matchers.go",
-        "modules/caddyhttp/server.go"
-      ],
-      "commit": "e3e8aabbcf65d37516bb97f9dc0f77df52f8cf55",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.64
-    },
-    {
       "id": "f9e1d964b-0",
       "kind": "decision",
       "text": "logging: Add `time_local` option to use local time instead of UTC (#5108)",

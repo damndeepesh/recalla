@@ -21,24 +21,6 @@
       "survival": 0.0
     },
     {
-      "id": "f787f6b25-0",
-      "kind": "decision",
-      "text": "chore: check against errors of `io/fs` instead of `os` (#6011)",
-      "files": [
-        "caddy.go",
-        "caddytest/caddytest.go",
-        "cmd/commandfuncs.go",
-        "cmd/main.go",
-        "modules/caddyhttp/fileserver/browse.go",
-        "modules/caddyhttp/fileserver/staticfiles.go",
-        "modules/caddyhttp/templates/tplcontext_test.go"
-      ],
-      "commit": "787f6b257f3ee34431e4f5a9aa33a5399096a78c",
-      "split": "holdout",
-      "state": "live",
-      "survival": 1.0
-    },
-    {
       "id": "f7c48b5fd-0",
       "kind": "decision",
       "text": "caddyfile: Switch to slices.Equal for better performance (#6061)",
@@ -49,18 +31,6 @@
       "split": "holdout",
       "state": "unknown",
       "survival": 0.0
-    },
-    {
-      "id": "f1bd598e9-0",
-      "kind": "decision",
-      "text": "chore: encode: use FlushError instead of Flush (#6168)",
-      "files": [
-        "modules/caddyhttp/encode/encode.go"
-      ],
-      "commit": "1bd598e90c9beea54a7e5082bdecff1500752bf1",
-      "split": "holdout",
-      "state": "live",
-      "survival": 1.0
     },
     {
       "id": "fd1325842-0",
@@ -160,19 +130,6 @@
       ],
       "commit": "db3e19b7b5322fba59068ce9f5c3532aa0c90740",
       "split": "holdout",
-      "state": "live",
-      "survival": 1.0
-    },
-    {
-      "id": "ff8a2c602-0",
-      "kind": "decision",
-      "text": "This change also updates the existing SanitizePathJoin tests to use filepath.FromSlash rather than filepath.Join.",
-      "files": [
-        "modules/caddyhttp/caddyhttp.go",
-        "modules/caddyhttp/caddyhttp_test.go"
-      ],
-      "commit": "f8a2c602971c2a85747b8eda7e01a40b585b3149",
-      "split": "tune",
       "state": "live",
       "survival": 1.0
     },
@@ -390,19 +347,6 @@
       "split": "tune"
     },
     {
-      "id": "p06a05e38",
-      "task": "Revert \"encode: Implement Flush for legacy compatibility\"",
-      "files": [
-        "modules/caddyhttp/encode/encode.go"
-      ],
-      "commit": "06a05e383c8fd6d693e2b8f09db1b8fa55090026",
-      "required": [
-        "f1bd598e9-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
       "id": "pf283062d",
       "task": "cmd: Custom binary names through `CustomBinaryName` and `CustomLongDescription` (#7513)",
       "files": [
@@ -469,23 +413,7 @@
       ],
       "commit": "7b34e3107eb6071fea3a3f94a5c913c32a55afd0",
       "required": [
-        "f5a6b2f8d-0",
-        "f787f6b25-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p1fbb2872",
-      "task": "Fix lint errors",
-      "files": [
-        "cmd/commandfuncs.go",
-        "modules/caddytls/connpolicy.go",
-        "modules/caddytls/folderloader.go"
-      ],
-      "commit": "1fbb28720b5d20d54074593b3c5d12f3549f371b",
-      "required": [
-        "f787f6b25-0"
+        "f5a6b2f8d-0"
       ],
       "stale": [],
       "split": "tune"
@@ -548,7 +476,6 @@
       "commit": "355c1782137f678897495503dcfe0b9e77997737",
       "required": [
         "f5a6b2f8d-0",
-        "f787f6b25-0",
         "ff11c780f-0"
       ],
       "stale": [],
@@ -583,32 +510,6 @@
       "commit": "761347aa635e14bf7a937e88d45a40e671d325c5",
       "required": [
         "f792f1c7e-0"
-      ],
-      "stale": [],
-      "split": "tune"
-    },
-    {
-      "id": "p88037f16",
-      "task": "chore: clean up wording and typo fixes (#7745)",
-      "files": [
-        "caddyconfig/caddyfile/lexer.go",
-        "caddyconfig/caddyfile/lexer_test.go",
-        "caddyconfig/caddyfile/parse.go",
-        "caddytest/caddytest.go",
-        "caddytest/integration/caddyfile_adapt/heredoc_invalid_marker.caddyfiletest",
-        "caddytest/integration/stream_test.go",
-        "cmd/commands.go",
-        "modules/caddyhttp/celmatcher.go",
-        "modules/caddyhttp/celmatcher_test.go",
-        "modules/caddyhttp/encode/encode.go",
-        "modules/caddyhttp/fileserver/staticfiles.go",
-        "modules/caddyhttp/http2listener.go"
-      ],
-      "commit": "88037f1666eb9ce1b26453d32dc861cb3a87a4c7",
-      "required": [
-        "f787f6b25-0",
-        "f1bd598e9-0",
-        "ff4840cfe-0"
       ],
       "stale": [],
       "split": "tune"
@@ -689,7 +590,6 @@
       "commit": "90ccea768fc192ba0feff7a8df4344916eb7331f",
       "required": [
         "f792f1c7e-0",
-        "f787f6b25-0",
         "f8c3dd3de-0"
       ],
       "stale": [],

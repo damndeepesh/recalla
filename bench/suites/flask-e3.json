@@ -109,19 +109,6 @@
       "survival": 0.0
     },
     {
-      "id": "fc43edfc7-0",
-      "kind": "decision",
-      "text": "- remove encoding detection backport, json.loads supports it directly - use str.translate instead of multiple str.replace",
-      "files": [
-        "src/flask/json/__init__.py",
-        "tests/test_helpers.py"
-      ],
-      "commit": "c43edfc7c08b8dbe883761bec14fa75ee7db1bf3",
-      "split": "holdout",
-      "state": "stale",
-      "survival": 0.27
-    },
-    {
       "id": "f7ba35c4d-0",
       "kind": "decision",
       "text": "* No longer causes AttributeError: 'PosixPath' object has no attribute 'rstrip'.",
@@ -263,19 +250,6 @@
   ],
   "probes": [
     {
-      "id": "pa841cfab",
-      "task": "Only use a custom JSONDecoder if needed",
-      "files": [
-        "src/flask/json/__init__.py"
-      ],
-      "commit": "a841cfabb58d3c1ac1d11b09353f458e759a63c2",
-      "required": [],
-      "stale": [
-        "fc43edfc7-0"
-      ],
-      "split": "holdout"
-    },
-    {
       "id": "p751d85f3",
       "task": "cli: use importlib.metadata instead of pkg_resources",
       "files": [
@@ -301,19 +275,6 @@
       ],
       "stale": [],
       "split": "holdout"
-    },
-    {
-      "id": "peede1a36",
-      "task": "fix annotation for json.loads",
-      "files": [
-        "src/flask/json/__init__.py"
-      ],
-      "commit": "eede1a3685e21deaeb6686e9de9b76a73b6a510c",
-      "required": [],
-      "stale": [
-        "fc43edfc7-0"
-      ],
-      "split": "tune"
     },
     {
       "id": "pe044b000",
@@ -366,8 +327,7 @@
         "f25357078-0"
       ],
       "stale": [
-        "fb51ab3ff-0",
-        "fc43edfc7-0"
+        "fb51ab3ff-0"
       ],
       "split": "tune"
     },

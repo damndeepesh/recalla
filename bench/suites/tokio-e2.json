@@ -85,18 +85,6 @@
       "survival": 0.4
     },
     {
-      "id": "fb9b59e4f-0",
-      "kind": "decision",
-      "text": "This change enables `tokio-console` to parse the location information for a spawned task into a structured object rather than simply displaying this info as a field on the task.",
-      "files": [
-        "tokio/src/util/trace.rs"
-      ],
-      "commit": "b9b59e4f15ad80775315ac1615a127c29725cb77",
-      "split": "holdout",
-      "state": "live",
-      "survival": 1.0
-    },
-    {
       "id": "feb1af7f2-0",
       "kind": "gotcha",
       "text": "Note that the issue that originally triggered this PR is not fixed yet, because the `timeout` function will not poll the timer after empty::read runs out of budget.",
@@ -311,36 +299,7 @@
       "survival": 1.0
     },
     {
-      "id": "fcc6c2f40-1",
-      "kind": "decision",
-      "text": "This PR also switches to using `as_ptr` to obtain the base pointer for clarity.",
-      "files": [
-        "tokio/src/util/slab.rs"
-      ],
-      "commit": "cc6c2f40cb1f54a6f53157a7631ac075130c7e36",
-      "split": "tune",
-      "state": "unknown",
-      "survival": 1.0
-    },
-    {
       "id": "f159508b9-0",
-      "kind": "gotcha",
-      "text": "This change adds track caller to all the non-unstable public APIs in Tokio core where the documentation describes how the function may panic due to incorrect context or inputs.",
-      "files": [
-        "tokio/src/runtime/builder.rs",
-        "tokio/src/runtime/context.rs",
-        "tokio/src/runtime/handle.rs",
-        "tokio/src/runtime/mod.rs",
-        "tokio/src/runtime/task/error.rs",
-        "tokio/tests/rt_panic.rs"
-      ],
-      "commit": "159508b916038217ceb668d727d9618b567ea8b1",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.66
-    },
-    {
-      "id": "f159508b9-1",
       "kind": "decision",
       "text": "Functions that may panic can be annotated with `#[track_caller]` so that in the event of a panic, the function where the user called the panicking function is shown instead of the file and line within Tokio source.",
       "files": [
@@ -358,19 +317,6 @@
     },
     {
       "id": "f485ca3e3-0",
-      "kind": "gotcha",
-      "text": "This change adds `#[track_caller]` to all the non-unstable public APIs in tokio-stream (only `chunks_timeout` in `StreamExt`) where the documentation describes how this function may panic due to incorrect input.",
-      "files": [
-        "tokio-stream/src/stream_ext.rs",
-        "tokio-stream/tests/stream_panic.rs"
-      ],
-      "commit": "485ca3e37c8ad2ee20945c981db6d53902e668a9",
-      "split": "holdout",
-      "state": "live",
-      "survival": 0.97
-    },
-    {
-      "id": "f485ca3e3-1",
       "kind": "decision",
       "text": "Functions that may panic can be annotated with `#[track_caller]` so that in the event of a panic, the function where the user called the panicking function is shown instead of the file and line within Tokio source.",
       "files": [
@@ -385,7 +331,7 @@
     {
       "id": "fad412a98-0",
       "kind": "gotcha",
-      "text": "This change adds `#[track_caller]` to all the non-unstable public APIs in tokio-util where the documentation describes how the function may panic due to incorrect context or inputs.",
+      "text": "However, the function didn't panic until a higher number caused by an allocation failure.",
       "files": [
         "tokio-util/src/io/sync_bridge.rs",
         "tokio-util/src/sync/mpsc.rs",
@@ -418,21 +364,6 @@
     },
     {
       "id": "f3cc61687-0",
-      "kind": "gotcha",
-      "text": "This change adds #[track_caller] to all the non-unstable public APIs in tokio-util where the documentation describes how the function may panic due to incorrect context or inputs.",
-      "files": [
-        "tokio/src/time/clock.rs",
-        "tokio/src/time/driver/handle.rs",
-        "tokio/src/time/driver/sleep.rs",
-        "tokio/tests/time_panic.rs"
-      ],
-      "commit": "3cc616877d7f0122b4547f4ccd6a6c13b61b2036",
-      "split": "holdout",
-      "state": "unknown",
-      "survival": 0.67
-    },
-    {
-      "id": "f3cc61687-1",
       "kind": "decision",
       "text": "Functions that may panic can be annotated with #[track_caller] so that in the event of a panic, the function where the user called the panicking function is shown instead of the file and line within Tokio source.",
       "files": [
@@ -448,25 +379,6 @@
     },
     {
       "id": "fb51aa8f6-0",
-      "kind": "gotcha",
-      "text": "This change adds #[track_caller] to all the non-unstable public io APIs in the main tokio crate where the documentation describes how the function may panic due to incorrect context or inputs.",
-      "files": [
-        "tokio/src/io/async_fd.rs",
-        "tokio/src/io/driver/mod.rs",
-        "tokio/src/io/read_buf.rs",
-        "tokio/src/io/split.rs",
-        "tokio/tests/io_panic.rs",
-        "tokio/tests/rt_panic.rs",
-        "tokio/tests/support/panic.rs",
-        "tokio/tests/time_panic.rs"
-      ],
-      "commit": "b51aa8f6f9cb205a8444743429cc80a86f982f1d",
-      "split": "tune",
-      "state": "live",
-      "survival": 0.96
-    },
-    {
-      "id": "fb51aa8f6-1",
       "kind": "decision",
       "text": "Functions that may panic can be annotated with #[track_caller] so that in the event of a panic, the function where the user called the panicking function is shown instead of the file and line within Tokio source.",
       "files": [
@@ -500,26 +412,6 @@
     },
     {
       "id": "f4daeea8c-0",
-      "kind": "gotcha",
-      "text": "This change adds `#[track_caller]` to all the public APIs in the sync module of the tokio crate where the documentation describes how the function may panic due to incorrect context or inputs.",
-      "files": [
-        "tokio/src/future/block_on.rs",
-        "tokio/src/runtime/enter.rs",
-        "tokio/src/sync/broadcast.rs",
-        "tokio/src/sync/mpsc/bounded.rs",
-        "tokio/src/sync/mpsc/unbounded.rs",
-        "tokio/src/sync/mutex.rs",
-        "tokio/src/sync/oneshot.rs",
-        "tokio/src/sync/rwlock.rs",
-        "tokio/tests/sync_panic.rs"
-      ],
-      "commit": "4daeea8cad1ce8e67946bc0e17d499ab304b5ca2",
-      "split": "tune",
-      "state": "live",
-      "survival": 0.86
-    },
-    {
-      "id": "f4daeea8c-1",
       "kind": "decision",
       "text": "Functions that may panic can be annotated with `#[track_caller]` so that in the event of a panic, the function where the user called the panicking function is shown instead of the file and line within Tokio source.",
       "files": [
@@ -540,27 +432,6 @@
     },
     {
       "id": "fcbdba8bd-0",
-      "kind": "gotcha",
-      "text": "This change adds #[track_caller] to all the non-unstable public net APIs in the main tokio crate where the documentation describes how the function may panic due to incorrect context or inputs.",
-      "files": [
-        "tokio/src/io/poll_evented.rs",
-        "tokio/src/net/tcp/listener.rs",
-        "tokio/src/net/tcp/stream.rs",
-        "tokio/src/net/udp.rs",
-        "tokio/src/net/unix/datagram/socket.rs",
-        "tokio/src/net/unix/listener.rs",
-        "tokio/src/net/unix/stream.rs",
-        "tokio/src/net/windows/named_pipe.rs",
-        "tokio/src/runtime/context.rs",
-        "tokio/tests/net_panic.rs"
-      ],
-      "commit": "cbdba8bd32a7a6afd63d43afd5ab978b91745814",
-      "split": "holdout",
-      "state": "live",
-      "survival": 0.98
-    },
-    {
-      "id": "fcbdba8bd-1",
       "kind": "decision",
       "text": "Functions that may panic can be annotated with #[track_caller] so that in the event of a panic, the function where the user called the panicking function is shown instead of the file and line within Tokio source.",
       "files": [
@@ -582,21 +453,6 @@
     },
     {
       "id": "f5288e1e1-0",
-      "kind": "gotcha",
-      "text": "This change adds `#[track_caller]` to all the public APIs in the task module of the tokio crate where the documentation describes how the function may panic due to incorrect context or inputs.",
-      "files": [
-        "tokio/src/runtime/mod.rs",
-        "tokio/src/task/local.rs",
-        "tokio/src/task/task_local.rs",
-        "tokio/tests/task_panic.rs"
-      ],
-      "commit": "5288e1e144d33ace0070325b16029523b1db0ffe",
-      "split": "holdout",
-      "state": "live",
-      "survival": 0.9
-    },
-    {
-      "id": "f5288e1e1-1",
       "kind": "decision",
       "text": "Functions that may panic can be annotated with `#[track_caller]` so that in the event of a panic, the function where the user called the panicking function is shown instead of the file and line within Tokio source.",
       "files": [
@@ -696,7 +552,7 @@
     {
       "id": "f99aa8d12-0",
       "kind": "decision",
-      "text": "This patch removes these traits as they are no longer needed.",
+      "text": "This is in service of a future refactor that will decouple the various resource drivers and store them in a single struct instead of nesting them.",
       "files": [
         "tokio/src/loom/mocked.rs",
         "tokio/src/loom/std/mod.rs",
@@ -809,8 +665,8 @@
       "commit": "8d58dc85b5fbd7509fb4b44874043565e69f9dee",
       "required": [
         "f4daeea8c-0",
-        "f4daeea8c-1",
-        "f9d9488db-0"
+        "f9d9488db-0",
+        "fd6da67b2-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -844,8 +700,8 @@
       "commit": "c6552c5680fa14105547cfbbc26b26d67197b64e",
       "required": [
         "f5288e1e1-0",
-        "f5288e1e1-1",
-        "f3a4f18b9-0"
+        "f3a4f18b9-0",
+        "fb1557ea5-0"
       ],
       "stale": [],
       "split": "tune"
@@ -858,8 +714,7 @@
       ],
       "commit": "699573d550fabf4bfb45d82505d6709faaae9037",
       "required": [
-        "fcbdba8bd-0",
-        "fcbdba8bd-1"
+        "fcbdba8bd-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -879,7 +734,6 @@
       "commit": "f9dbfa82513c346940a6255336ed8a3e0f89b5f0",
       "required": [
         "fcbdba8bd-0",
-        "fcbdba8bd-1",
         "f8fb15da8-0"
       ],
       "stale": [],
@@ -894,8 +748,7 @@
       ],
       "commit": "c390a62387fe7346951c8bc57ea2761614b83e82",
       "required": [
-        "f4daeea8c-0",
-        "f4daeea8c-1"
+        "f4daeea8c-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -930,8 +783,7 @@
       ],
       "commit": "d6ea7a742b92d3e516035a584ab9347a96be363a",
       "required": [
-        "fb51aa8f6-0",
-        "fb51aa8f6-1"
+        "fb51aa8f6-0"
       ],
       "stale": [],
       "split": "tune"
@@ -946,26 +798,10 @@
       "commit": "061325ba7ea952c78b23abe685e40a3aac132a2b",
       "required": [
         "f3a4f18b9-0",
-        "f5288e1e1-0",
-        "f5288e1e1-1"
+        "f5288e1e1-0"
       ],
       "stale": [],
       "split": "tune"
-    },
-    {
-      "id": "p28d6f4d5",
-      "task": "task: fix wording with 'unsend' (#5452)",
-      "files": [
-        "tokio/src/task/local.rs"
-      ],
-      "commit": "28d6f4d5093ba5f565e6836b81e3db79ca7a196a",
-      "required": [
-        "f5288e1e1-0",
-        "f5288e1e1-1",
-        "fb1557ea5-0"
-      ],
-      "stale": [],
-      "split": "holdout"
     },
     {
       "id": "pd19f2f2d",
@@ -979,7 +815,6 @@
       "commit": "d19f2f2d395a4d6befb5f66ff87a19172aede2ee",
       "required": [
         "f4daeea8c-0",
-        "f4daeea8c-1",
         "fd6da67b2-0"
       ],
       "stale": [],
@@ -996,8 +831,7 @@
       "commit": "b921fe45ac9fc49e18bc6e834065b61d246f56e0",
       "required": [
         "f431ec68f-0",
-        "fcbdba8bd-0",
-        "fcbdba8bd-1"
+        "fcbdba8bd-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -1010,8 +844,7 @@
       ],
       "commit": "018d0450c71f782f3833fde6346f7ef48fcb57a2",
       "required": [
-        "fb51aa8f6-0",
-        "fb51aa8f6-1"
+        "fb51aa8f6-0"
       ],
       "stale": [],
       "split": "tune"
@@ -1028,7 +861,6 @@
       "commit": "c89406965ffb4a64936d781c556a2c48855dfbdb",
       "required": [
         "f4daeea8c-0",
-        "f4daeea8c-1",
         "f431ec68f-0"
       ],
       "stale": [],
@@ -1078,7 +910,6 @@
       "commit": "2b7b1a0494b65b6f1d13a0ddd0ff6965c36170ce",
       "required": [
         "fcbdba8bd-0",
-        "fcbdba8bd-1",
         "f8fb15da8-0"
       ],
       "stale": [],
@@ -1108,7 +939,6 @@
       ],
       "commit": "d4afbad6e5d84a01d97ff97d3c82d83eb196d160",
       "required": [
-        "fad412a98-0",
         "fad412a98-1"
       ],
       "stale": [],
@@ -1126,7 +956,6 @@
       ],
       "commit": "effead29d19b6f07ff2c546dcec76671ca98e8d6",
       "required": [
-        "fad412a98-0",
         "fad412a98-1"
       ],
       "stale": [],
@@ -1142,11 +971,26 @@
       "commit": "8497f379b5c57d37db82db5dd74833998ae847a1",
       "required": [
         "f9d9488db-0",
-        "f4daeea8c-0",
-        "f4daeea8c-1"
+        "f4daeea8c-0"
       ],
       "stale": [],
       "split": "holdout"
+    },
+    {
+      "id": "p9f9e596e",
+      "task": "time: fix panic in DelayQueue (#5630)",
+      "files": [
+        "tokio-util/src/time/wheel/level.rs",
+        "tokio-util/src/time/wheel/mod.rs",
+        "tokio-util/tests/time_delay_queue.rs"
+      ],
+      "commit": "9f9e596eec51a5c25d3a744f3e23606b4a09f54c",
+      "required": [
+        "fad412a98-0",
+        "fad412a98-1"
+      ],
+      "stale": [],
+      "split": "tune"
     },
     {
       "id": "pe789b614",
@@ -1158,47 +1002,10 @@
       ],
       "commit": "e789b614243d77261d81f4ed15e4ac7d36081bf2",
       "required": [
-        "f485ca3e3-0",
-        "f485ca3e3-1"
+        "f485ca3e3-0"
       ],
       "stale": [],
       "split": "tune"
-    },
-    {
-      "id": "p304d1403",
-      "task": "tokio: reduce LLVM code generation (#5859)",
-      "files": [
-        "tokio/src/runtime/scheduler/multi_thread/handle.rs",
-        "tokio/src/runtime/scheduler/multi_thread/worker.rs",
-        "tokio/src/runtime/task/core.rs",
-        "tokio/src/runtime/task/harness.rs",
-        "tokio/src/runtime/task/list.rs",
-        "tokio/src/util/trace.rs"
-      ],
-      "commit": "304d14036184c9c65d88706e48dacb57bb172fcc",
-      "required": [
-        "f3a4f18b9-0",
-        "fb9b59e4f-0"
-      ],
-      "stale": [
-        "fd0305d57-0"
-      ],
-      "split": "holdout"
-    },
-    {
-      "id": "p0fe24fcf",
-      "task": "sync: improve cancel-safety documentation for mpsc::Sender::send (#5947)",
-      "files": [
-        "tokio/src/sync/mpsc/bounded.rs"
-      ],
-      "commit": "0fe24fcffaa98cea639f9e3b38c9c4e93305fa0d",
-      "required": [
-        "f4daeea8c-0",
-        "f4daeea8c-1",
-        "fd6da67b2-0"
-      ],
-      "stale": [],
-      "split": "holdout"
     },
     {
       "id": "p98bb3be0",
@@ -1232,8 +1039,7 @@
       ],
       "commit": "58acb56a172747e5d9ddaec6bf578330d251ddaa",
       "required": [
-        "f485ca3e3-0",
-        "f485ca3e3-1"
+        "f485ca3e3-0"
       ],
       "stale": [],
       "split": "tune"

@@ -21,19 +21,6 @@
       "survival": 0.43
     },
     {
-      "id": "f8d693a2a-0",
-      "kind": "gotcha",
-      "text": "- The fix itself - The test infrastructure to ensure it does not regress because HTTPBin is insufficient",
-      "files": [
-        "requests/sessions.py",
-        "test_requests.py"
-      ],
-      "commit": "8d693a2a27d0a073c0d03823cab71a3716001285",
-      "split": "tune",
-      "state": "live",
-      "survival": 0.88
-    },
-    {
       "id": "f3b0fcb62-0",
       "kind": "gotcha",
       "text": "Importing simplejson on Python 3.2 results in a SyntaxError because simplejson uses the u'...' syntax (the syntax was not supported in Python 3.0 to 3.2).",

@@ -333,18 +333,6 @@
       "survival": 1.0
     },
     {
-      "id": "fe1fcdbc3-0",
-      "kind": "decision",
-      "text": "fix(zsh): use the '=~' operator instead of grep (#3906)",
-      "files": [
-        "shell/key-bindings.zsh"
-      ],
-      "commit": "e1fcdbc3372087d80ebfd30c3c433881b9535b38",
-      "split": "holdout",
-      "state": "live",
-      "survival": 1.0
-    },
-    {
       "id": "fb44ab9e3-0",
       "kind": "gotcha",
       "text": "Because it is important to be able to see the whole command before deciding to kill it.",
@@ -361,22 +349,6 @@
       "id": "f587df594-0",
       "kind": "gotcha",
       "text": "Because the initial reader is not started, Terminal never gets the initial list 5.",
-      "files": [
-        "src/constants.go",
-        "src/core.go",
-        "src/options.go",
-        "src/reader.go",
-        "src/terminal.go"
-      ],
-      "commit": "587df594b884c3649b14c8f19dfbcee78e74a0a9",
-      "split": "tune",
-      "state": "live",
-      "survival": 0.84
-    },
-    {
-      "id": "f587df594-1",
-      "kind": "decision",
-      "text": "This commit fixes the above problem by extracting the reload command bound to 'start' event and starting the initial reader with that command instead of letting Terminal start it.",
       "files": [
         "src/constants.go",
         "src/core.go",
@@ -416,18 +388,6 @@
       "survival": 1.0
     },
     {
-      "id": "fed76f076-0",
-      "kind": "decision",
-      "text": "- Use `string collect` instead of cat to get the contents of $FZF_DEFAULT_OPTS_FILE.",
-      "files": [
-        "shell/key-bindings.fish"
-      ],
-      "commit": "ed76f076ddb81d0350b7c00bab279a6520bf6f09",
-      "split": "tune",
-      "state": "stale",
-      "survival": 0.0
-    },
-    {
       "id": "f66dbee10-0",
       "kind": "gotcha",
       "text": "But due to the hardcoded value for the minimum size of the preview window the size could not be decreased further than 5.",
@@ -465,8 +425,8 @@
       "commit": "4298c0b1eb31b7563eb608e3fbf4069488ada08d",
       "required": [
         "f587df594-0",
-        "f587df594-1",
-        "f3277e8c8-0"
+        "f3277e8c8-0",
+        "f3dee8778-0"
       ],
       "stale": [],
       "split": "holdout"
@@ -528,25 +488,6 @@
       ],
       "stale": [],
       "split": "holdout"
-    },
-    {
-      "id": "p664ee1f4",
-      "task": "Add change-pointer and transform-pointer",
-      "files": [
-        "man/man1/fzf.1",
-        "src/actiontype_string.go",
-        "src/options.go",
-        "src/terminal.go",
-        "test/test_core.rb"
-      ],
-      "commit": "664ee1f4832340ea301f9525cb2d4ce8fc7f12cd",
-      "required": [
-        "f587df594-0",
-        "f587df594-1",
-        "f3277e8c8-0"
-      ],
-      "stale": [],
-      "split": "tune"
     },
     {
       "id": "p0dce561e",
