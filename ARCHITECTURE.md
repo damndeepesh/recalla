@@ -330,7 +330,7 @@ GET /api/overview
  "sessions":2,"events":20,"sources":2,
  "injections":{"count":4,"est_tokens":682,"baselined_est_tokens":682,"candidate_tokens":566,"saved_pct":-20.5,"last_at":1795402977295,"last_via":"hook"},
  "last_event_ts":1793530800000,"db_bytes":163840,"archive_bytes":1804,"data_dir":"~/.local/share/recalla","mirror_dir":"~/.local/share/recalla/mirror",
- "version":"0.1.0","schema_version":8,"generated_at":1795403979793}
+ "version":"0.2.0","schema_version":8,"generated_at":1795403979793}
 
 GET /api/sessions?limit=1
 {"items":[{"harness":"claude-code","session_id":"sess1","project":"/work/proj","first_ts":1793527201000,"last_ts":1793530800000,

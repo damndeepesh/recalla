@@ -6,8 +6,8 @@ Plain HTML, CSS and a little vanilla JS. No build step, no dependencies, no thir
 
 - `index.html`: content. `404.html`: not-found page (uses `/recalla/` absolute paths because it can be served from any depth).
 - `assets/app.css`: all styles and design tokens (CSS variables at the top). `assets/app.js`: tabs, copy button, theme toggle, platform detection. `assets/theme.js`: applies the saved theme before first paint.
-- Keep it free of external requests. A CSP `<meta>` in each page enforces same-origin only. Page weight budget: under 100 KB without `og.png`.
-- Releasing a new version: set `data-version` on `<html>` in `index.html` (the script rewrites the download links and version labels from it), then update the static fallback links so they work without JS: `sed -i '' 's/0\.1\.0/X.Y.Z/g' index.html` (also updates `softwareVersion` in the JSON-LD).
+- Keep it free of external requests. A CSP `<meta>` in each page enforces same-origin only. Page weight budget: under 100 KB of HTML, CSS and JS; images in `assets/` are not counted, so keep each small (webp).
+- Releasing a new version: set `data-version` on `<html>` in `index.html` (the script rewrites the download links and version labels from it), then update the static fallback links so they work without JS: `sed -i '' 's/OLD_VERSION/X.Y.Z/g' index.html` with the old version's dots escaped (also updates `softwareVersion` in the JSON-LD).
 - The terminal demo is real output from the release binary on a synthetic project. Regenerate it when output formats change.
 
 ## Preview under the real subpath

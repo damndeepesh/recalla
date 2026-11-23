@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-23
+
 ### Security
 - Dashboard threat model: binds 127.0.0.1 only; login is a one-time code valid for 60 s, delivered through a private 0600 redirect page (never argv or a URL in the process list); per-port session cookie (`HttpOnly`, `SameSite=Strict`) that expires after 12 h idle; `Host`, `Origin` and CSRF-header checks on every request; strict CSP and no third-party requests; reads use a read-only database connection. See ARCHITECTURE.md and D-022/D-023
 
@@ -50,5 +52,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - `redact_path` for cwd/branch (no entropy layer) so project keys survive random path components
 - Claude Code hooks: `recalla hook session-start|capture`, `recalla hooks install|uninstall|status` (never block; settings backed up, atomic, order-preserving)
 
-[Unreleased]: https://github.com/damndeepesh/recalla/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/damndeepesh/recalla/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/damndeepesh/recalla/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/damndeepesh/recalla/releases/tag/v0.1.0

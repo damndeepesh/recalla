@@ -15,7 +15,7 @@ It turns your existing session history into compact, source-linked memories, fla
 </div>
 
 > [!WARNING]
-> **Alpha (v0.1.0).** Imports Claude Code and Codex history and works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Extraction is rule-based, precise but not exhaustive, and still being tuned on real histories. See [ROADMAP.md](ROADMAP.md) for what's next, and please [open an issue](https://github.com/damndeepesh/recalla/issues) if it misses or invents something on your logs.
+> **Alpha (v0.2.0).** Imports Claude Code and Codex history and works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Extraction is rule-based, precise but not exhaustive, and still being tuned on real histories. See [ROADMAP.md](ROADMAP.md) for what's next, and please [open an issue](https://github.com/damndeepesh/recalla/issues) if it misses or invents something on your logs.
 
 ---
 
@@ -46,12 +46,13 @@ flowchart LR
 - **Atomic memories:** decisions, facts, procedures, gotchas, preferences and tasks, each with provenance, confidence, scope (global, project or module) and a reversible lifecycle. Nothing is hard-deleted.
 - **Deterministic identity:** a memory's ID is a hash of its content, so re-importing the same history never creates duplicates, and two machines agree on IDs without syncing.
 - **Readable without the engine:** a markdown mirror (one file per memory) lets any agent or person read memory with no tooling.
+- **See what your agent got:** `recalla ui` opens a local dashboard with every session and memory, and the exact pack each agent received, tokens against all candidates ([details](#dashboard)).
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for components and data flow.
 
 ## Status
 
-Alpha (v0.1.0). Everything in the MVP is built and covered by tests and an end-to-end script.
+Alpha (v0.2.0). Everything in the MVP is built and covered by tests and an end-to-end script.
 
 | Component | State |
 | --- | --- |
@@ -63,6 +64,7 @@ Alpha (v0.1.0). Everything in the MVP is built and covered by tests and an end-t
 | Token-budgeted context packs + injection ledger | ✅ |
 | MCP server (4 tools) + Claude Code hooks | ✅ |
 | Markdown mirror + `rebuild` | ✅ |
+| Local dashboard (`recalla ui`) | ✅ |
 | Gemini CLI / OpenCode / Cursor sessions, contradiction resolution, embeddings | 🗺️ planned, see [ROADMAP.md](ROADMAP.md) |
 
 ## Getting started
