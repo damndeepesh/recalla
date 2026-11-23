@@ -1,15 +1,20 @@
 updated: 2026-11-23
 milestone: v0.4 (dev)
-branch: feature/extractor-precision
-task: "0.4 on dev: extractor precision (#15-#17); then benchmark"
+branch: feature/pack-ranking
+task: "Task-focused pack --query (PR #49 into dev)"
 status: review
-plan: null
+plan: .agent/plans/bench.md
 done:
-  - v0.3.0 released (tag, crates.io); dev branch created; recalla forget implemented with tests
+  - "dev has forget (#45), extractor recall/precision (#46, #47), pack --query any-word match (#48)"
+  - "#49: pack --query focuses on the task (file anchors, 25% cutoff, near-dup drop); make check green"
+  - "feature/bench (local, unpushed): membench miner, 18 suites, adapters, scorers, provenance, real worktree t0->t1"
 next:
-  - merge #46 then #47 into dev (never main for now); then benchmark: /validate verdict was BUILD narrowed, neutral runnable harness, see conversation
+  - merge #49 into dev when CI is green (never main for now)
+  - finish bench steps C-G in .agent/plans/bench.md (generic MCP adapter, report, hand spot-check, docs, make bench, real-data mode), then PR feature/bench into dev
+  - later: per-file PreToolUse recall hook; extraction from plain assistant explanations (6% recall on bench)
 blockers: []
 notes:
-  - this worktree (../recalla-ui) holds this branch; remove with `git worktree remove ../recalla-ui` when done
-  - Playwright MCP Chrome is missing; use playwright-core + Brave for browser checks
-  - no publish/tag/push without the owner's go
+  - e2e has 2 pre-existing hooks failures (install/uninstall settings), unrelated to pack
+  - bench numbers are first results; mined facts not yet hand-spot-checked; probe relevance filter is lexical (favours grep-like retrieval)
+  - bench needs full-history clones (bench/suites/build.sh) for --repos; Playwright MCP Chrome missing, use playwright-core + Brave
+  - no publish/tag/push to main without the owner's go
