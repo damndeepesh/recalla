@@ -9,7 +9,9 @@ A neutral, runnable benchmark for coding-agent memory tools. Primary axis: what 
 - Two feed modes, reported separately:
   - facts-in: same ground-truth statements written through each tool's write interface (tests retrieval, noise, staleness).
   - transcript-in: synthetic sessions fed to tools that can ingest/extract (tests extraction). Tools without ingestion are marked n/a, not zero.
-- Scenario suite = data, not code: `bench/suites/<name>/` with a synthetic git repo generator (seeded), a history of facts/sessions, and probes (task query -> required fact ids, distractor ids, kind).
+- Ground truth from public data (D-025): `membench mine` turns pinned public repos (ripgrep, fzf, requests) into suites: causal/decision sentences in commit messages = facts; a later commit touching the same files = the task (probe); fact is stale when lines its commit added no longer survive at T1. Suites are JSON (`bench/suites/`), tuning + held-out split. A tiny hand-built synthetic suite stays only as a smoke test.
+- Time model: history <= T0 is fed to the tool, the repo is then checked out at T1 (staleness), probes come from commits after T1.
+- Transcript-in sessions are rebuilt from commits: user task, Edit call with the real diff lines, assistant explanation (Claude Code JSONL).
 - Scores (each 0-1, report per axis and a transparent weighted total, equal weights by default):
   1. recall@budget: required facts present in what the tool returns within N tokens
   2. noise: 1 - share of returned tokens not tied to the task
