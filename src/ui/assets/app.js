@@ -119,7 +119,11 @@ prefersDark.addEventListener("change", paintThemeButton);
 paintThemeButton();
 
 // ---- nav icons, skip link, search ----
-for (const a of document.querySelectorAll("[data-nav]")) a.prepend(icon(a.dataset.nav, 17));
+const NAV_KEY = { home: "h", memories: "m", sessions: "s", packs: "p", setup: "c" };
+for (const a of document.querySelectorAll("[data-nav]")) {
+  a.prepend(icon(a.dataset.nav, 17));
+  a.append(h("span", { class: "nav-key", "aria-hidden": "true" }, h("kbd", null, "g"), h("kbd", null, NAV_KEY[a.dataset.nav])));
+}
 document.getElementById("search-btn").prepend(icon("search", 16));
 document.getElementById("search-btn").addEventListener("click", () => openPalette({ toggleTheme }));
 document.getElementById("skip").addEventListener("click", (e) => {

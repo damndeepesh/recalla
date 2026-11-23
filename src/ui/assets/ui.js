@@ -2,6 +2,7 @@
 // states, paged list, dialogs, copy. Everything renders through dom.h().
 import { h, icon, copyText, num, baseName, midPath, time } from "./dom.js";
 import { memoryHref, packHref } from "./router.js";
+import { illustration } from "./charts.js";
 
 // ---- messages ----
 /** Toast with an optional action ({label, run}); errors stay longer. */
@@ -137,20 +138,26 @@ export function meter(v) {
 }
 
 // ---- states ----
+/** Skeleton rows shaped like real list rows (title bar + meta bar). */
 export function skeleton(rows = 6) {
-  return h(
-    "div",
-    { class: "skel-list card", "aria-hidden": "true" },
-    Array.from({ length: rows }, () => h("div", { class: "skel" })),
-  );
+  return h("div", { class: "skel-list", "aria-hidden": "true" },
+    Array.from({ length: rows }, (_, i) => h("div", { class: "skel" }, h("span", { class: "skel-t", css: { "--w": `${55 + ((i * 17) % 35)}%` } }), h("span", { class: "skel-m" }))));
 }
 
 export function loading(label = "Loading") {
-  return h("div", { role: "status", "aria-label": label }, skeleton(5));
+  return h("div", { role: "status", "aria-label": label, class: "card" }, skeleton(5));
 }
 
-export function emptyState(title, body, action) {
-  return h("div", { class: "empty" }, h("h3", null, title), body ? h("p", null, body) : null, action);
+/** Empty state with a small illustration and one action. */
+export function emptyState(title, body, action, art = "empty") {
+  return h("div", { class: "empty" }, illustration(art), h("h3", null, title), body ? h("p", null, body) : null, action);
+}
+
+/** A bento block: icon + title header, body, optional aside link. */
+export function block(title, ic, body, { span = 12, aside = null } = {}) {
+  return h("section", { class: `block span-${span}` },
+    h("header", { class: "block-head" }, h("span", { class: "block-icon", "aria-hidden": "true" }, icon(ic, 15)), h("h2", null, title), aside),
+    body);
 }
 
 export function errorState(err, retry) {

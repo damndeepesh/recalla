@@ -160,8 +160,7 @@ function summary(d) {
   return h(
     "section",
     { class: "card pack-sum", "aria-label": "Size" },
-    h("p", { class: "big" }, big),
-    h("p", null, body),
+    h("div", null, h("p", { class: "big" }, big), h("p", null, body)),
     ruler(d.est_tokens, d.candidate_tokens),
   );
 }

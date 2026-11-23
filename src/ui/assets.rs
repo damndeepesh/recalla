@@ -121,31 +121,52 @@ pub const TABLE: &[(&str, Asset)] = &[
         },
     ),
     (
-        "/assets/fonts/instrument-sans.woff2",
+        "/assets/fonts/bricolage-grotesque.woff2",
         Asset {
             content_type: WOFF2,
-            body: include_bytes!("assets/fonts/instrument-sans.woff2"),
+            body: include_bytes!("assets/fonts/bricolage-grotesque.woff2"),
         },
     ),
     (
-        "/assets/fonts/jetbrains-mono.woff2",
+        "/assets/fonts/geist.woff2",
         Asset {
             content_type: WOFF2,
-            body: include_bytes!("assets/fonts/jetbrains-mono.woff2"),
+            body: include_bytes!("assets/fonts/geist.woff2"),
         },
     ),
     (
-        "/assets/fonts/OFL-InstrumentSans.txt",
+        "/assets/fonts/geist-mono.woff2",
         Asset {
-            content_type: TXT,
-            body: include_bytes!("assets/fonts/OFL-InstrumentSans.txt"),
+            content_type: WOFF2,
+            body: include_bytes!("assets/fonts/geist-mono.woff2"),
         },
     ),
     (
-        "/assets/fonts/OFL-JetBrainsMono.txt",
+        "/assets/fonts/OFL-BricolageGrotesque.txt",
         Asset {
             content_type: TXT,
-            body: include_bytes!("assets/fonts/OFL-JetBrainsMono.txt"),
+            body: include_bytes!("assets/fonts/OFL-BricolageGrotesque.txt"),
+        },
+    ),
+    (
+        "/assets/fonts/OFL-Geist.txt",
+        Asset {
+            content_type: TXT,
+            body: include_bytes!("assets/fonts/OFL-Geist.txt"),
+        },
+    ),
+    (
+        "/assets/fonts/OFL-GeistMono.txt",
+        Asset {
+            content_type: TXT,
+            body: include_bytes!("assets/fonts/OFL-GeistMono.txt"),
+        },
+    ),
+    (
+        "/assets/charts.js",
+        Asset {
+            content_type: JS,
+            body: include_bytes!("assets/charts.js"),
         },
     ),
 ];
@@ -217,7 +238,7 @@ mod tests {
             assert_eq!(a.content_type, want, "{path}");
         }
         let total: usize = all().map(|(_, a)| a.body.len()).sum();
-        assert!(total < 250 * 1024, "assets are {total} bytes");
+        assert!(total < 300 * 1024, "assets are {total} bytes");
     }
 
     /// Guard like `scripts/web-check.sh`: the dashboard renders untrusted text
@@ -345,8 +366,9 @@ mod tests {
             );
         }
         for (font, licence) in [
-            ("instrument-sans.woff2", "OFL-InstrumentSans.txt"),
-            ("jetbrains-mono.woff2", "OFL-JetBrainsMono.txt"),
+            ("bricolage-grotesque.woff2", "OFL-BricolageGrotesque.txt"),
+            ("geist.woff2", "OFL-Geist.txt"),
+            ("geist-mono.woff2", "OFL-GeistMono.txt"),
         ] {
             let f = lookup(&format!("/assets/fonts/{font}")).unwrap();
             assert!(f.body.starts_with(b"wOF2"), "{font} is woff2");

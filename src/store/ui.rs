@@ -158,6 +158,24 @@ pub struct Overview {
     pub last_injection_via: Option<String>,
 }
 
+/// One UTC day of activity for the dashboard's charts.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DayActivity {
+    /// Start of the UTC day, unix ms.
+    pub day: i64,
+    /// Distinct sessions with at least one event that day.
+    pub sessions: u64,
+    /// Memories created that day.
+    pub memories: u64,
+    /// Context packs served that day.
+    pub packs: u64,
+    /// Tokens in those packs.
+    pub tokens: u64,
+}
+
+/// Milliseconds in a day.
+const DAY_MS: i64 = 86_400_000;
+
 // ---------------------------------------------------------------- sessions
 
 #[derive(Debug, Clone, Default)]
@@ -525,6 +543,58 @@ impl Store {
             last_injection_at: last.as_ref().map(|l| l.0),
             last_injection_via: last.map(|l| l.1),
         })
+    }
+
+    /// The last `days` UTC days of activity ending with the day of `now_ms`,
+    /// oldest first, zero-filled.
+    ///
+    /// # Errors
+    /// `Sqlite` on failure.
+    pub fn ui_activity(&self, now_ms: i64, days: usize) -> Result<Vec<DayActivity>, StoreError> {
+        let days_i = i64::try_from(days.clamp(1, 366)).unwrap_or(30);
+        let last = now_ms.div_euclid(DAY_MS) * DAY_MS;
+        let first = last - (days_i - 1) * DAY_MS;
+        let mut out: Vec<DayActivity> = (0..days_i)
+            .map(|i| DayActivity {
+                day: first + i * DAY_MS,
+                ..DayActivity::default()
+            })
+            .collect();
+        let mut fill = |sql: &str, set: fn(&mut DayActivity, u64, u64)| -> Result<(), StoreError> {
+            let mut stmt = self.conn.prepare_cached(sql)?;
+            let rows = stmt.query_map(params![first, last + DAY_MS, DAY_MS], |r| {
+                Ok((r.get::<_, i64>(0)?, get_u64(r, 1)?, get_u64(r, 2)?))
+            })?;
+            for row in rows {
+                let (day, a, b) = row?;
+                if let Some(slot) = usize::try_from((day - first) / DAY_MS)
+                    .ok()
+                    .and_then(|i| out.get_mut(i))
+                {
+                    set(slot, a, b);
+                }
+            }
+            Ok(())
+        };
+        fill(
+            "SELECT (ts / ?3) * ?3 AS d, count(DISTINCT harness || char(31) || session_id), 0
+             FROM events WHERE ts >= ?1 AND ts < ?2 GROUP BY d",
+            |s, a, _| s.sessions = a,
+        )?;
+        fill(
+            "SELECT (created_at / ?3) * ?3 AS d, count(*), 0
+             FROM memories WHERE created_at >= ?1 AND created_at < ?2 GROUP BY d",
+            |s, a, _| s.memories = a,
+        )?;
+        fill(
+            "SELECT (at / ?3) * ?3 AS d, count(*), coalesce(sum(est_tokens), 0)
+             FROM injections WHERE at >= ?1 AND at < ?2 GROUP BY d",
+            |s, a, b| {
+                s.packs = a;
+                s.tokens = b;
+            },
+        )?;
+        Ok(out)
     }
 
     /// Sessions, most recently active first (ties by first event id).
@@ -1114,6 +1184,31 @@ mod tests {
         assert_eq!(
             Cursor::parse("1:2").unwrap().pair::<i64, i64>().unwrap(),
             (1, 2)
+        );
+    }
+
+    #[test]
+    fn activity_is_zero_filled_and_bucketed_by_utc_day() {
+        let s = Store::open_in_memory().unwrap();
+        let now = 20 * DAY_MS + 5_000;
+        let a = s.ui_activity(now, 7).unwrap();
+        assert_eq!(a.len(), 7);
+        assert_eq!(a[6].day, 20 * DAY_MS);
+        assert_eq!(a[0].day, 14 * DAY_MS);
+        assert!(a.iter().all(|d| d.sessions == 0 && d.packs == 0));
+        s.conn
+            .execute(
+                "INSERT INTO injections (at, budget, est_tokens, memory_uids, via)
+                 VALUES (?1, 100, 40, '[]', 'cli'), (?1 + 10, 100, 60, '[]', 'hook'), (?2, 100, 1, '[]', 'cli')",
+                params![19 * DAY_MS + 7, 3 * DAY_MS],
+            )
+            .unwrap();
+        let a = s.ui_activity(now, 7).unwrap();
+        assert_eq!((a[5].packs, a[5].tokens), (2, 100));
+        assert_eq!(
+            a.iter().map(|d| d.packs).sum::<u64>(),
+            2,
+            "older rows are outside the window"
         );
     }
 

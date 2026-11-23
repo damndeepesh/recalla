@@ -355,6 +355,14 @@ fn every_endpoint_needs_the_login() {
 fn overview_shape_and_numbers() {
     let (api, _, total) = Api::start();
     let v = api.ok("/api/overview");
+    let activity = v["activity"].as_array().unwrap();
+    assert_eq!(activity.len(), 30, "30 days, zero-filled");
+    for d in activity {
+        for f in ["day", "sessions", "memories", "packs", "tokens"] {
+            assert!(d[f].is_u64() || d[f].is_i64(), "{f}");
+        }
+    }
+    assert!(activity.windows(2).all(|w| w[1]["day"].as_i64() > w[0]["day"].as_i64()));
     assert_eq!(v["memories"]["total"], total);
     let by_status: u64 = v["memories"]["by_status"]
         .as_object()
