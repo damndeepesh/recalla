@@ -26,6 +26,13 @@ export function append(el, children) {
   return el;
 }
 
+/** Text with `backtick` spans as <code> nodes (still text-only, never HTML). */
+export function inline(text) {
+  return String(text)
+    .split(/(`[^`\n]+`)/)
+    .map((p) => (p.length > 2 && p.startsWith("`") && p.endsWith("`") ? h("code", null, p.slice(1, -1)) : p));
+}
+
 /** Replaces an element's children, skipping null/false (replaceChildren would print "null"). */
 export function fill(el, ...children) {
   el.replaceChildren();

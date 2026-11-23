@@ -1,6 +1,6 @@
 // Shared components. One of each: row, flag, kind dot, path chip, token ruler,
 // states, paged list, dialogs, copy. Everything renders through dom.h().
-import { h, icon, copyText, num, baseName, midPath, time } from "./dom.js";
+import { h, icon, copyText, num, baseName, midPath, time, inline } from "./dom.js";
 import { memoryHref, packHref } from "./router.js";
 import { illustration } from "./charts.js";
 
@@ -430,7 +430,7 @@ export function memoryRow(m, { link, selected = false, showProject = true } = {}
   return h(
     "li",
     { class: "row", "aria-current": selected ? "true" : null, "data-uid": m.uid },
-    h("a", { class: "row-title clamp", href: link ?? memoryHref(m.uid) }, m.text),
+    h("a", { class: "row-title clamp", href: link ?? memoryHref(m.uid) }, inline(m.text)),
     h(
       "div",
       { class: "row-meta" },

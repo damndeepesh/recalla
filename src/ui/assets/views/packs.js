@@ -1,6 +1,6 @@
 // Context packs: exactly what each agent was given, which memories made it in
 // and why, and how it compares with sending every candidate memory.
-import { h, icon, num, time, absTime, short, baseName } from "../dom.js";
+import { h, inline, icon, num, time, absTime, short, baseName } from "../dom.js";
 import { get, enc } from "../api.js";
 import { go, href, sessionHref, memoryHref } from "../router.js";
 import {
@@ -205,7 +205,7 @@ function whyPanel(m, project) {
   if (!m) return h("p", { class: "muted" }, "Select a line in the pack to see why it was included.");
   return h("div", { class: "stack" },
     h("div", { class: "cluster" }, kindDot(m.kind), statusFlag(m.status)),
-    h("p", { class: "why-text" }, m.text),
+    h("p", { class: "why-text" }, inline(m.text)),
     reasons(m, project),
     h("div", null, h("a", { class: "btn sm", href: memoryHref(m.uid) }, "Open memory")));
 }

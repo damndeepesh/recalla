@@ -103,7 +103,7 @@ export function columns(series, { value, line, label }) {
             width: bw,
             height: bh,
             rx: Math.min(3, bw / 2),
-            class: i === n - 1 ? "col today" : "col",
+            class: "col",
           },
           svg(
             "title",
@@ -169,7 +169,8 @@ export function pairedBars(items, label) {
   const root = frame(w, hgt, "pairs-chart", label);
   items.forEach((p, i) => {
     const x = i * step + (step - bw) / 2;
-    const ch = ((p.candidate_tokens ?? 0) / max) * (hgt - 4);
+    const known = p.candidate_tokens != null && p.candidate_tokens >= p.est_tokens;
+    const ch = known ? (p.candidate_tokens / max) * (hgt - 4) : 0;
     const ph = Math.max(2, (p.est_tokens / max) * (hgt - 4));
     const t = svg(
       "title",
@@ -198,10 +199,7 @@ export function pairedBars(items, label) {
           width: bw,
           height: ph,
           rx: 2,
-          class:
-            p.candidate_tokens != null && p.est_tokens > p.candidate_tokens
-              ? "sent over"
-              : "sent",
+          class: "sent",
         },
         t,
       ),

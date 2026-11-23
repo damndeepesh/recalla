@@ -1,7 +1,7 @@
 // Memories: search + project scope up front, everything else behind Filters.
 // Master-detail: the list stays put while a memory opens in the side pane
 // (full page below 72rem). All state lives in the hash.
-import { h, icon, num, time, absTime, short, baseName } from "../dom.js";
+import { h, inline, icon, num, time, absTime, short, baseName } from "../dom.js";
 import { get, post, enc } from "../api.js";
 import { go, href, memoryHref, sessionHref, packHref } from "../router.js";
 import {
@@ -313,7 +313,7 @@ function detail(d, { onChange, closeHref, wide }) {
         h("div", { class: "cluster" }, kindDot(d.kind), statusFlag(d.status), projectChip(d.scope_project)),
         close,
       ),
-      h("h2", { id: "mem-title", class: "mem-text", tabindex: "-1" }, d.text),
+      h("h2", { id: "mem-title", class: "mem-text", tabindex: "-1" }, inline(d.text)),
       d.status === "needs_reverify"
         ? h(
             "p",

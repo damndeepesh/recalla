@@ -707,6 +707,7 @@ export function mount(ctx) {
         if (s.tone === "fresh") grid.replaceChildren(firstRun(c, onChange));
         else {
           grid.replaceChildren(
+            ...[
             hero(o, c, s, onChange),
             health(o, c),
             activity(o),
@@ -717,6 +718,7 @@ export function mount(ctx) {
             projectsBlock(ctx.signal),
             timeline(ctx.signal),
             o.memories.stale ? recent(ctx.signal) : null,
+            ].filter(Boolean),
           );
           if (!o.injections.count)
             grid
