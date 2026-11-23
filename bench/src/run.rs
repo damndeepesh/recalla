@@ -91,13 +91,7 @@ fn adapter_source(_: &crate::adapter::Item) -> Option<String> {
 /// line, so anything outside `[A-Za-z0-9._-]` (or `..`) is rejected before a
 /// path is built or removed.
 pub fn scratch(base: &Path, suite: &str, adapter: &str) -> std::result::Result<PathBuf, String> {
-    let ok = |s: &str| {
-        !s.is_empty()
-            && s != ".."
-            && s.chars()
-                .all(|c| c.is_ascii_alphanumeric() || "._-".contains(c))
-    };
-    if !ok(suite) || !ok(adapter) {
+    if !crate::sessions::safe_name(suite) || !crate::sessions::safe_name(adapter) {
         return Err(format!(
             "unsafe suite or adapter name: {suite:?} / {adapter:?}"
         ));
