@@ -19,13 +19,30 @@ const CONFIDENCE: f32 = 0.65;
 const IMPORTANCE: u8 = 1;
 const MAX_PER_EVENT: usize = 2;
 
-/// Cause/fix phrases. A bare `because` is deliberately absent.
+/// Cause/fix phrases.
 static CAUSE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
         r"(?i)\b(?:root cause|the issue (?:was|is)|turns out|the fix is|fixed by|(?:happens|failed|fails|is|was) because)\b",
     )
     .expect("valid regex")
 });
+
+/// A plain `because` explains a finding only when the sentence states a
+/// fact about the code (`The queue is never drained because ...`). Statements
+/// about what the assistant is doing or about to do (`I'll retry because ...`,
+/// `Let me check ... because`) explain a step, not a gotcha.
+static BECAUSE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)\bbecause\b").expect("valid regex"));
+static ABOUT_THE_STEP: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"(?i)^(?:i|i['\u{2019}](?:ll|m|ve|d)|let me|let['\u{2019}]s|we['\u{2019}](?:ll|re|ve)|we (?:need|should|can|will|are)|now|first|next|ok|okay|sure|good|great|you|your)\b",
+    )
+    .expect("valid regex")
+});
+
+fn is_cause(sentence: &str) -> bool {
+    CAUSE.is_match(sentence) || (BECAUSE.is_match(sentence) && !ABOUT_THE_STEP.is_match(sentence))
+}
 
 /// Hypotheticals and advice are not findings.
 static NOT_A_FINDING: LazyLock<Regex> =
@@ -84,7 +101,7 @@ pub fn extract(ctx: &EventCtx<'_>, project: Option<&str>) -> Vec<Candidate> {
     let clean = strip_code(&ctx.event.text);
     sentences(&clean)
         .into_iter()
-        .filter(|s| CAUSE.is_match(s) && !NOT_A_FINDING.is_match(s))
+        .filter(|s| is_cause(s) && !NOT_A_FINDING.is_match(s))
         // The explanation must be about this failure, not any stray error
         // that happens to sit in the window.
         .filter(|s| !tokens(s).is_disjoint(&failure))
@@ -198,6 +215,27 @@ mod tests {
             "I will update the config and rerun the whole suite.",
             "Done, the change touches three files in total.",
             "That works because I said so earlier in the thread.",
+        ] {
+            assert!(run(s).is_empty(), "{s}");
+        }
+    }
+
+    #[test]
+    fn plain_because_states_a_finding_about_the_code() {
+        let got = run("The lockfile was stale because the cache path moved during the migration.");
+        assert_eq!(got.len(), 1);
+        let got =
+            run("The history rewrite was blocked because the lockfile needs explicit approval.");
+        assert_eq!(got.len(), 1);
+    }
+
+    #[test]
+    fn because_about_the_assistants_own_step_is_not_a_finding() {
+        for s in [
+            "I'll retry the lockfile step because the cache looked stale.",
+            "Let me rerun the migration because the schema changed.",
+            "We need the cargo feature flag because the build target differs.",
+            "You should clear the cache because the lockfile is stale.",
         ] {
             assert!(run(s).is_empty(), "{s}");
         }
