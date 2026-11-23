@@ -6,10 +6,10 @@ status: review
 plan: .agent/plans/bench.md
 done:
   - "dev has forget, extractor fixes, pack --query any-word match (#48) and task focus (#49)"
+  - "bench real: membench real mines the local repo history (private clone, nothing uploaded)"
   - "bench/: miner, 18 suites (240 probes), adapters (none/dump/file/grep/mcp/recalla/recalla-backfill), scorers, report, make bench, CI job, SCORING/README/SPOTCHECK"
 next:
   - PR feature/bench into dev, merge when CI is green (never main for now)
-  - real-data mode: membench real on the user's own history, local only
   - Recalla: extraction from plain assistant explanations (bench extraction recall 0.05); per-file PreToolUse recall hook
 blockers: []
 notes:

@@ -30,7 +30,7 @@ Done (wip commits on feature/bench): crate skeleton, miner + 18 suites, tokens/m
 - [x] D. Report: raw per-probe JSON, where-each-tool-loses, tune vs holdout, weighted total (3 pillars, equal)
 - [x] E. Hand spot-check of ~20 mined facts/probes; record findings in bench/README.md
 - [x] F. bench/SCORING.md (lock definitions + weights), bench/README.md, DESIGN_DECISIONS (tempfile), `make bench`, CI smoke, CHANGELOG, state
-- [ ] G. Real-data mode (`membench real`), local only
+- [x] G. Real-data mode (`membench real`), local only
 - Deferred: agent-run tier (billed; needs approval); claude-mem/supermemory (need LLM/network; separate tier, needs approval)
 
 ## Rules

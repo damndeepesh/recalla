@@ -50,11 +50,10 @@ pub fn one(
     adapter: &mut dyn Adapter,
     split: Option<Split>,
     dir: &Path,
-    repos: Option<&Path>,
+    repo: Option<&Path>,
 ) -> std::result::Result<Result, String> {
     let wt = dir.join("wt");
-    let repo = repos.map(|r| r.join(base_name(&suite.name)));
-    if let Some(repo) = &repo {
+    if let Some(repo) = repo {
         let w = wt.display().to_string();
         git::git(
             repo,
@@ -193,9 +192,4 @@ pub fn table(results: &[Result]) -> String {
         out.push_str(&rows);
     }
     out
-}
-
-/// `ripgrep-e2` -> `ripgrep`.
-fn base_name(suite: &str) -> &str {
-    suite.rsplit_once("-e").map_or(suite, |(b, _)| b)
 }

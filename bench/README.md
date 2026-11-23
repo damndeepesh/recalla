@@ -24,6 +24,15 @@ cargo run --release -- run --suite suites/*-e?.json \
 
 `--report` writes totals, tune vs holdout and where each tool loses. `--out` writes every probe's raw score as JSON. Adapters: `none` (no memory), `dump` (everything), `file` (a CLAUDE.md-style file, newest first), `grep` (word overlap), `mcp` (any MCP server), `recalla` and `recalla-backfill` (need `--recalla PATH`).
 
+## On your own repository
+
+```sh
+membench real --repo . --adapters none,grep,mcp,recalla --recalla path/to/recalla \
+  --mcp-command "my-memory-server --stdio" --mcp-name my-memory --report real.md
+```
+
+It mines a suite from your repo's own commit history with the same miner and scoring, then runs the tools on it. Your repo is never modified (a private clone in a temporary directory is used and deleted), nothing is fetched or uploaded, and no LLM is called. Facts are the causal and decision sentences in your commit messages, so a history of terse messages ("wip", "fix") gives little to mine and the command says so. Output files contain sentences from your commits: keep them local if the repo is private. Real mode uses all probes (there is no tune/holdout split on your data), so the numbers are for comparing tools on your project, not for publishing.
+
 ## First results
 
 Holdout probes, 1500-token budget, file hints, real worktrees. Recalla at `dev` after #49.
@@ -43,6 +52,7 @@ Read these carefully:
 - grep wins raw recall (0.99 vs Recalla 0.94) but spends about 1180 tokens against Recalla's 490, with more noise. The lexical probe filter favours keyword retrieval.
 - Recalla's extraction is poor on this feed: 5% of suite facts, from plain explanatory sentences. The extractor targets error-then-fix patterns and preferences; widening it is tracked as a follow-up.
 - Provenance is measured only where a tool keeps a source (transcript ingestion). Recalla via `remember` has none, so it is n/a, not zero.
+- Real mode (above) is the day-to-day tool; ingesting your actual Claude Code sessions for the transcript tools is not built yet.
 - Not run: claude-mem, supermemory and other tools that need an LLM or network. They belong in a separate, explicitly approved tier.
 - The suites were mined by Recalla's author. Rerun everything yourself.
 

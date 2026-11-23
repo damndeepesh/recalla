@@ -89,7 +89,8 @@ fn headline<'a>(
 }
 
 #[must_use]
-pub fn render(results: &[Result], suites: &[Suite]) -> String {
+#[allow(clippy::too_many_lines)] // linear text assembly, one section after another
+pub fn render(results: &[Result], suites: &[Suite], focus: Option<Split>) -> String {
     let split_of: HashMap<(&str, &str), Split> = suites
         .iter()
         .flat_map(|s| {
@@ -101,16 +102,21 @@ pub fn render(results: &[Result], suites: &[Suite]) -> String {
     let names = adapters(results);
     let mut out = String::new();
 
+    let which = match focus {
+        Some(Split::Holdout) => "holdout",
+        Some(Split::Tune) => "tune",
+        None => "all",
+    };
     let _ = writeln!(
         out,
-        "# membench report\n\nHeadline: holdout probes, {HEADLINE}-token budget, file hints given.\n"
+        "# membench report\n\nHeadline: {which} probes, {HEADLINE}-token budget, file hints given.\n"
     );
     out.push_str("## Total (equal weight across the pillars that apply)\n\n");
     out.push_str(
         "| adapter | usefulness | token savings | core | extraction | total | pillars |\n|---|---|---|---|---|---|---|\n",
     );
     for a in &names {
-        let scores = headline(results, a, &split_of, Some(Split::Holdout));
+        let scores = headline(results, a, &split_of, focus);
         let ex: Vec<&Extraction> = results
             .iter()
             .filter(|r| &r.adapter == a)
@@ -151,7 +157,9 @@ pub fn render(results: &[Result], suites: &[Suite]) -> String {
         }
     }
 
-    out.push_str("\n## Where each tool loses\n\nLowest-recall holdout probes per tool (ties broken by probe id).\n");
+    out.push_str(
+        "\n## Where each tool loses\n\nLowest-recall probes per tool (ties broken by probe id).\n",
+    );
     let task_of: HashMap<(&str, &str), &str> = suites
         .iter()
         .flat_map(|s| {
@@ -168,7 +176,9 @@ pub fn render(results: &[Result], suites: &[Suite]) -> String {
             .filter(|(r, p)| {
                 p.budget == HEADLINE
                     && p.with_files
-                    && split_of.get(&(r.suite.as_str(), p.probe.as_str())) == Some(&Split::Holdout)
+                    && focus.is_none_or(|s| {
+                        split_of.get(&(r.suite.as_str(), p.probe.as_str())) == Some(&s)
+                    })
             })
             .filter_map(|(r, p)| Some((p.recall?, r.suite.as_str(), p.probe.as_str())))
             .collect();
@@ -177,7 +187,7 @@ pub fn render(results: &[Result], suites: &[Suite]) -> String {
         let misses = worst.iter().filter(|w| w.0 < 1.0).count();
         let _ = writeln!(
             out,
-            "{misses} of {} holdout probes with required facts missed at least one.\n",
+            "{misses} of {} probes with required facts missed at least one.\n",
             worst.len()
         );
         for (rec, suite, probe) in worst.iter().take(3).filter(|w| w.0 < 1.0) {
