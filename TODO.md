@@ -14,3 +14,8 @@
 - [x] Markdown mirror + `recalla rebuild`
 - [x] Codex harness
 - [x] Perf pass: 300 MB backfill <5 min, hook p95 <100 ms
+
+## v0.2.0
+
+- [x] `recalla ui`: local dashboard with connector status (branch feature/ui)
+- [ ] PR for feature/ui, then release v0.2.0 (version bump, CHANGELOG, publish, tag) on the user's go

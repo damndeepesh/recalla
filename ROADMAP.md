@@ -10,6 +10,7 @@
 
 ## v1.0: trusted and proven
 
+- [x] `recalla ui`: local dashboard (sessions, memories, what Claude got, connect), built and in review; ships in v0.2.0
 - Better extraction: bare imperatives, past-tense decisions, gotcha-to-error matching (issues #13 to #17)
 - Contradiction resolution
 - Optional local embeddings (hybrid RRF)

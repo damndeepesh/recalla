@@ -4,10 +4,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Security
+- Dashboard threat model: binds 127.0.0.1 only; login is a one-time code valid for 60 s, delivered through a private 0600 redirect page (never argv or a URL in the process list); per-port session cookie (`HttpOnly`, `SameSite=Strict`) that expires after 12 h idle; `Host`, `Origin` and CSRF-header checks on every request; strict CSP and no third-party requests; reads use a read-only database connection. See ARCHITECTURE.md and D-022/D-023
+
 ### Fixed
 - Landing page works when a proxy serves it at `/recalla` without the trailing slash (`<base href="/recalla/">`, in-place anchor scrolling), guarded by `scripts/web-check.sh`
 
 ### Added
+- `recalla ui`: local dashboard served from the single binary (no install, no build step, no telemetry)
+  - Views: sessions, memories, what Claude got (each injected pack, its tokens and the saving versus dumping every memory), connect (hooks and MCP status)
+  - One-time login link printed on start and opened in your browser
+  - From the browser: install/uninstall hooks, confirm/forget/restore a memory, test recall for a project, import history
+  - Schema v8 records session id, pack text and candidate tokens per injection; existing databases migrate automatically
 - Landing page in `web/` (static, no third-party requests), deployed to GitHub Pages by `.github/workflows/pages.yml` and served at deepeshgupta.dev/recalla; `scripts/web-check.sh` guards its privacy promise in CI
 - Release downloads for macOS (arm64, x86_64) and Linux (x86_64, arm64); Windows users run the Linux build in WSL until native support lands (#32)
 
