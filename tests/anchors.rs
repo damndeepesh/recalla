@@ -485,7 +485,7 @@ fn window_turns(file: &Path, gotcha: &str) -> Vec<Value> {
         json!({"tool": "Edit", "input": {"file_path": file.to_str().unwrap(),
             "old_string": "a", "new_string": "b"}, "result": "ok", "error": false}),
         json!({"tool": "Bash", "input": {"command": "cargo build"},
-            "result": "error[E0432]: unresolved import", "error": true}),
+            "result": "error[E0432]: unresolved import in the limits module", "error": true}),
         json!({"assistant": gotcha}),
     ]
 }

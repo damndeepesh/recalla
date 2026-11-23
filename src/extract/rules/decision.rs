@@ -71,12 +71,55 @@ fn spoken(ctx: &EventCtx<'_>, project: Option<&str>, confidence: f32) -> Vec<Can
         .collect()
 }
 
+/// A decision needs substance: at least this many words.
+const MIN_WORDS: usize = 5;
+
+/// Adverbs that can follow "decided" without naming what was decided.
+const BARE_ADVERBS: &[&str] = &[
+    "upfront",
+    "early",
+    "late",
+    "later",
+    "earlier",
+    "already",
+    "finally",
+    "together",
+    "again",
+    "then",
+    "now",
+    "today",
+    "here",
+    "there",
+    "otherwise",
+    "wisely",
+    "quickly",
+];
+
+/// True when the word right after the marker is a stray adverb or ends a
+/// clause ("Decided upfront, not bolted on later."), so no object is named.
+fn lacks_object(after_marker: &str) -> bool {
+    let Some(first) = after_marker.split_whitespace().next() else {
+        return true;
+    };
+    let word = first.trim_end_matches(|c: char| !c.is_alphanumeric());
+    first.ends_with([',', ';', '.', '!']) && !word.is_empty()
+        || BARE_ADVERBS.contains(&word.to_lowercase().as_str())
+        || (word.len() > 3 && word.to_lowercase().ends_with("ly"))
+}
+
 fn states_decision(sentence: &str) -> bool {
-    !is_question(sentence)
-        && PHRASE
-            .find(sentence)
-            .is_some_and(|m| !is_quoted(sentence, m.start()))
-        && !NOT_A_DECISION.is_match(sentence)
+    if is_question(sentence)
+        || sentence.split_whitespace().count() < MIN_WORDS
+        || NOT_A_DECISION.is_match(sentence)
+    {
+        return false;
+    }
+    PHRASE.find(sentence).is_some_and(|m| {
+        // Only a bare "decided" can be followed by nothing decided; the other
+        // phrases ("chose X over Y", "going with X") carry their object.
+        let bare = m.as_str().eq_ignore_ascii_case("decided");
+        !(is_quoted(sentence, m.start()) || bare && lacks_object(&sentence[m.end()..]))
+    })
 }
 
 /// `## D-NNN Title` blocks inside a Write/Edit to `DESIGN_DECISIONS.md`.
@@ -158,6 +201,26 @@ mod tests {
             },
             Some("/work/app"),
         )
+    }
+
+    #[test]
+    fn a_decision_needs_an_object_and_five_words() {
+        for s in [
+            "We decided that the cache must be keyed by tenant.",
+            "We chose Postgres over MySQL.",
+            "Decided to keep the archive format as it is.",
+            "Going with sqlite for the local store.",
+        ] {
+            assert_eq!(run(StoredKind::UserText, s).len(), 1, "{s}");
+        }
+        for s in [
+            "Decided upfront, not bolted on later.",
+            "We decided.",
+            "Decided quickly and moved on.",
+            "Going with it.",
+        ] {
+            assert!(run(StoredKind::UserText, s).is_empty(), "{s}");
+        }
     }
 
     #[test]

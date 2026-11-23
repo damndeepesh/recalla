@@ -1,13 +1,13 @@
 updated: 2026-11-23
-milestone: v0.3.0
-branch: feature/extractor-recall
-task: "0.4 on dev: forget (#27), extractor #13-#17"
+milestone: v0.4 (dev)
+branch: feature/extractor-precision
+task: "0.4 on dev: extractor precision (#15-#17); then benchmark"
 status: review
 plan: null
 done:
   - v0.3.0 released (tag, crates.io); dev branch created; recalla forget implemented with tests
 next:
-  - PR feature/forget into dev, then extractor fixes #13/#14 (recall) and #15-#17 (precision), each on its own branch into dev; weekly dev->main merge, no version bump until the big release
+  - merge #46 then #47 into dev (never main for now); then benchmark: /validate verdict was BUILD narrowed, neutral runnable harness, see conversation
 blockers: []
 notes:
   - this worktree (../recalla-ui) holds this branch; remove with `git worktree remove ../recalla-ui` when done

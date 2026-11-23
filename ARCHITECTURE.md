@@ -124,7 +124,7 @@ flowchart LR
 - Subagent (sidechain) "user" text is the orchestrator's instructions, not the human's, so it never yields preferences, facts or user decisions.
 - Questions are skipped, including ones without a `?`.
 - `EXTRACTOR_VERSION` bump or `--rebuild`: archive backfill-only memories, then re-extract.
-- Eval gate: `tests/extract_eval.rs` over 11 synthetic sessions / 53 labels requires zero false positives. Real-data review is a standing step, because an eval written alongside the rules overfits.
+- Eval gate: `tests/extract_eval.rs` over 11 synthetic sessions / 52 labels requires zero false positives. Real-data review is a standing step, because an eval written alongside the rules overfits.
 - Measured: 2,751 real events extracted in 26 ms.
 
 ## Context packs (`pack`, `recalla pack|stats|why`)
