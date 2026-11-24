@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-24
+
 ### Added
 - `recalla hooks install --file-recall`: opt-in `PreToolUse` hook that, before Read/Edit/Write, injects the memories anchored to that file (<= 300 tokens, once per memory per session, never blocks). p95 1.4 ms on 100k memories (D-030).
 - Unconfirmed, low-confidence memories fade in pack ranking after 30 days (down to half weight); `confirm` resets it and `pack --explain` shows the `decay` factor. Nothing is archived or deleted (D-029).
