@@ -11,7 +11,8 @@ use serde_json::json;
 use thiserror::Error;
 
 use crate::anchor;
-use crate::model::{Scope, Status};
+use crate::extract::conflict::{Analyzed, detect};
+use crate::model::{Memory, Scope, Status};
 use crate::pack;
 use crate::paths;
 use crate::store::{DEFAULT_BUSY, Filter, NewInjection, Store, StoreError, Via};
@@ -255,10 +256,12 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
         });
         prov.push((p, file, events));
     }
+    let rels = relation_lines(store, &m)?;
     if json {
         return Ok(Why::Found(format!(
             "{}\n",
             json!({
+                "relations": rels.iter().map(|l| json!({"relation": l.0, "other": l.1, "reason": l.2})).collect::<Vec<_>>(),
                 "uid": clean(&m.uid), "kind": m.kind.to_string(),
                 "text": truncate_chars(&m.text, 2000),
                 "scope": clean(&m.scope.to_string()), "confidence": m.confidence,
@@ -301,6 +304,7 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
                 .map(|e| format!("    > {}", truncate_chars(e, EVENT_CHARS))),
         );
     }
+    lines.extend(relation_text(&rels));
     if !m.anchors.is_empty() {
         lines.push("anchors".to_owned());
         lines.extend(m.anchors.iter().map(|a| match &a.symbol {
@@ -309,6 +313,47 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
         }));
     }
     Ok(Why::Found(lines.join("\n") + "\n"))
+}
+
+/// `(relation, other uid, reason)` for the memory's supersede/conflict links,
+/// phrased from this memory's side. The reason is recomputed from the two
+/// texts, so nothing but the link is stored.
+fn relation_lines(store: &Store, m: &Memory) -> Result<Vec<(String, String, String)>, String> {
+    let mine = Analyzed::new(&m.text);
+    let mut out = Vec::new();
+    for (src, dst, kind) in store.relations_of(&m.uid).map_err(|e| e.to_string())? {
+        let (other, outgoing) = if src == m.uid {
+            (dst, true)
+        } else {
+            (src, false)
+        };
+        let label = match (kind.as_str(), outgoing) {
+            ("supersedes", true) => "supersedes",
+            ("supersedes", false) => "superseded-by",
+            ("conflicts", true) => "contradicts",
+            ("conflicts", false) => "contradicted-by",
+            _ => continue,
+        };
+        let reason = store
+            .get(&other)
+            .map_err(|e| e.to_string())?
+            .and_then(|o| detect(&mine, &Analyzed::new(&o.text)))
+            .map_or_else(String::new, |c| c.reason());
+        out.push((label.to_owned(), clean(&other), reason));
+    }
+    Ok(out)
+}
+
+fn relation_text(rels: &[(String, String, String)]) -> Vec<String> {
+    if rels.is_empty() {
+        return Vec::new();
+    }
+    let mut out = vec!["relations".to_owned()];
+    out.extend(
+        rels.iter()
+            .map(|(rel, other, reason)| format!("  {rel} {other}  {reason}")),
+    );
+    out
 }
 
 /// Opens the existing store; never creates one.

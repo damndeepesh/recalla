@@ -4,6 +4,7 @@
 //! `.git` existence under an event's own cwd. Persistence is the pipeline's
 //! job; this module only proposes [`Candidate`]s.
 
+pub mod conflict;
 mod pipeline;
 pub mod rules;
 pub mod scope;

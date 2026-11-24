@@ -11,11 +11,13 @@ use std::time::Instant;
 
 use serde_json::{Value, json};
 
+use super::conflict::{Analyzed, detect};
 use super::rules::task;
 use super::scope::{project_key, project_scope};
 use super::{EXTRACTOR_VERSION, EventCtx, extract_event_with};
 use crate::anchor;
 use crate::model::{self, Kind, NewMemory, Origin, Provenance, Scope, Status};
+use crate::ops::CONFIRMED_CONFIDENCE;
 use crate::store::{EventRow, Insert, Store, StoreError, StoredKind};
 
 /// Events read per batch (and per checkpoint).
@@ -38,6 +40,10 @@ pub struct Report {
     pub memories_new: BTreeMap<String, u64>,
     pub memories_duplicate: BTreeMap<String, u64>,
     pub tasks_archived: u64,
+    /// Older rules replaced by a newer contradicting one.
+    pub conflicts_superseded: u64,
+    /// Contradicting pairs left in place and flagged `needs_reverify`.
+    pub conflicts_flagged: u64,
     /// True when the run restarted from event 0 (rebuild or version bump).
     pub restarted: bool,
     pub memories_archived_for_rebuild: u64,
@@ -53,6 +59,8 @@ impl Report {
             "memories_new": self.memories_new,
             "memories_duplicate": self.memories_duplicate,
             "tasks_archived": self.tasks_archived,
+            "conflicts_superseded": self.conflicts_superseded,
+            "conflicts_flagged": self.conflicts_flagged,
             "restarted": self.restarted,
             "memories_archived_for_rebuild": self.memories_archived_for_rebuild,
             "duration_ms": self.duration_ms,
@@ -86,6 +94,7 @@ pub fn run(store: &mut Store, opts: &Options) -> Result<Report, StoreError> {
         last_id = 0;
         report.restarted = true;
     }
+    let mut rules = RuleIndex::load(store)?;
     let mut windows: HashMap<String, VecDeque<EventRow>> = HashMap::new();
     let projects: RefCell<HashMap<String, String>> = RefCell::default();
     let project_of = |cwd: &str| {
@@ -108,7 +117,7 @@ pub fn run(store: &mut Store, opts: &Options) -> Result<Report, StoreError> {
             let window = windows.entry(event.session_id.clone()).or_default();
             let prev: Vec<EventRow> = window.iter().cloned().collect();
             let ctx = EventCtx { event, prev: &prev };
-            process(store, &ctx, restart, &project_of, &mut report)?;
+            process(store, &ctx, restart, &project_of, &mut rules, &mut report)?;
             if window.len() == WINDOW {
                 window.pop_front();
             }
@@ -130,6 +139,7 @@ fn process(
     ctx: &EventCtx<'_>,
     restoring: bool,
     project_of: &impl Fn(&str) -> String,
+    rules: &mut RuleIndex,
     report: &mut Report,
 ) -> Result<(), StoreError> {
     let e = ctx.event;
@@ -171,16 +181,99 @@ fn process(
         }
         // A rebuild archived this memory moments ago; extracting it again
         // means it is still wanted.
-        if restoring
+        let restored = restoring
             && matches!(outcome, Insert::Duplicate(_))
             && store
                 .get(outcome.uid())?
-                .is_some_and(|m| m.status == Status::Archived)
-        {
+                .is_some_and(|m| m.status == Status::Archived);
+        if restored {
             store.restore(outcome.uid())?;
+        }
+        if matches!(outcome, Insert::Inserted(_)) || restored {
+            rules.resolve(store, outcome.uid(), &new, report)?;
         }
     }
     archive_finished_tasks(store, ctx, project_of, report)
+}
+
+/// A live preference or decision, as the contradiction check sees it.
+struct Rule {
+    uid: String,
+    scope: Scope,
+    confidence: f32,
+    analyzed: Analyzed,
+}
+
+/// Live rule memories kept in memory for one run, so each new rule is
+/// compared with its scope's rules without a query per insert.
+struct RuleIndex(Vec<Rule>);
+
+impl RuleIndex {
+    fn load(store: &Store) -> Result<Self, StoreError> {
+        Ok(Self(
+            store
+                .live_rules()?
+                .into_iter()
+                .map(|m| Rule {
+                    analyzed: Analyzed::new(&m.text),
+                    uid: m.uid,
+                    scope: m.scope,
+                    confidence: m.confidence,
+                })
+                .collect(),
+        ))
+    }
+
+    /// Compares a just-stored rule with the live rules of its scope (D-028).
+    /// A newer rule that is at least as confident supersedes an unconfirmed
+    /// older one; any other contradiction flags the newcomer (and the older
+    /// rule too, unless it is confirmed) for re-verification.
+    fn resolve(
+        &mut self,
+        store: &mut Store,
+        uid: &str,
+        new: &NewMemory,
+        report: &mut Report,
+    ) -> Result<(), StoreError> {
+        if !matches!(new.kind, Kind::Preference | Kind::Decision) {
+            return Ok(());
+        }
+        let analyzed = Analyzed::new(&new.text);
+        let mut gone: Vec<String> = Vec::new();
+        for old in &self.0 {
+            if old.uid == uid
+                || old.scope != new.scope
+                || detect(&old.analyzed, &analyzed).is_none()
+            {
+                continue;
+            }
+            if new.confidence >= old.confidence && old.confidence < CONFIRMED_CONFIDENCE {
+                store.supersede(&old.uid, uid)?;
+                store.add_relation(uid, &old.uid, crate::store::CONFLICTS)?;
+                gone.push(old.uid.clone());
+                report.conflicts_superseded += 1;
+            } else {
+                // A confirmed rule is the user's word: automatic detection may
+                // flag the newcomer but never demotes it.
+                store.add_relation(uid, &old.uid, crate::store::CONFLICTS)?;
+                if old.confidence < CONFIRMED_CONFIDENCE {
+                    store.set_status(&old.uid, Status::NeedsReverify)?;
+                }
+                store.set_status(uid, Status::NeedsReverify)?;
+                report.conflicts_flagged += 1;
+            }
+        }
+        self.0.retain(|r| !gone.contains(&r.uid));
+        if !self.0.iter().any(|r| r.uid == uid) {
+            self.0.push(Rule {
+                uid: uid.to_owned(),
+                scope: new.scope.clone(),
+                confidence: new.confidence,
+                analyzed,
+            });
+        }
+        Ok(())
+    }
 }
 
 /// Files the session read or edited in the window (previous events plus the
@@ -250,4 +343,106 @@ fn archive_finished_tasks(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ops::why;
+
+    fn add(store: &mut Store, kind: Kind, text: &str, confidence: f32) -> (NewMemory, String) {
+        let new = NewMemory {
+            kind,
+            text: text.to_owned(),
+            scope: Scope::Project("/p".to_owned()),
+            confidence,
+            importance: 1,
+        };
+        let prov = Provenance {
+            origin: Origin::Backfill,
+            harness: None,
+            session_id: None,
+            message_uuid: None,
+            source_path: None,
+            line: None,
+            git_commit: None,
+        };
+        let uid = store.insert(&new, &prov).unwrap().uid().to_owned();
+        (new, uid)
+    }
+
+    fn status(store: &Store, uid: &str) -> Status {
+        store.get(uid).unwrap().unwrap().status
+    }
+
+    fn resolve(store: &mut Store, rules: &mut RuleIndex, m: &(NewMemory, String)) -> Report {
+        let mut r = Report::default();
+        rules.resolve(store, &m.1, &m.0, &mut r).unwrap();
+        r
+    }
+
+    #[test]
+    fn newer_equally_confident_rule_supersedes_the_older_and_confirm_undoes_it() {
+        let mut s = Store::open_in_memory().unwrap();
+        let mut rules = RuleIndex::load(&s).unwrap();
+        let old = add(&mut s, Kind::Preference, "Use tabs for indentation", 0.8);
+        assert_eq!(resolve(&mut s, &mut rules, &old).conflicts_superseded, 0);
+        let new = add(&mut s, Kind::Preference, "Use spaces for indentation", 0.8);
+        let r = resolve(&mut s, &mut rules, &new);
+        assert_eq!(r.conflicts_superseded, 1);
+        assert_eq!(status(&s, &old.1), Status::Superseded);
+        assert_eq!(status(&s, &new.1), Status::Active);
+        let why = why(&s, &old.1[..8], false, false).unwrap();
+        let crate::ops::Why::Found(text) = why else {
+            panic!()
+        };
+        assert!(
+            text.contains("superseded-by") && text.contains("opposed choices"),
+            "{text}"
+        );
+
+        s.restore(&old.1).unwrap(); // what `confirm` does
+        assert_eq!(status(&s, &old.1), Status::Active);
+        assert!(s.relations_of(&old.1).unwrap().is_empty());
+    }
+
+    #[test]
+    fn confirmed_or_more_confident_old_rule_is_flagged_not_replaced() {
+        let mut s = Store::open_in_memory().unwrap();
+        let mut rules = RuleIndex::load(&s).unwrap();
+        let old = add(&mut s, Kind::Decision, "Use WAL mode for SQLite", 0.95);
+        resolve(&mut s, &mut rules, &old);
+        let new = add(
+            &mut s,
+            Kind::Decision,
+            "Use rollback journal mode for SQLite",
+            0.95,
+        );
+        let r = resolve(&mut s, &mut rules, &new);
+        assert_eq!((r.conflicts_superseded, r.conflicts_flagged), (0, 1));
+        assert_eq!(status(&s, &old.1), Status::Active, "confirmed rule stays");
+        assert_eq!(status(&s, &new.1), Status::NeedsReverify);
+    }
+
+    #[test]
+    fn unrelated_scopes_kinds_and_wording_never_conflict() {
+        let mut s = Store::open_in_memory().unwrap();
+        let mut rules = RuleIndex::load(&s).unwrap();
+        let a = add(&mut s, Kind::Preference, "Use tabs for indentation", 0.8);
+        resolve(&mut s, &mut rules, &a);
+        let fact = add(&mut s, Kind::Fact, "Use spaces for indentation", 0.8);
+        let other = {
+            let mut m = add(
+                &mut s,
+                Kind::Preference,
+                "Use spaces for indentation here",
+                0.8,
+            );
+            m.0.scope = Scope::Project("/other".to_owned());
+            m
+        };
+        assert_eq!(resolve(&mut s, &mut rules, &fact).conflicts_superseded, 0);
+        assert_eq!(resolve(&mut s, &mut rules, &other).conflicts_superseded, 0);
+        assert_eq!(status(&s, &a.1), Status::Active);
+    }
 }

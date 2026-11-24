@@ -5,6 +5,7 @@ mod extract;
 mod ingest;
 mod mirror;
 mod pack;
+mod relation;
 mod schema;
 mod search;
 mod ui;
@@ -26,6 +27,7 @@ pub use extract::EventRow;
 pub use ingest::{Checkpoint, SegmentRow, SourceRow, StoredEvent, StoredKind};
 pub use mirror::FullMemory;
 pub use pack::{InjectionStats, NewInjection, ProjectInjections, Via};
+pub use relation::CONFLICTS;
 pub use schema::version as schema_version;
 pub use search::{Filter, Hit};
 pub use ui::{
@@ -508,7 +510,7 @@ impl Store {
                 [uid],
             )?;
             tx.execute(
-                "DELETE FROM relations WHERE dst = ?1 AND kind = 'supersedes'",
+                "DELETE FROM relations WHERE dst = ?1 AND kind IN ('supersedes', 'conflicts')",
                 [uid],
             )?;
         }
