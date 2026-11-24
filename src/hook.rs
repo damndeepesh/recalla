@@ -22,8 +22,9 @@ use crate::extract::{self, scope::project_key};
 use crate::ingest::{self, Options};
 use crate::mirror;
 use crate::ops::{self, PackArgs};
+use crate::pack;
 use crate::paths;
-use crate::store::{Store, StoreError, Via};
+use crate::store::{NewInjection, Store, StoreError, Via};
 
 /// Longest wait on a locked database before a hook gives up.
 pub const BUSY: Duration = Duration::from_secs(2);
@@ -46,6 +47,8 @@ pub enum Event {
     SessionStart,
     /// Used for both `Stop` and `PreCompact`.
     Capture,
+    /// `PreToolUse` on Read/Edit/Write: memories anchored to that file.
+    PreToolUse,
 }
 
 impl Event {
@@ -53,6 +56,7 @@ impl Event {
         match self {
             Self::SessionStart => "session-start",
             Self::Capture => "capture",
+            Self::PreToolUse => "pre-tool-use",
         }
     }
 }
@@ -143,8 +147,9 @@ fn handle(
 ) -> Result<(), HookError> {
     let payload = read_payload(input)?;
     match event {
-        Event::SessionStart => session_start(&payload, out, &ctx.data_dir),
+        Event::SessionStart => session_start(&payload, out, ctx),
         Event::Capture => capture(&payload, ctx),
+        Event::PreToolUse => pre_tool_use(&payload, out, ctx),
     }
 }
 
@@ -193,13 +198,23 @@ pub fn budget_from(var: Option<&str>) -> usize {
 /// Longest `session_id` stored with an injection, in chars.
 const MAX_SESSION_ID: usize = 200;
 
-fn session_start(payload: &Value, out: &mut impl Write, data_dir: &Path) -> Result<(), HookError> {
-    let project = project_key(str_field(payload, "cwd")?);
-    let db = paths::db_path(data_dir);
+fn session_start(payload: &Value, out: &mut impl Write, ctx: &Ctx) -> Result<(), HookError> {
+    let cwd = str_field(payload, "cwd")?;
+    let project = project_key(cwd);
+    let db = paths::db_path(&ctx.data_dir);
     if !db.is_file() {
         return Ok(());
     }
     let mut store = Store::open_with_busy(&db, BUSY)?;
+    // A failed catch-up must never cost the session its pack.
+    if let Err(e) = catch_up(
+        &mut store,
+        ctx,
+        cwd,
+        payload.get("session_id").and_then(Value::as_str),
+    ) {
+        log_line(&ctx.data_dir, Event::SessionStart, &e);
+    }
     let args = PackArgs {
         budget: budget_from(std::env::var("RECALLA_BUDGET").ok().as_deref()),
         project: Some(project),
@@ -221,6 +236,166 @@ fn session_start(payload: &Value, out: &mut impl Write, data_dir: &Path) -> Resu
         "additionalContext": pack.markdown,
     }});
     writeln!(out, "{reply}").map_err(|e| HookError::Io(format!("writing stdout: {:?}", e.kind())))
+}
+
+/// Tools whose target file we look up (`tool_input.file_path`).
+const FILE_TOOLS: [&str; 4] = ["Read", "Edit", "Write", "MultiEdit"];
+/// Most tokens one file lookup may inject.
+const FILE_RECALL_TOKENS: usize = 300;
+/// Most memories per file lookup.
+const FILE_RECALL_ITEMS: usize = 5;
+
+/// Injects the memories anchored to the file a tool is about to touch, once
+/// per memory per session (the injection ledger is the dedupe). Silent when
+/// there is nothing new to say. Never decides permissions: only
+/// `additionalContext` is returned.
+fn pre_tool_use(payload: &Value, out: &mut impl Write, ctx: &Ctx) -> Result<(), HookError> {
+    let tool = str_field(payload, "tool_name")?;
+    if !FILE_TOOLS.contains(&tool) {
+        return Ok(());
+    }
+    let cwd = str_field(payload, "cwd")?;
+    let session = str_field(payload, "session_id")?;
+    let file = payload
+        .pointer("/tool_input/file_path")
+        .and_then(Value::as_str)
+        .ok_or(HookError::Input("missing tool_input.file_path"))?;
+    let project = project_key(cwd);
+    let Some(rel) = Path::new(file)
+        .strip_prefix(&project)
+        .ok()
+        .and_then(|r| r.to_str())
+        .filter(|r| !r.is_empty())
+        .map(|r| r.replace('\\', "/"))
+    else {
+        return Ok(()); // outside the project
+    };
+    let db = paths::db_path(&ctx.data_dir);
+    if !db.is_file() {
+        return Ok(());
+    }
+    let mut store = Store::open_with_busy(&db, BUSY)?;
+    let session: String = session.chars().take(MAX_SESSION_ID).collect();
+    let seen = store.injected_uids(&session)?;
+    let header = format!("Recalla: memories for {}", ops::clean(&rel));
+    let mut lines = vec![header];
+    let mut uids = Vec::new();
+    let mut tokens = pack::est_tokens(&lines[0]);
+    for m in store.memories_anchored_to(&project, &rel)? {
+        if seen.contains(&m.uid) || uids.len() == FILE_RECALL_ITEMS {
+            continue;
+        }
+        let text = ops::clean(&m.text);
+        if text.is_empty() {
+            continue;
+        }
+        let line = format!("- [{}] {text}", m.kind);
+        let cost = pack::est_tokens(&line);
+        if tokens + cost > FILE_RECALL_TOKENS {
+            continue;
+        }
+        tokens += cost;
+        uids.push(m.uid);
+        lines.push(line);
+    }
+    if uids.is_empty() {
+        return Ok(());
+    }
+    let text = lines.join("\n");
+    store.record_injection(&NewInjection {
+        project: Some(&project),
+        budget: FILE_RECALL_TOKENS,
+        est_tokens: tokens,
+        memory_uids: &uids,
+        via: Via::Hook,
+        session_id: Some(&session),
+        pack_text: Some(&text),
+        candidate_count: None,
+        candidate_tokens: None,
+    })?;
+    let reply = json!({"hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "additionalContext": text,
+    }});
+    writeln!(out, "{reply}").map_err(|e| HookError::Io(format!("writing stdout: {:?}", e.kind())))
+}
+
+/// Newest transcripts to re-read at session start, and how old they may be.
+const CATCH_UP_FILES: usize = 3;
+const CATCH_UP_MAX_AGE: Duration = Duration::from_secs(24 * 3600);
+
+/// Claude Code's project directory name for a working directory: every
+/// character that is not ASCII alphanumeric becomes `-`.
+fn claude_project_dir_name(cwd: &str) -> String {
+    cwd.chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect()
+}
+
+/// Recent transcripts of this project other than the starting session.
+fn recent_transcripts(root: &Path, cwd: &str, current: Option<&str>) -> Vec<PathBuf> {
+    let dir = root.join("projects").join(claude_project_dir_name(cwd));
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let now = SystemTime::now();
+    let mut files: Vec<(SystemTime, PathBuf)> = entries
+        .flatten()
+        .filter_map(|e| {
+            let path = e.path();
+            let name = path.file_stem()?.to_str()?.to_owned();
+            if path.extension()? != "jsonl" || current == Some(name.as_str()) {
+                return None;
+            }
+            let meta = e.metadata().ok().filter(fs::Metadata::is_file)?;
+            let modified = meta.modified().ok()?;
+            (now.duration_since(modified).unwrap_or_default() <= CATCH_UP_MAX_AGE)
+                .then_some((modified, path))
+        })
+        .collect();
+    files.sort_by_key(|f| std::cmp::Reverse(f.0));
+    files
+        .into_iter()
+        .take(CATCH_UP_FILES)
+        .map(|(_, p)| p)
+        .collect()
+}
+
+/// The Stop hook can run before Claude has written the last records of a
+/// turn (the final reply), and a finished session never fires it again.
+/// Re-reading the project's latest transcripts (incremental, so unchanged
+/// files are skipped) picks up that tail before the pack is built.
+fn catch_up(
+    store: &mut Store,
+    ctx: &Ctx,
+    cwd: &str,
+    current: Option<&str>,
+) -> Result<(), HookError> {
+    let Some(root) = ctx.root.as_deref() else {
+        return Ok(());
+    };
+    let files: Vec<PathBuf> = recent_transcripts(root, cwd, current)
+        .into_iter()
+        .filter_map(|f| trusted_transcript(root, &f.to_string_lossy()).ok())
+        .collect();
+    if files.is_empty() {
+        return Ok(());
+    }
+    let opts = Options {
+        claude_root: Some(root.to_owned()),
+        codex_root: None,
+        data_dir: ctx.data_dir.clone(),
+        archive: true,
+        dry_run: false,
+    };
+    let report = ingest::run_files(store, &opts, &files);
+    if let Some(f) = report.failed.first() {
+        return Err(HookError::store(&format!("ingest failed: {}", f.error)));
+    }
+    if report.files_unchanged < files.len() as u64 {
+        extract::run(store, &extract::Options::default())?;
+    }
+    Ok(())
 }
 
 /// The canonical path of a transcript, if it is a `.jsonl` file under

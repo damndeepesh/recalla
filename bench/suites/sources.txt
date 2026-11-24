@@ -1,0 +1,7 @@
+# name url license head-sha  (pinned: suites are reproducible from these)
+ripgrep https://github.com/BurntSushi/ripgrep MIT-OR-Unlicense 4a51093f78bfbef86d89275f4916fd6b6039fe9e
+fzf https://github.com/junegunn/fzf MIT 9a0705815cc690552ac5e2c0a6b51fd4ed3e831a
+requests https://github.com/psf/requests Apache-2.0 3c7baaa05ab4aa49cc819ce3a819d260de19c157
+tokio https://github.com/tokio-rs/tokio MIT 6bbeecff4d207b938761b9d69dabbd6486492f67
+flask https://github.com/pallets/flask BSD-3-Clause 49943b5a94413a530761350f04e896f76e8d620e
+caddy https://github.com/caddyserver/caddy Apache-2.0 edcdfa0ed88f7dcc1c53720d25218fde9d63eb1e

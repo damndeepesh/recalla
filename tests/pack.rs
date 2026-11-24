@@ -328,6 +328,33 @@ fn cli_pack_json_query_and_other_projects() {
 }
 
 #[test]
+fn cli_pack_explain_lists_every_candidate_and_leaves_the_pack_intact() {
+    let env = backfilled();
+    let base = ["pack", "--project", WEB_API, "--budget", "150", "--no-log"];
+    let (_, plain, _) = env.cli(&base);
+    let (code, out, err) = env.cli(&[&base[..], &["--explain"]].concat());
+    assert_eq!(code, 0, "{err}");
+    assert!(out.starts_with(plain.trim_end()), "{out}");
+    assert!(out.contains("outcome") && out.contains("included"), "{out}");
+    assert!(
+        out.contains("over budget") || out.contains("section cap"),
+        "{out}"
+    );
+
+    let (code, out, _) = env.cli(&[&base[..], &["--explain", "--format", "json"]].concat());
+    assert_eq!(code, 0);
+    let v = json(&out);
+    let explain = v["explain"].as_array().unwrap();
+    let included = explain.iter().filter(|e| e["included"] == true).count();
+    assert_eq!(included, v["memories"].as_array().unwrap().len());
+    assert!(explain.len() > included);
+    assert!(explain[0]["parts"]["kind_weight"].is_number());
+    // Without the flag the JSON shape is unchanged.
+    let (_, out, _) = env.cli(&[&base[..], &["--format", "json"]].concat());
+    assert!(json(&out).get("explain").is_none());
+}
+
+#[test]
 fn cli_pack_with_missing_db_is_silent_success() {
     let env = Env::new();
     let (code, out, err) = env.cli(&["pack", "--project", WEB_API]);
@@ -424,4 +451,75 @@ fn stats_on_a_fresh_ledger_is_empty_not_an_error() {
     let (code, out, _) = env.cli(&["stats"]);
     assert_eq!(code, 0);
     assert!(out.contains("injections  0 (avg 0 tok"), "{out}");
+}
+
+#[test]
+fn forget_archives_is_idempotent_and_confirm_undoes_it() {
+    let env = backfilled();
+    let mem = env
+        .active()
+        .into_iter()
+        .find(|m| m.text.contains("token bucket"))
+        .unwrap();
+    let id = &mem.uid[..8];
+    let (code, out, err) = env.cli(&["forget", id]);
+    assert_eq!(code, 0, "{err}");
+    assert!(
+        out.contains("Archived") && out.contains("recalla confirm"),
+        "{out}"
+    );
+    assert!(
+        env.active().iter().all(|m| m.uid != mem.uid),
+        "still active"
+    );
+    // The raw memory is kept, only hidden.
+    let kept = env.store().memories_by_uid_prefix(&mem.uid).unwrap();
+    assert_eq!(kept[0].status, Status::Archived);
+    // Forgetting twice is a no-op success.
+    let (code, out, _) = env.cli(&["forget", id]);
+    assert_eq!(code, 0);
+    assert!(out.contains("already archived"), "{out}");
+    // A forgotten memory is not injected into packs.
+    let (_, pack, _) = env.cli(&["pack", "--project", WEB_API, "--format", "json"]);
+    assert!(!pack.contains(&mem.uid), "forgotten memory in pack");
+    // `confirm` brings it back.
+    let (code, _, err) = env.cli(&["confirm", id]);
+    assert_eq!(code, 0, "{err}");
+    assert!(env.active().iter().any(|m| m.uid == mem.uid));
+}
+
+#[test]
+fn forget_ambiguous_exits_2_missing_exits_1_and_short_prefix_is_usage() {
+    let env = Env::new();
+    let mut seen: HashMap<String, String> = HashMap::new();
+    let (a, b, shared) = (0..)
+        .find_map(|i| {
+            let text = format!("memory number {i}");
+            let uid = model::uid(Kind::Fact, &Scope::Global, &text);
+            let key = uid[..4].to_owned();
+            seen.insert(key.clone(), text.clone())
+                .map(|prev| (prev, text, key))
+        })
+        .unwrap();
+    paths::ensure_dir(&env.data).unwrap();
+    let mut store = Store::open(paths::db_path(&env.data)).unwrap();
+    insert(&mut store, Kind::Fact, Scope::Global, &a);
+    insert(&mut store, Kind::Fact, Scope::Global, &b);
+    drop(store);
+
+    let (code, out, err) = env.cli(&["forget", &shared]);
+    assert_eq!((code, out.as_str()), (2, ""));
+    assert!(
+        err.contains("matches 2 memories") && err.contains(&a) && err.contains(&b),
+        "{err}"
+    );
+    let (code, _, err) = env.cli(&["forget", "ffff"]);
+    assert_eq!(code, 1, "{err}");
+    assert!(err.contains("no memory matches"), "{err}");
+    let (code, _, _) = env.cli(&["forget", "ab"]);
+    assert_eq!(code, 2);
+    // Nothing was archived by the failed attempts, and Global memories can be forgotten here.
+    let full = model::uid(Kind::Fact, &Scope::Global, &a);
+    let (code, _, err) = env.cli(&["forget", &full]);
+    assert_eq!(code, 0, "{err}");
 }

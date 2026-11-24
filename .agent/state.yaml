@@ -1,15 +1,35 @@
-updated: 2026-11-23
-milestone: v0.3.0
-branch: chore/release-0.3.0
-task: "release v0.3.0: bump, e2e, PR, tag"
+updated: 2026-11-24
+milestone: v0.4 (dev)
+branch: chore/release-0.3.1
+task: "Windows completeness (USERPROFILE, opener, .exe hooks, CI tests) + grouped backfill --pick/--list; PR into dev"
+plan: .agent/plans/v0.4.0.md
 status: review
-plan: null
 done:
-  - #42 scoped backfill and #43 landing fix merged; version bumped to 0.3.0
+  - "release 0.3.1 (owner go 2026-11-24): everything on dev ships as 0.3.1; web/ page version bump after binaries exist"
+  - "fix/windows-full merged (#63); anchors integration tests now run on Windows CI (#64); e2e.sh/make live/perf stay unix-only"
+  - "backfill --pick/--list grouped by project; Windows home/opener/.exe hook fixes; windows CI runs cargo test (check result)"
+  - "step 8 merged (#62); steps 1-9 all in dev"
+  - "step 8: hook pre-tool-use + hooks install --file-recall (opt-in, D-030); tests hook/hooks/perf; p95 1.4ms. Per-file bench not run (needs REPOS clones)"
+  - "steps 7, 9 merged (#60, #61)"
+  - "step 9: pack decay factor for unconfirmed memories (D-029), explain shows it; bench noise/staleness not re-measured"
+  - "step 6 merged (#59)"
+  - "step 7 backend: ops::edit + POST /api/memories/{uid}/edit + relations in detail API; ui_api edit test"
+  - "step 6: ops::promote + `recalla promote` + UI route; tests/promote.rs, ui_api"
+  - "steps 4,5 merged (#56,#57); Windows build fixed + CI job (#58)"
+  - "step 5: extract::conflict detector (opposed groups + polarity), pipeline supersede/flag, why shows relations, D-028; tests: unit, pipeline, tests/conflict.rs"
+  - "step 4 merged (#56)"
+  - "step 4: pack --explain (score parts + included/dropped reason per candidate; also in UI preview API as explain[])"
+  - "steps 2+3 merged into dev (#54, #55)"
+  - "step 3: extractor handles imperative prompts (Decision for this project:, Rule:/Convention:, We always, Going forward); eval 52/0/0 + imperative 7/0/0. Bench recall not re-measured (needs REPOS clones)"
+  - "step 2: recalla doctor (10 checks, read-only, --json); merged #54"
+  - "step 1 done: make live 7/7, e2e 85/85, SessionStart tail catch-up; merged #53"
 next:
-  - make e2e, PR + merge, then cargo publish (owner go) and tag v0.3.0
+  - per-file bench probe set (bench/, needs REPOS) to decide default-on for --file-recall
+  - owner: release go (0.3.1 Windows hotfix and/or v0.4.0), memorybench judge keys
+  - owner decision: memorybench needs paid judge keys
 blockers: []
 notes:
-  - this worktree (../recalla-ui) holds this branch; remove with `git worktree remove ../recalla-ui` when done
-  - Playwright MCP Chrome is missing; use playwright-core + Brave for browser checks
-  - no publish/tag/push without the owner's go
+  - plan .agent/plans/v0.4.0.md: all work on dev; no publish/tag/push to main without the owner's go
+  - make live needs claude (and optionally codex) + installed hooks; uses installed ~/.cargo/bin/recalla; not in CI
+  - bench numbers are first results; probe relevance filter is lexical
+  - bench needs full-history clones (bench/suites/build.sh); Playwright MCP Chrome missing, use playwright-core + Brave

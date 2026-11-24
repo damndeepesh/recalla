@@ -1,0 +1,863 @@
+{
+  "name": "ripgrep-e2",
+  "repo": {
+    "url": "https://github.com/BurntSushi/ripgrep",
+    "license": "MIT-OR-Unlicense",
+    "t0": "e5639cf22d138d86b04f1097f42e0f9e13438aa5",
+    "t1": "48646e3451798941cf449cbbb86049e9b44914c1",
+    "head": "94305125ef33b86151b6cd2ce2b33d641f6b6ac3"
+  },
+  "facts": [
+    {
+      "id": "fe2516ed0-0",
+      "kind": "decision",
+      "text": "This way we only have to specify the default values once in `GlobOptions::default()` rather than replicated in both code and tests.",
+      "files": [
+        "globset/src/glob.rs",
+        "globset/src/lib.rs"
+      ],
+      "commit": "e2516ed0957b10c0a2d49e5cc402c44f04f30a43",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.84
+    },
+    {
+      "id": "f1f70e918-0",
+      "kind": "decision",
+      "text": "This update brings with it a new feature of the regex crate which will now use SIMD optimizations automatically at runtime with no necessary compile time flags.",
+      "files": [
+        "ci/before_deploy.sh",
+        "src/args.rs"
+      ],
+      "commit": "1f70e9187ceca65e7196f65e8cad1cba65efb47c",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fcd08707c-0",
+      "kind": "decision",
+      "text": "* Regexes like `\\s*{` no longer emit incomprehensible errors.",
+      "files": [
+        "grep/src/literals.rs",
+        "grep/src/nonl.rs",
+        "grep/src/search.rs",
+        "grep/src/word_boundary.rs",
+        "src/args.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "cd08707c7c82058559bd5557efb3c1d0379dbf1d",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.37
+    },
+    {
+      "id": "f507801c1-0",
+      "kind": "decision",
+      "text": "This improves support for submodules, which seem to use a '.git' file instead of a '.git' directory to indicate a worktree.",
+      "files": [
+        "ignore/src/dir.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "507801c1f2efdc45ea25227a613c2e38cdecf88b",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fbf51058e-0",
+      "kind": "decision",
+      "text": "However, once the atty bug was fixed, atty::is(Stdin) no longer returned true, causing `rg foo` searches to fail.",
+      "files": [
+        "tests/tests.rs"
+      ],
+      "commit": "bf51058eb27458c4f01d4cbf8bf4ee0d80fac61e",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fb64475ae-0",
+      "kind": "gotcha",
+      "text": "Upstream deprecated env::home_dir because of minor bugs in some corner cases.",
+      "files": [
+        "ignore/src/gitignore.rs"
+      ],
+      "commit": "b64475aeac00c430b58ff953a27d0d448161625e",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fd09e2f6a-0",
+      "kind": "decision",
+      "text": "This makes it clear that the `bytes` API of the regex crate should be used instead of the Unicode API.",
+      "files": [
+        "globset/src/glob.rs"
+      ],
+      "commit": "d09e2f6af1821c4d6fcdcfb7278e57c76c1f5c76",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f231456c4-0",
+      "kind": "decision",
+      "text": "Instead of searching the file directly, ripgrep will instead search the stdout contents of the program.",
+      "files": [
+        "src/app.rs",
+        "src/args.rs",
+        "src/main.rs",
+        "src/preprocessor.rs",
+        "src/worker.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "231456c409ff38c75c39d01b781b569965ddf808",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.2
+    },
+    {
+      "id": "fc96a3585-0",
+      "kind": "gotcha",
+      "text": "This warning is important because a flag like this could easily wind up in a user's configuration file.",
+      "files": [
+        "src/app.rs"
+      ],
+      "commit": "c96a3585935f8fb064fd40828447ba862f86ff5b",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f6dc09c5b-0",
+      "kind": "decision",
+      "text": "An empty string will also disable --pre behavior, but actually utterring an empty flag value is quite awkward, so we provide an explicit switch to do the same thing.",
+      "files": [
+        "src/app.rs"
+      ],
+      "commit": "6dc09c5b1b7da5de65b5a5df3ce570f05d82e3a3",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.78
+    },
+    {
+      "id": "fe65ca21a-0",
+      "kind": "decision",
+      "text": "The key change here is to move the logic of whether to traverse parents into the directory matcher rather than putting the onus on the directory traverser.",
+      "files": [
+        "ignore/src/dir.rs",
+        "ignore/src/walk.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "e65ca21a6cebceb9ba79fcd164da24478cc01fb0",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.78
+    },
+    {
+      "id": "fdca8110d-0",
+      "kind": "decision",
+      "text": "One way of fixing this might be to replace the absence of patterns with a pattern that can never match, but this still requires opening and searching through every file, which is quite a waste.",
+      "files": [
+        "src/args.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "dca8110da2a2783dedeb00f2cab21f3b55d211ad",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f0863c75a-0",
+      "kind": "gotcha",
+      "text": "This actually caused tests to fail when running under release mode, because the debug_assert!",
+      "files": [
+        "ignore/src/gitignore.rs"
+      ],
+      "commit": "0863c75a5a819dc94754f3465246366ffd5d541f",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f0863c75a-1",
+      "kind": "decision",
+      "text": "Instead of using assert!, it was using debug_assert!.",
+      "files": [
+        "ignore/src/gitignore.rs"
+      ],
+      "commit": "0863c75a5a819dc94754f3465246366ffd5d541f",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f0eef0514-0",
+      "kind": "decision",
+      "text": "This also updates some code to make use of our more liberal versioning requirement, including the use of crossbeam-channel instead of the MsQueue from the older an unmaintained crossbeam 0.3.",
+      "files": [
+        "build.rs",
+        "ignore/examples/walk.rs",
+        "ignore/src/lib.rs",
+        "ignore/src/walk.rs",
+        "src/app.rs"
+      ],
+      "commit": "0eef05142a03cbe393e8e346d401991d45878a81",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.16
+    },
+    {
+      "id": "f1529ce33-0",
+      "kind": "gotcha",
+      "text": "We remove the work-around because we are moving to a latest-stable Rust version policy, which has included this fix for a while now.",
+      "files": [
+        "ignore/src/walk.rs",
+        "src/subject.rs"
+      ],
+      "commit": "1529ce33414f33eb432f9efadf3e38609ae89429",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f241bc8f8-0",
+      "kind": "decision",
+      "text": "The --pre-glob flag is like the --glob flag, except it applies to filtering files through the preprocessor instead of for search.",
+      "files": [
+        "src/app.rs",
+        "src/args.rs",
+        "src/search.rs",
+        "tests/misc.rs"
+      ],
+      "commit": "241bc8f8fcfdc725afa65ee539c37960b10550b1",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.91
+    },
+    {
+      "id": "f3dd4b77d-0",
+      "kind": "gotcha",
+      "text": "We initially did not have this impl because the first revision of the Sink trait was much more complicated.",
+      "files": [
+        "grep-searcher/src/sink.rs"
+      ],
+      "commit": "3dd4b77dfb677a7dec3b1806943da0dbf416db92",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.91
+    },
+    {
+      "id": "f662a9bc7-0",
+      "kind": "gotcha",
+      "text": "Doing an update of rand without doing an update of rand_core results in compilation errors because two distinct versions of rand_core are included in the build, and the traits they expose are distinct and incompatible.",
+      "files": [
+        "ignore/examples/walk.rs",
+        "ignore/src/dir.rs",
+        "ignore/src/lib.rs",
+        "ignore/src/walk.rs"
+      ],
+      "commit": "662a9bc73dc01c529de93c991584035bbba38549",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.06
+    },
+    {
+      "id": "f662a9bc7-1",
+      "kind": "decision",
+      "text": "We also switch over to using tempfile instead of tempdir, which drops the last remaining thing keeping rand 0.4 in the build.",
+      "files": [
+        "ignore/examples/walk.rs",
+        "ignore/src/dir.rs",
+        "ignore/src/lib.rs",
+        "ignore/src/walk.rs"
+      ],
+      "commit": "662a9bc73dc01c529de93c991584035bbba38549",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.06
+    },
+    {
+      "id": "f718a00f6-0",
+      "kind": "gotcha",
+      "text": "Because this introduces a potentially significant performance regression, this is always disabled by default.",
+      "files": [
+        "ignore/src/dir.rs",
+        "ignore/src/gitignore.rs",
+        "ignore/src/overrides.rs",
+        "ignore/src/walk.rs",
+        "src/app.rs",
+        "src/args.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "718a00f6f2f88238546f7d33c1ea52217002495e",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.88
+    },
+    {
+      "id": "faeaa5fc1-0",
+      "kind": "gotcha",
+      "text": "It's a little tricky because we treat `**/a`, `a/**` and `a/**/b` as distinct tokens with their own regex conversions.",
+      "files": [
+        "globset/src/glob.rs",
+        "ignore/src/gitignore.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "aeaa5fc1b13bd5b903ef5660d3a6cb26b6745945",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.81
+    },
+    {
+      "id": "f9c940b45-0",
+      "kind": "gotcha",
+      "text": "It turns out that git itself has treated `**` outside the above contexts as valid for quite a while, so there was an inconsistency between the spec `man gitignore` and the implementation, and it wasn't clear which was actually correct.",
+      "files": [
+        "globset/src/glob.rs",
+        "globset/src/lib.rs",
+        "ignore/src/dir.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9c940b45f4f81b51eee7dcf5836fb3680cf6b62c",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.95
+    },
+    {
+      "id": "f9c940b45-1",
+      "kind": "decision",
+      "text": "We deprecate the `InvalidRecursive` error since it is no longer used.",
+      "files": [
+        "globset/src/glob.rs",
+        "globset/src/lib.rs",
+        "ignore/src/dir.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9c940b45f4f81b51eee7dcf5836fb3680cf6b62c",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.95
+    },
+    {
+      "id": "f7dcbff9a-0",
+      "kind": "gotcha",
+      "text": "We stop short of using byte strings everywhere else because we rely heavily on the `impl ops::Index<[u8]> for grep_matcher::Match` impl, which isn't available for byte strings.",
+      "files": [
+        "grep-searcher/src/lib.rs",
+        "grep-searcher/src/line_buffer.rs",
+        "grep-searcher/src/lines.rs",
+        "grep-searcher/src/searcher/core.rs",
+        "grep-searcher/src/testutil.rs"
+      ],
+      "commit": "7dcbff9a9b3e598d4be136d3261d4afecc729d6e",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.55
+    },
+    {
+      "id": "f09108b7f-0",
+      "kind": "gotcha",
+      "text": "Building the regex for a large dictionary (>100,000 literals) turns out to be quite slow, even if it internally will dispatch to Aho-Corasick.",
+      "files": [
+        "grep-regex/src/config.rs",
+        "grep-regex/src/crlf.rs",
+        "grep-regex/src/lib.rs",
+        "grep-regex/src/matcher.rs",
+        "grep-regex/src/multi.rs",
+        "grep-regex/src/word.rs",
+        "src/args.rs"
+      ],
+      "commit": "09108b7fda7af6db7c1c4f0366301f9a21cc485d",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.89
+    },
+    {
+      "id": "fbd222ae9-0",
+      "kind": "gotcha",
+      "text": "We didn't before because the regex engine actually disallows empty alternates, however, this code runs before the regex compiler rejects the regex.",
+      "files": [
+        "grep-regex/src/multi.rs"
+      ],
+      "commit": "bd222ae93fa0cabe7d51ba8db40ece99579bdaed",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fa7d26c8f-0",
+      "kind": "gotcha",
+      "text": "(ripgrep has this behavior by default because it really wants to NOT search binary files at all, just like it doesn't search gitignored or hidden files.)",
+      "files": [
+        "doc/rg.1.txt.tpl",
+        "grep-printer/src/standard.rs",
+        "grep-printer/src/summary.rs",
+        "grep-searcher/src/line_buffer.rs",
+        "grep-searcher/src/searcher/core.rs",
+        "grep-searcher/src/searcher/glue.rs",
+        "grep-searcher/src/searcher/mod.rs",
+        "grep-searcher/src/sink.rs",
+        "src/app.rs",
+        "src/args.rs",
+        "src/search.rs",
+        "src/subject.rs"
+      ],
+      "commit": "a7d26c8f144a4957b75f71087a66692d0b25759a",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.93
+    },
+    {
+      "id": "f03bf37ff-0",
+      "kind": "gotcha",
+      "text": "It turns out that musl's allocator is slow enough to cause a fairly noticeable performance regression when ripgrep is built as a static binary with musl.",
+      "files": [
+        "src/main.rs"
+      ],
+      "commit": "03bf37ff4a29361c47843369f7d3dc5689b8fdac",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.94
+    },
+    {
+      "id": "f5ce2d735-0",
+      "kind": "gotcha",
+      "text": "This is necessary because jemalloc + musl + Ubuntu 16.04 is apparently broken.",
+      "files": [
+        "ci/before_deploy.sh",
+        "ci/script.sh",
+        "ci/utils.sh",
+        "src/main.rs"
+      ],
+      "commit": "5ce2d7351dba9c113318f4e43c041be7c25eaee4",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.7
+    },
+    {
+      "id": "fadb9332f-0",
+      "kind": "gotcha",
+      "text": "It turns out that when the -F flag was used, if any of the patterns contained a regex meta character (such as `.`), then we winded up escaping the pattern first before handing it off to Aho-Corasick, which treats all patterns literally.",
+      "files": [
+        "grep-regex/src/matcher.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "adb9332f52b884c8b872d1c969a7841188fe3089",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f9268ff8e-0",
+      "kind": "gotcha",
+      "text": "This is because `--with-filename` is automatically enabled when ripgrep is given a single path that is a directory.",
+      "files": [
+        "src/args.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9268ff8e8db179a484810cfbc40f3a8dba74ccaf",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.8
+    },
+    {
+      "id": "f813c676e-0",
+      "kind": "gotcha",
+      "text": "This is because the regex engine needs a contiguous block of memory to search, so there is no way to search anything smaller than a single line.",
+      "files": [
+        "grep-searcher/src/line_buffer.rs"
+      ],
+      "commit": "813c676ecac053559a3b1b72034e0c34c8ed7e06",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "fad97e9c9-0",
+      "kind": "gotcha",
+      "text": "This was because the inner literal detector was adapter from the prefix literal detector, which had to stop here.",
+      "files": [
+        "grep-regex/src/literal.rs"
+      ],
+      "commit": "ad97e9c93fc0687ba7a96680ddc749c1da664446",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fad97e9c9-1",
+      "kind": "decision",
+      "text": "However, for inner literals, this calculus no longer makes sense.",
+      "files": [
+        "grep-regex/src/literal.rs"
+      ],
+      "commit": "ad97e9c93fc0687ba7a96680ddc749c1da664446",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f6a0e0147-0",
+      "kind": "decision",
+      "text": "So this commit fixes this by falling back to prefix or suffix literals when they're available instead of prematurely giving up and assuming the regex engine will do the rest.",
+      "files": [
+        "grep-regex/src/literal.rs",
+        "grep-regex/src/matcher.rs"
+      ],
+      "commit": "6a0e0147e03a0322fc8e7e959e787f7a635df906",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.8
+    },
+    {
+      "id": "f0c3b673e-0",
+      "kind": "gotcha",
+      "text": "It turns out that querying the CWD while in a directory that no longer exists results in an error.",
+      "files": [
+        "src/args.rs"
+      ],
+      "commit": "0c3b673e4c64c6e9c580b15ff8cf9c2a21c29cbd",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.96
+    },
+    {
+      "id": "f0c3b673e-1",
+      "kind": "decision",
+      "text": "It turns out that querying the CWD while in a directory that no longer exists results in an error.",
+      "files": [
+        "src/args.rs"
+      ],
+      "commit": "0c3b673e4c64c6e9c580b15ff8cf9c2a21c29cbd",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.96
+    },
+    {
+      "id": "f6f2b79f5-0",
+      "kind": "gotcha",
+      "text": "Unlike git this does *not* read environment variables GIT_DIR and GIT_COMMON_DIR, because it is not clear how to interpret them when searching multiple repositories.",
+      "files": [
+        "ignore/src/dir.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "6f2b79f5847f941aec44ed5813c0dae16c2b2946",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.9
+    },
+    {
+      "id": "f322fc75a-0",
+      "kind": "gotcha",
+      "text": "The serial walker does produce a successful entry for a directory that it cannot descend into due to insufficient permissions.",
+      "files": [
+        "ignore/src/walk.rs"
+      ],
+      "commit": "322fc75a3da11242c3e23a60bc4cddbc688552b0",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.93
+    },
+    {
+      "id": "f711426a6-0",
+      "kind": "gotcha",
+      "text": "It turns out that users were relying on this buggy behavior.",
+      "files": [
+        "ci/test_complete.sh",
+        "ignore/src/dir.rs",
+        "ignore/src/walk.rs",
+        "src/app.rs",
+        "src/args.rs",
+        "tests/feature.rs"
+      ],
+      "commit": "711426a632aee0affb7009cd8e3492c4ff7273e8",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.78
+    },
+    {
+      "id": "f52d7f474-0",
+      "kind": "gotcha",
+      "text": "Due to how walkdir works if symlinks are not followed, symlinks to directories are seen as simple files by ripgrep.",
+      "files": [
+        "ignore/src/walk.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "52d7f474206eb517c7284448777ed839c0cae8bb",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.84
+    },
+    {
+      "id": "f3d59bd98-0",
+      "kind": "gotcha",
+      "text": "The final \"dance\" is unnecessary, because by the time quitting begins, no thread will ever spawn a new `Work`.",
+      "files": [
+        "ignore/src/walk.rs"
+      ],
+      "commit": "3d59bd98aaea776092168f8feaf5daeeaf743cbf",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.38
+    },
+    {
+      "id": "f3d59bd98-1",
+      "kind": "decision",
+      "text": "The trick was to replace the heuristic spin-loop with blocking receive.",
+      "files": [
+        "ignore/src/walk.rs"
+      ],
+      "commit": "3d59bd98aaea776092168f8feaf5daeeaf743cbf",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.38
+    },
+    {
+      "id": "fee21897e-0",
+      "kind": "decision",
+      "text": "Once we have that, we just use 'qemu-foo rg' instead of 'rg'.",
+      "files": [
+        "tests/util.rs"
+      ],
+      "commit": "ee21897ebd35fc875a790b7ef0192609e81489f0",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.96
+    },
+    {
+      "id": "ff314b0d5-0",
+      "kind": "gotcha",
+      "text": "It turns out that the previous version wasn't quite correct.",
+      "files": [
+        "crates/ignore/src/walk.rs"
+      ],
+      "commit": "f314b0d55f2fa7c9f19b677624a19a7ba24c7cf4",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.96
+    },
+    {
+      "id": "f0ea65efd-0",
+      "kind": "gotcha",
+      "text": "It turns out that using literals in this case when the -w flag is NOT used results in a performance regression.",
+      "files": [
+        "crates/regex/src/literal.rs"
+      ],
+      "commit": "0ea65efd6d7a98b721fcf5f62a6e549204ee01b2",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f139f186e-0",
+      "kind": "gotcha",
+      "text": "While there are no real intrinsic differences, depth first traversal generally tends to use less memory because directory trees are more commonly wide than they are deep.",
+      "files": [
+        "crates/ignore/src/lib.rs",
+        "crates/ignore/src/walk.rs"
+      ],
+      "commit": "139f186e5721e74542604fad8a3c5907c4911faa",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fa2e6aec7-0",
+      "kind": "gotcha",
+      "text": "Or more precisely, a new bug with the same root cause.",
+      "files": [
+        "tests/regression.rs"
+      ],
+      "commit": "a2e6aec7a4d9382941932245e8854f0ae5703a5e",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f7ed9a318-0",
+      "kind": "gotcha",
+      "text": "For PCRE2's case in multiline mode, it is available because we force it to be so for correctness.",
+      "files": [
+        "crates/printer/src/summary.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "7ed9a31819aa4f1c1b25f1fa95bdf602232ddbb0",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.67
+    }
+  ],
+  "probes": [
+    {
+      "id": "p9f0e88bc",
+      "task": "ignore: fix gitignore parsing bug for trailing \\/",
+      "files": [
+        "crates/ignore/src/gitignore.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9f0e88bcb14e02da1b88872435b17d74786640b5",
+      "required": [
+        "f718a00f6-0",
+        "f9c940b45-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p36194c27",
+      "task": "test: test that regex inline flags work as intended",
+      "files": [
+        "tests/regression.rs"
+      ],
+      "commit": "36194c27427a6df76963da472b13c36f47410824",
+      "required": [
+        "f718a00f6-0",
+        "f9268ff8e-0",
+        "f9c940b45-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p341a19e0",
+      "task": "regex: fix fast path for -w/--word-regexp flag (#2576)",
+      "files": [
+        "crates/regex/src/word.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "341a19e0d05bc6f0cabeb2dc756b37cfc047f8f0",
+      "required": [
+        "f718a00f6-0",
+        "f9268ff8e-0",
+        "fadb9332f-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pcad1f5fa",
+      "task": "ignore: fix filtering when searching subdirectories",
+      "files": [
+        "crates/ignore/src/dir.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "cad1f5fae2e4b48d8942add9dc4c950a170b5d2e",
+      "required": [
+        "f6f2b79f5-0",
+        "f718a00f6-0",
+        "f9268ff8e-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p9626f167",
+      "task": "progress",
+      "files": [
+        "crates/regex/src/ast.rs",
+        "crates/regex/src/config.rs",
+        "crates/regex/src/error.rs",
+        "crates/regex/src/lib.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/regex/src/non_matching.rs",
+        "crates/regex/src/word.rs",
+        "tests/misc.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9626f167573527858f9736a3054882de87d6cd79",
+      "required": [
+        "f718a00f6-0",
+        "f9c940b45-1",
+        "fadb9332f-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p9ed7565f",
+      "task": "cli: error when searching for NUL",
+      "files": [
+        "crates/core/flags/hiargs.rs",
+        "crates/regex/src/ban.rs",
+        "crates/regex/src/config.rs",
+        "crates/regex/src/error.rs",
+        "crates/regex/src/lib.rs",
+        "crates/regex/src/matcher.rs",
+        "crates/searcher/src/line_buffer.rs",
+        "crates/searcher/src/searcher/mod.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9ed7565fcb47d02e76398d41f24ba0817f6b9c2f",
+      "required": [
+        "f6f2b79f5-0",
+        "f718a00f6-0",
+        "f9268ff8e-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p827082a3",
+      "task": "ci: add more ARM build configurations to CI and release workflows",
+      "files": [
+        "tests/feature.rs",
+        "tests/misc.rs",
+        "tests/regression.rs",
+        "tests/util.rs"
+      ],
+      "commit": "827082a33ae7d86846a103ef14fb9ff297587049",
+      "required": [
+        "f718a00f6-0",
+        "fa2e6aec7-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pc8e4a845",
+      "task": "cli: prefix all non-fatal error messages with 'rg: '",
+      "files": [
+        "crates/core/messages.rs",
+        "tests/feature.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "c8e4a84519ede79b330f9a9e2b072110d5bd0c8c",
+      "required": [
+        "f718a00f6-0",
+        "f9268ff8e-0",
+        "f9c940b45-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p3ad0e834",
+      "task": "ignore/walk: correct build_parallel() documentation",
+      "files": [
+        "crates/ignore/src/walk.rs"
+      ],
+      "commit": "3ad0e83471588d8802d5747d0cc9accec76f7ccf",
+      "required": [
+        "ff314b0d5-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p9d738ad0",
+      "task": "regex: fix inner literal extraction that resulted in false negatives",
+      "files": [
+        "crates/regex/src/literal.rs",
+        "tests/util.rs"
+      ],
+      "commit": "9d738ad0c009e6632d75fa3d36051e5ae7f7cce6",
+      "required": [
+        "fee21897e-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    }
+  ]
+}

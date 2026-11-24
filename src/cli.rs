@@ -14,6 +14,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use serde_json::{Value, json};
 
 use crate::anchor;
+use crate::doctor;
 use crate::extract;
 use crate::extract::scope::project_key;
 use crate::harness::{claude, codex};
@@ -22,8 +23,11 @@ use crate::hooks_cfg;
 use crate::ingest::{self, Options, Report};
 use crate::mcp::{self, McpCtx};
 use crate::mirror;
-use crate::model::{Kind, Memory, Scope};
-use crate::ops::{self, PackArgs, Why, open_existing, pack_for, prefix, truncate_chars, why};
+use crate::model::{Kind, Memory, Scope, Status};
+use crate::ops::{
+    self, PackArgs, Why, clean, open_existing, pack_for, prefix, truncate_chars, why,
+};
+use crate::pack;
 use crate::paths;
 use crate::select::{self, Selection};
 use crate::store::{Filter, Hit, Store, Via};
@@ -194,8 +198,22 @@ enum Command {
         /// Don't record this injection in the ledger.
         #[arg(long)]
         no_log: bool,
+        /// Show each candidate's score parts and why it was included or dropped.
+        #[arg(long)]
+        explain: bool,
         #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
         data_dir: Option<PathBuf>,
+    },
+    /// Check that Recalla is wired up and has fired (hooks, MCP, database, last capture/injection).
+    Doctor {
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+        /// Claude Code settings file [default: `$CLAUDE_CONFIG_DIR/settings.json` or `~/.claude/settings.json`].
+        #[arg(long, value_name = "PATH")]
+        settings: Option<PathBuf>,
+        /// Print as JSON.
+        #[arg(long)]
+        json: bool,
     },
     /// Show what memory has been injected and what it cost.
     Stats {
@@ -250,6 +268,9 @@ enum Command {
         /// Show what would change; write nothing.
         #[arg(long)]
         dry_run: bool,
+        /// With `install`: also recall memories anchored to a file before Read/Edit/Write.
+        #[arg(long)]
+        file_recall: bool,
         #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
         data_dir: Option<PathBuf>,
     },
@@ -271,6 +292,26 @@ enum Command {
         #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
         data_dir: Option<PathBuf>,
     },
+    /// Drop a wrong memory: archive it (undo with `recalla confirm <id>`).
+    Forget {
+        /// Memory id or a prefix of at least 4 hex characters.
+        id: String,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+    },
+    /// Move a memory to another scope: global (all projects) or one project.
+    Promote {
+        /// Memory id or a prefix of at least 4 hex characters.
+        id: String,
+        /// Make it apply to every project (the default).
+        #[arg(long, conflicts_with = "project")]
+        global: bool,
+        /// Pin it to this project key instead.
+        #[arg(long, value_name = "PROJECT")]
+        project: Option<String>,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+    },
     /// Explain a memory: its provenance and the source text it came from.
     Why {
         /// Memory id or a prefix of at least 4 hex characters.
@@ -289,6 +330,8 @@ enum HookEvent {
     SessionStart,
     /// For `Stop` and `PreCompact`.
     Capture,
+    /// For `PreToolUse` on Read/Edit/Write (opt-in): memories anchored to the file.
+    PreToolUse,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -465,6 +508,7 @@ where
             query,
             format,
             no_log,
+            explain,
             data_dir,
         } => {
             let args = PackArgs {
@@ -475,7 +519,7 @@ where
                 via: Via::Cli,
                 session_id: None,
             };
-            run_pack(&args, format, data_dir, out, err)
+            run_pack(&args, format, explain, data_dir, out, err)
         }
         Command::Mcp { data_dir, project } => {
             let data_dir = match resolve_data_dir(data_dir) {
@@ -511,6 +555,7 @@ where
                 let event = match event {
                     HookEvent::SessionStart => hook::Event::SessionStart,
                     HookEvent::Capture => hook::Event::Capture,
+                    HookEvent::PreToolUse => hook::Event::PreToolUse,
                 };
                 hook::run(event, std::io::stdin().lock(), out, &ctx);
             }
@@ -520,8 +565,33 @@ where
             action,
             settings,
             dry_run,
+            file_recall,
             data_dir,
-        } => run_hooks(action, settings, dry_run, data_dir, out, err),
+        } => run_hooks(action, settings, dry_run, file_recall, data_dir, out, err),
+        Command::Doctor {
+            data_dir,
+            settings,
+            json,
+        } => match resolve_data_dir(data_dir) {
+            Ok(dir) => {
+                let checks = doctor::run(&doctor::Inputs::from_env(dir, settings));
+                let text = if json {
+                    format!("{}\n", doctor::render_json(&checks))
+                } else {
+                    doctor::render_text(&checks)
+                };
+                emit(
+                    out,
+                    &text,
+                    if doctor::failed(&checks) {
+                        SOME_FAILED
+                    } else {
+                        OK
+                    },
+                )
+            }
+            Err(msg) => emit(err, &msg, USAGE),
+        },
         Command::Stats { data_dir, json } => {
             read_only(data_dir, out, err, |s| stats_text(s, json).map(Why::Found))
         }
@@ -531,6 +601,13 @@ where
             json,
         } => run_check(project, data_dir, json, out, err),
         Command::Confirm { id, data_dir } => run_confirm(&id, data_dir, out, err),
+        Command::Forget { id, data_dir } => run_forget(&id, data_dir, out, err),
+        Command::Promote {
+            id,
+            global: _,
+            project,
+            data_dir,
+        } => run_promote(&id, project.as_deref(), data_dir, out, err),
         Command::Why { id, data_dir, json } => {
             read_only(data_dir, out, err, |s| why(s, &id, json, true))
         }
@@ -542,6 +619,7 @@ fn run_hooks(
     action: HooksAction,
     settings: Option<PathBuf>,
     dry_run: bool,
+    file_recall: bool,
     data_dir: Option<PathBuf>,
     out: &mut impl Write,
     err: &mut impl Write,
@@ -562,7 +640,7 @@ fn run_hooks(
         }
     };
     let result = match action {
-        HooksAction::Install => hooks_cfg::install(&settings, &exe, dry_run),
+        HooksAction::Install => hooks_cfg::install_with(&settings, &exe, dry_run, file_recall),
         HooksAction::Uninstall => hooks_cfg::uninstall(&settings, dry_run),
         HooksAction::Status => return hooks_status(&settings, data_dir, out, err),
     };
@@ -740,11 +818,136 @@ fn run_confirm(
     }
 }
 
+/// `recalla forget <id>`: archive one memory (human path, so Global memories
+/// are allowed). An ambiguous or malformed id is a usage error listing the
+/// candidates; an unknown id is a failure.
+fn run_forget(
+    id: &str,
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let mut store = match open_existing(&data_dir) {
+        Ok(s) => s,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    let found = match store.memories_by_uid_prefix(id) {
+        Ok(f) => f,
+        Err(e) => return emit(err, &format!("error: {e}\n"), USAGE),
+    };
+    let m = match found.as_slice() {
+        [] => {
+            return emit(
+                err,
+                &format!("error: no memory matches {id}\n"),
+                SOME_FAILED,
+            );
+        }
+        [m] => m,
+        many => {
+            let mut t = format!(
+                "error: {id} matches {} memories; use a longer prefix:\n",
+                many.len()
+            );
+            for m in many {
+                let _ = writeln!(
+                    t,
+                    "  {}  {}",
+                    prefix(&m.uid, 12),
+                    truncate_chars(&clean(&m.text), 70)
+                );
+            }
+            return emit(err, &t, USAGE);
+        }
+    };
+    let short = prefix(&m.uid, 8);
+    if m.status == Status::Archived {
+        return emit(out, &format!("{short} is already archived\n"), OK);
+    }
+    if let Err(e) = store.archive(&m.uid) {
+        return emit(err, &format!("error: {e}\n"), SOME_FAILED);
+    }
+    warn_mirror(&mut store, &data_dir, err);
+    emit(
+        out,
+        &format!(
+            "Archived {short}: {}\nUndo with: recalla confirm {short}\n",
+            truncate_chars(&clean(&m.text), 80)
+        ),
+        OK,
+    )
+}
+
+/// `recalla promote`.
+fn run_promote(
+    id: &str,
+    project: Option<&str>,
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let mut store = match open_existing(&data_dir) {
+        Ok(s) => s,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    let found = match store.memories_by_uid_prefix(id) {
+        Ok(f) => f,
+        Err(e) => return emit(err, &format!("error: {e}\n"), USAGE),
+    };
+    let [m] = found.as_slice() else {
+        let msg = if found.is_empty() {
+            format!("error: no memory matches {id}\n")
+        } else {
+            format!(
+                "error: {id} matches {} memories; use a longer prefix\n",
+                found.len()
+            )
+        };
+        return emit(
+            err,
+            &msg,
+            if found.is_empty() { SOME_FAILED } else { USAGE },
+        );
+    };
+    let target = match project.map(str::trim) {
+        None => Scope::Global,
+        Some("") => return emit(err, "error: --project needs a project key\n", USAGE),
+        Some(key) => Scope::Project(key.to_owned()),
+    };
+    let new_uid = match ops::promote(&mut store, &m.uid, &target) {
+        Ok(u) => u,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    warn_mirror(&mut store, &data_dir, err);
+    emit(
+        out,
+        &format!(
+            "Moved {} to {}: {}\nNew id {}. Undo with: recalla forget {} && recalla confirm {}\n",
+            prefix(&m.uid, 8),
+            clean(&target.to_string()),
+            truncate_chars(&clean(&m.text), 80),
+            prefix(&new_uid, 8),
+            prefix(&new_uid, 8),
+            prefix(&m.uid, 8),
+        ),
+        OK,
+    )
+}
+
 /// `recalla pack`. Hooks call this, so a missing database is a hint on
 /// stderr with exit 0, never a failure.
 fn run_pack(
     args: &PackArgs,
     format: Format,
+    explain: bool,
     data_dir: Option<PathBuf>,
     out: &mut impl Write,
     err: &mut impl Write,
@@ -771,10 +974,18 @@ fn run_pack(
     };
     match pack_for(&data_dir, &args) {
         Ok(p) => {
-            let text = match format {
-                Format::Md if p.markdown.is_empty() => String::new(),
-                Format::Md => format!("{}\n", p.markdown),
-                Format::Json => format!("{}\n", p.json),
+            let text = match (format, explain) {
+                (Format::Md, false) if p.markdown.is_empty() => String::new(),
+                (Format::Md, false) => format!("{}\n", p.markdown),
+                (Format::Md, true) => {
+                    format!("{}\n\n{}", p.markdown, pack::explain_text(&p.decisions))
+                }
+                (Format::Json, false) => format!("{}\n", p.json),
+                (Format::Json, true) => {
+                    let mut j = p.json.clone();
+                    j["explain"] = pack::explain_json(&p.decisions);
+                    format!("{j}\n")
+                }
             };
             emit(out, &text, OK)
         }
@@ -924,45 +1135,161 @@ fn pick_sessions(
     }) else {
         return Ok(None);
     };
-    let mut rows: Vec<_> = all.iter().filter(|c| c.agent == h).collect();
-    rows.sort_by(|a, b| a.cwd.cmp(&b.cwd).then_with(|| a.path.cmp(&b.path)));
-    let _ = writeln!(out, "\n{h} sessions:");
-    for (i, c) in rows.iter().enumerate() {
-        let id = select::session_ids(&c.path)
-            .into_iter()
-            .next()
-            .unwrap_or_default();
-        let id: String = id
-            .chars()
-            .rev()
-            .take(12)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .collect();
-        let bytes = fs::metadata(&c.path).map_or(0, |m| m.len());
-        let cwd = c
-            .cwd
-            .as_ref()
-            .map_or_else(|| "?".to_owned(), |p| p.display().to_string());
-        let _ = writeln!(out, "  {:>3}) {cwd}  …{id}  {}", i + 1, size(bytes));
+    let groups = project_groups(all.iter().filter(|c| c.agent == h));
+    let _ = writeln!(out, "\n{h} projects:");
+    for (i, g) in groups.iter().enumerate() {
+        let _ = writeln!(
+            out,
+            "  {:>3}) {}\n       {} · {} · last active {}",
+            i + 1,
+            g.label,
+            plural(g.rows.len(), "session"),
+            size(g.bytes),
+            ago(g.newest),
+        );
     }
     let Some(chosen) = ask(
         input,
         out,
-        "Import which? [e.g. 1,3-5 or a for all, q to cancel]: ",
-        |a| select::parse_choice(a, rows.len()),
+        "Import which projects? [e.g. 1,3-5 or a for all, q to cancel]: ",
+        |a| select::parse_choice(a, groups.len()),
     ) else {
         return Ok(None);
     };
-    let sessions = chosen
-        .into_iter()
-        .filter_map(|i| select::session_ids(&rows[i].path).into_iter().next())
-        .collect();
+    let mut rows: Vec<&SessionRow> = chosen.iter().flat_map(|&i| &groups[i].rows).collect();
+    if rows.len() > 1 {
+        let total: u64 = rows.iter().map(|r| r.bytes).sum();
+        let all_of_them = plural(rows.len(), "session");
+        let prompt = format!(
+            "{all_of_them} ({}) selected. Import [a]ll or [c]hoose individually? ",
+            size(total)
+        );
+        let Some(all_sessions) = ask(input, out, &prompt, |a| {
+            match a.to_ascii_lowercase().as_str() {
+                "a" | "all" => Ok(true),
+                "c" | "choose" => Ok(false),
+                _ => Err("answer a or c".to_owned()),
+            }
+        }) else {
+            return Ok(None);
+        };
+        if !all_sessions {
+            rows.sort_by_key(|a| std::cmp::Reverse(a.modified));
+            for (i, r) in rows.iter().enumerate() {
+                let _ = writeln!(
+                    out,
+                    "  {:>3}) {}  {}  {}  {}",
+                    i + 1,
+                    r.short_id,
+                    ago(r.modified),
+                    size(r.bytes),
+                    r.cwd
+                );
+            }
+            let Some(pick) = ask(
+                input,
+                out,
+                "Import which sessions? [e.g. 1,3-5 or a for all, q to cancel]: ",
+                |a| select::parse_choice(a, rows.len()),
+            ) else {
+                return Ok(None);
+            };
+            rows = pick.into_iter().map(|i| rows[i]).collect();
+        }
+    }
     Ok(Some(Selection {
         dirs: Vec::new(),
-        sessions,
+        sessions: rows.iter().map(|r| r.id.clone()).collect(),
     }))
+}
+
+/// One session in a picker or listing.
+struct SessionRow {
+    id: String,
+    short_id: String,
+    cwd: String,
+    bytes: u64,
+    modified: Option<std::time::SystemTime>,
+}
+
+/// Sessions of one project directory, newest first.
+struct ProjectGroup {
+    label: String,
+    rows: Vec<SessionRow>,
+    bytes: u64,
+    newest: Option<std::time::SystemTime>,
+}
+
+/// Groups candidates by working directory (home shown as `~`), most recently
+/// active project first. Sessions with no recorded directory go last.
+fn project_groups<'a>(cands: impl Iterator<Item = &'a select::Candidate>) -> Vec<ProjectGroup> {
+    let home = paths::home_dir().map(PathBuf::from);
+    let mut groups: Vec<ProjectGroup> = Vec::new();
+    for c in cands {
+        let id = select::session_ids(&c.path)
+            .into_iter()
+            .next()
+            .unwrap_or_default();
+        let meta = fs::metadata(&c.path).ok();
+        let cwd = c.cwd.as_deref().map_or_else(
+            || "(unknown directory)".to_owned(),
+            |p| tilde_path(p, home.as_deref()),
+        );
+        let row = SessionRow {
+            short_id: id.chars().take(8).collect(),
+            id,
+            cwd: cwd.clone(),
+            bytes: meta.as_ref().map_or(0, fs::Metadata::len),
+            modified: meta.and_then(|m| m.modified().ok()),
+        };
+        match groups.iter_mut().find(|g| g.label == cwd) {
+            Some(g) => g.rows.push(row),
+            None => groups.push(ProjectGroup {
+                label: cwd,
+                rows: vec![row],
+                bytes: 0,
+                newest: None,
+            }),
+        }
+    }
+    for g in &mut groups {
+        g.rows.sort_by_key(|a| std::cmp::Reverse(a.modified));
+        g.bytes = g.rows.iter().map(|r| r.bytes).sum();
+        g.newest = g.rows.iter().filter_map(|r| r.modified).max();
+    }
+    groups.sort_by(|a, b| {
+        (a.label == "(unknown directory)")
+            .cmp(&(b.label == "(unknown directory)"))
+            .then_with(|| b.newest.cmp(&a.newest))
+            .then_with(|| a.label.cmp(&b.label))
+    });
+    groups
+}
+
+/// `p` with a leading home directory shown as `~`.
+fn tilde_path(p: &std::path::Path, home: Option<&std::path::Path>) -> String {
+    match home.and_then(|h| p.strip_prefix(h).ok()) {
+        Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
+        Some(rest) => format!("~/{}", rest.display().to_string().replace('\\', "/")),
+        None => p.display().to_string(),
+    }
+}
+
+fn plural(n: usize, noun: &str) -> String {
+    format!("{n} {noun}{}", if n == 1 { "" } else { "s" })
+}
+
+/// Coarse "how long ago" for a timestamp (`today`, `3d ago`, `2mo ago`).
+fn ago(t: Option<std::time::SystemTime>) -> String {
+    let Some(secs) = t.and_then(|t| t.elapsed().ok()).map(|d| d.as_secs()) else {
+        return "unknown".to_owned();
+    };
+    match secs / 86_400 {
+        0 => "today".to_owned(),
+        d @ 1..=59 => format!("{d}d ago"),
+        d @ 60..=729 => format!("{}mo ago", d / 30),
+        d => format!("{}y ago", d / 365),
+    }
 }
 
 fn list_sessions(
@@ -988,18 +1315,33 @@ fn list_sessions(
         format!("{}\n", json!({"sessions": rows}))
     } else {
         let mut t = String::new();
+        let mut agents: Vec<&str> = Vec::new();
         for c in &found {
-            let id = select::session_ids(&c.path)
-                .into_iter()
-                .next()
-                .unwrap_or_default();
-            let cwd = c
-                .cwd
-                .as_ref()
-                .map_or_else(|| "?".to_owned(), |p| p.display().to_string());
-            let _ = writeln!(t, "{:<7} {id}  {cwd}", c.agent);
+            if !agents.contains(&c.agent) {
+                agents.push(c.agent);
+            }
         }
-        let _ = writeln!(t, "{} session(s)", found.len());
+        for agent in agents {
+            let groups = project_groups(found.iter().filter(|c| c.agent == agent));
+            if groups.is_empty() {
+                continue;
+            }
+            let _ = writeln!(t, "{agent}");
+            for g in &groups {
+                let _ = writeln!(
+                    t,
+                    "  {}  ({}, {}, last active {})",
+                    g.label,
+                    plural(g.rows.len(), "session"),
+                    size(g.bytes),
+                    ago(g.newest)
+                );
+                for r in &g.rows {
+                    let _ = writeln!(t, "    {}  {:>8}  {}", r.id, size(r.bytes), ago(r.modified));
+                }
+            }
+        }
+        let _ = writeln!(t, "{}", plural(found.len(), "session"));
         t
     };
     emit(out, &text, OK)
@@ -1503,6 +1845,25 @@ mod tests {
         let (code, _, err) = run_args(&["recalla", "backfill", "--bogus"]);
         assert_eq!(code, 2);
         assert!(err.contains("--bogus"));
+    }
+
+    #[test]
+    fn project_labels_and_ages() {
+        use std::path::Path;
+        let home = Path::new("/home/me");
+        assert_eq!(tilde_path(Path::new("/home/me"), Some(home)), "~");
+        assert_eq!(tilde_path(Path::new("/home/me/a/b"), Some(home)), "~/a/b");
+        assert_eq!(tilde_path(Path::new("/srv/x"), Some(home)), "/srv/x");
+        assert_eq!(tilde_path(Path::new("/home/mer"), Some(home)), "/home/mer");
+        assert_eq!(plural(1, "session"), "1 session");
+        assert_eq!(plural(3, "session"), "3 sessions");
+        assert_eq!(ago(None), "unknown");
+        let day = std::time::Duration::from_secs(86_400);
+        let back = |d: u32| Some(std::time::SystemTime::now() - day * d);
+        assert_eq!(ago(back(0)), "today");
+        assert_eq!(ago(back(3)), "3d ago");
+        assert_eq!(ago(back(90)), "3mo ago");
+        assert_eq!(ago(back(800)), "2y ago");
     }
 
     #[test]

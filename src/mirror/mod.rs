@@ -250,7 +250,7 @@ mod tests {
         let p = memory_path(Path::new("/m"), &m);
         let rel = p.strip_prefix("/m").unwrap();
         assert_eq!(rel.components().count(), 4, "{rel:?}");
-        assert!(rel.to_str().unwrap().ends_with(&format!("gotcha/{uid}.md")));
+        assert!(rel.ends_with(Path::new("gotcha").join(format!("{uid}.md"))));
         assert!(!rel.to_str().unwrap().contains(".."));
     }
 }

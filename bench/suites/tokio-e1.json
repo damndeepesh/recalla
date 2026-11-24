@@ -1,0 +1,1601 @@
+{
+  "name": "tokio-e1",
+  "repo": {
+    "url": "https://github.com/tokio-rs/tokio",
+    "license": "MIT",
+    "t0": "8feebab7cdef2fbeb810d18509b1443b6b9f60b1",
+    "t1": "a95378a850f56cd3b020fb204d09a9b416384cb5",
+    "head": "e2589a0e401e27457618920e66caa0f14e9a69ad"
+  },
+  "facts": [
+    {
+      "id": "f7e7a5147-0",
+      "kind": "decision",
+      "text": "This branch replaces the use of `log` in `tokio-executor` with `tracing`.",
+      "files": [
+        "tokio-executor/src/lib.rs",
+        "tokio-executor/src/threadpool/builder.rs",
+        "tokio-executor/src/threadpool/park/boxed.rs",
+        "tokio-executor/src/threadpool/pool/mod.rs",
+        "tokio-executor/src/threadpool/sender.rs",
+        "tokio-executor/src/threadpool/task/mod.rs",
+        "tokio-executor/src/threadpool/worker/mod.rs",
+        "tokio-executor/src/tracing.rs"
+      ],
+      "commit": "7e7a5147a3f5de83ee540ebaad0928183e61df2c",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fd1c58b79-0",
+      "kind": "gotcha",
+      "text": "This type is used in return type of `Runtime::run`, but because the type was not exported it was opaque in the documentation of `Runtime`.",
+      "files": [
+        "tokio/src/runtime/current_thread/mod.rs"
+      ],
+      "commit": "d1c58b7940de6e4baea4ac99b6433742962c11c1",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f9c31797a-0",
+      "kind": "decision",
+      "text": "This branch replaces the use of `log` in `tokio-net` with `tracing`.",
+      "files": [
+        "tokio-net/src/driver/reactor.rs",
+        "tokio-net/src/driver/registration.rs",
+        "tokio-net/src/lib.rs",
+        "tokio-net/src/process/unix/orphan.rs",
+        "tokio-net/src/tcp/stream.rs",
+        "tokio-net/src/tracing.rs",
+        "tokio-net/src/udp/frame.rs",
+        "tokio-net/src/uds/frame.rs",
+        "tokio-net/tests/process_stdio.rs"
+      ],
+      "commit": "9c31797a087165660a689f7430b6be1ce8eeaa63",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f2f91c85a-0",
+      "kind": "decision",
+      "text": "Bring back `split` utility as a free fn instead of a method on `AsyncRead`.",
+      "files": [
+        "tokio-io/src/lib.rs",
+        "tokio-io/src/split.rs",
+        "tokio-io/tests/split.rs",
+        "tokio-net/src/tcp/split.rs",
+        "tokio-net/src/tcp/stream.rs",
+        "tokio-net/src/uds/split.rs",
+        "tokio-net/src/uds/stream.rs",
+        "tokio-net/tests/tcp_echo.rs",
+        "tokio-net/tests/tcp_shutdown.rs",
+        "tokio-net/tests/tcp_split.rs",
+        "tokio-net/tests/uds_split.rs",
+        "tokio/examples/connect.rs"
+      ],
+      "commit": "2f91c85ad80c1311225ef482f6feb3c18b441edc",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.84
+    },
+    {
+      "id": "f578a9aec-0",
+      "kind": "decision",
+      "text": "sync: replace deprecated mem::uninitialized usage with MaybeUninit (#1540)",
+      "files": [
+        "tokio-sync/src/mpsc/block.rs"
+      ],
+      "commit": "578a9aec169ddc1c3b762943e1487f5f682627b5",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.64
+    },
+    {
+      "id": "f22a3b101-0",
+      "kind": "gotcha",
+      "text": "Currently, when threads in the blocking pool shutdown due to being idle the counter tracking threads is not decremented.",
+      "files": [
+        "tokio-executor/src/blocking.rs"
+      ],
+      "commit": "22a3b101714d8756f2d239ee3199b555d3396712",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fc81447fd-0",
+      "kind": "gotcha",
+      "text": "* Adds tests to check that Unpin requirement does not change accidentally because changing Unpin requirements will be breaking changes.",
+      "files": [
+        "tokio-io/src/io/buf_reader.rs",
+        "tokio-io/src/io/buf_stream.rs",
+        "tokio-io/src/io/buf_writer.rs",
+        "tokio-io/src/io/chain.rs",
+        "tokio-io/src/io/copy.rs",
+        "tokio-io/src/io/flush.rs",
+        "tokio-io/src/io/lines.rs",
+        "tokio-io/src/io/read.rs",
+        "tokio-io/src/io/read_exact.rs",
+        "tokio-io/src/io/read_line.rs",
+        "tokio-io/src/io/read_to_end.rs",
+        "tokio-io/src/io/read_to_string.rs"
+      ],
+      "commit": "c81447fdccc31081b6af03015853dd8d05fd32f1",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.37
+    },
+    {
+      "id": "fc78c9168-0",
+      "kind": "gotcha",
+      "text": "In the past, it was not possible to choose to use the multi-threaded tokio `Runtime` in tests, which meant that any test that transitively used `executor::threadpool::blocking` would fail with",
+      "files": [
+        "build-tests/tests/fail/macros_invalid_input.stderr",
+        "tokio-macros/src/lib.rs"
+      ],
+      "commit": "c78c9168d7d9e7dce4b3ab5426a68a9787bae147",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.16
+    },
+    {
+      "id": "fc9bcbe77-0",
+      "kind": "gotcha",
+      "text": "The `tokio_net` resources can be created outside of a runtime due to how tokio has been used with futures to date.",
+      "files": [
+        "tokio-net/src/driver/mod.rs",
+        "tokio-net/src/driver/reactor.rs",
+        "tokio-net/src/driver/registration.rs",
+        "tokio-net/src/process/unix/mod.rs",
+        "tokio-net/src/process/windows.rs",
+        "tokio-net/src/signal/unix.rs",
+        "tokio-net/src/tcp/listener.rs",
+        "tokio-net/src/tcp/stream.rs",
+        "tokio-net/src/udp/socket.rs",
+        "tokio-net/src/uds/datagram.rs",
+        "tokio-net/src/uds/listener.rs",
+        "tokio-net/src/uds/stream.rs"
+      ],
+      "commit": "c9bcbe77b9fa36868cc94cc75426823c7ec205ac",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.37
+    },
+    {
+      "id": "fc9bcbe77-1",
+      "kind": "decision",
+      "text": "With the tokio 0.2 common case, this is no longer necessary and can be removed.",
+      "files": [
+        "tokio-net/src/driver/mod.rs",
+        "tokio-net/src/driver/reactor.rs",
+        "tokio-net/src/driver/registration.rs",
+        "tokio-net/src/process/unix/mod.rs",
+        "tokio-net/src/process/windows.rs",
+        "tokio-net/src/signal/unix.rs",
+        "tokio-net/src/tcp/listener.rs",
+        "tokio-net/src/tcp/stream.rs",
+        "tokio-net/src/udp/socket.rs",
+        "tokio-net/src/uds/datagram.rs",
+        "tokio-net/src/uds/listener.rs",
+        "tokio-net/src/uds/stream.rs"
+      ],
+      "commit": "c9bcbe77b9fa36868cc94cc75426823c7ec205ac",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.37
+    },
+    {
+      "id": "f03a93782-0",
+      "kind": "decision",
+      "text": "One downside of this change is that thread names are no longer \"semantic\".",
+      "files": [
+        "tokio-executor/src/blocking.rs",
+        "tokio-executor/src/blocking/builder.rs",
+        "tokio-executor/src/blocking/mod.rs",
+        "tokio-executor/src/current_thread/mod.rs",
+        "tokio-executor/src/current_thread/scheduler.rs",
+        "tokio-executor/src/global.rs",
+        "tokio-executor/src/lib.rs",
+        "tokio-executor/src/loom/mod.rs",
+        "tokio-executor/src/loom/std/mod.rs",
+        "tokio-executor/src/thread_pool/builder.rs",
+        "tokio-executor/src/thread_pool/pool.rs",
+        "tokio-executor/src/thread_pool/set.rs"
+      ],
+      "commit": "03a9378297c73c2e56a6d6b55db22b92427b850a",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fe19bd77e-0",
+      "kind": "decision",
+      "text": "Additionally, in anticipation of the `thread_pool` module being switched to private, tests are updated to use `Runtime` directly instead of `thread_pool`.",
+      "files": [
+        "tokio/src/executor/task/list.rs",
+        "tokio/src/executor/task/state.rs",
+        "tokio/src/executor/thread_pool/tests/loom_pool.rs",
+        "tokio/src/executor/thread_pool/tests/mod.rs",
+        "tokio/src/executor/thread_pool/tests/pool.rs",
+        "tokio/tests/rt_common.rs",
+        "tokio/tests/rt_current_thread.rs",
+        "tokio/tests/rt_thread_pool.rs",
+        "tokio/tests/thread_pool.rs"
+      ],
+      "commit": "e19bd77ef0149b3141981b36f3ebc442fae4a0b4",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.59
+    },
+    {
+      "id": "f9bec0941-0",
+      "kind": "decision",
+      "text": "timer: have example use delay_for instead of delay (#1735)",
+      "files": [
+        "tokio/src/timer/mod.rs"
+      ],
+      "commit": "9bec094150e869caae5105d7080f0ae54757b2d9",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f7c8b8877-0",
+      "kind": "decision",
+      "text": "The `load` is switched to `fetch_add(0)` which does establish the necessary synchronization.",
+      "files": [
+        "tokio/src/runtime/thread_pool/idle.rs",
+        "tokio/src/runtime/thread_pool/queue/global.rs"
+      ],
+      "commit": "7c8b8877d440629ab9a27a2c9dcef859835d3536",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.44
+    },
+    {
+      "id": "f3e643c7b-0",
+      "kind": "gotcha",
+      "text": "Because it is not in the public API, this can be done in a following change.",
+      "files": [
+        "tokio-test/tests/block_on.rs",
+        "tokio/src/time/delay.rs",
+        "tokio/src/time/delay_queue.rs",
+        "tokio/src/time/driver/entry.rs",
+        "tokio/src/time/driver/handle.rs",
+        "tokio/src/time/driver/registration.rs",
+        "tokio/src/time/tests/mod.rs",
+        "tokio/src/time/tests/test_delay.rs"
+      ],
+      "commit": "3e643c7b81736a4c2b11387a6f71aba99450270b",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.73
+    },
+    {
+      "id": "f3e643c7b-1",
+      "kind": "decision",
+      "text": "Similar to #1666, it is no longer necessary to lazily register delays with the executions default timer.",
+      "files": [
+        "tokio-test/tests/block_on.rs",
+        "tokio/src/time/delay.rs",
+        "tokio/src/time/delay_queue.rs",
+        "tokio/src/time/driver/entry.rs",
+        "tokio/src/time/driver/handle.rs",
+        "tokio/src/time/driver/registration.rs",
+        "tokio/src/time/tests/mod.rs",
+        "tokio/src/time/tests/test_delay.rs"
+      ],
+      "commit": "3e643c7b81736a4c2b11387a6f71aba99450270b",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.73
+    },
+    {
+      "id": "f38e602f4-0",
+      "kind": "decision",
+      "text": "However, PR #1716 merged the current-thread and threadpool runtimes into a single type, which can no longer run `!Send` futures.",
+      "files": [
+        "tokio/src/macros/cfg.rs",
+        "tokio/src/runtime/basic_scheduler.rs",
+        "tokio/src/runtime/blocking/schedule.rs",
+        "tokio/src/runtime/thread_pool/shared.rs",
+        "tokio/src/sync/mod.rs",
+        "tokio/src/task/local.rs",
+        "tokio/src/task/mod.rs",
+        "tokio/src/task/raw.rs",
+        "tokio/src/tests/loom_schedule.rs",
+        "tokio/src/tests/mock_schedule.rs",
+        "tokio/tests/rt_common.rs"
+      ],
+      "commit": "38e602f4d812c196d5dc0bc245e79ccad4e77cfd",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.29
+    },
+    {
+      "id": "f524e6631-0",
+      "kind": "gotcha",
+      "text": "It turns out that the `Scheduler::release` method on `LocalSet`'s `Scheduler` *is* called, when the  `Scheduler` is dropped with tasks still running.",
+      "files": [
+        "tokio/src/task/local.rs"
+      ],
+      "commit": "524e66314faacd9803792ce2a9dc13befd2ceeeb",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fb559a0cd-0",
+      "kind": "decision",
+      "text": "This used to be exposed in 0.1, but was switched to private during the upgrade.",
+      "files": [
+        "tokio/src/net/tcp/stream.rs"
+      ],
+      "commit": "b559a0cd9a55e563299c7ba3d9473540e87a367f",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.88
+    },
+    {
+      "id": "f0e729aa3-0",
+      "kind": "gotcha",
+      "text": "This issue exists because the `Drop` impl for `task::local::Scheduler` does not drain the queue of tasks notified externally, the way the basic scheduler does.",
+      "files": [
+        "tokio/src/runtime/basic_scheduler.rs",
+        "tokio/src/task/local.rs",
+        "tokio/src/task/mod.rs",
+        "tokio/src/task/queue.rs"
+      ],
+      "commit": "0e729aa341028c121b9c39fe552ed4309bae6b6a",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.01
+    },
+    {
+      "id": "f0e729aa3-1",
+      "kind": "decision",
+      "text": "Rather than duplicating this code in `LocalSet`, I thought it was probably better to factor it out into a shared type.",
+      "files": [
+        "tokio/src/runtime/basic_scheduler.rs",
+        "tokio/src/task/local.rs",
+        "tokio/src/task/mod.rs",
+        "tokio/src/task/queue.rs"
+      ],
+      "commit": "0e729aa341028c121b9c39fe552ed4309bae6b6a",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.01
+    },
+    {
+      "id": "fdbcd1f9a-0",
+      "kind": "gotcha",
+      "text": "A `TODO` was also removed that would panic if when registering a new `Delay` the current timer handle was full.",
+      "files": [
+        "tokio/src/time/driver/entry.rs",
+        "tokio/src/time/driver/handle.rs",
+        "tokio/src/time/driver/mod.rs"
+      ],
+      "commit": "dbcd1f9a0964c64d5aa335649eabea281ac59574",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.66
+    },
+    {
+      "id": "fdbcd1f9a-1",
+      "kind": "decision",
+      "text": "With the removal of the logic required for that, `HandlePriv` is no longer needed.",
+      "files": [
+        "tokio/src/time/driver/entry.rs",
+        "tokio/src/time/driver/handle.rs",
+        "tokio/src/time/driver/mod.rs"
+      ],
+      "commit": "dbcd1f9a0964c64d5aa335649eabea281ac59574",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.66
+    },
+    {
+      "id": "f3d1b4b30-0",
+      "kind": "gotcha",
+      "text": "Nested spawn_blocking calls would result in a panic due to the necessary context not being setup.",
+      "files": [
+        "tokio/src/runtime/blocking/pool.rs",
+        "tokio/tests/rt_common.rs"
+      ],
+      "commit": "3d1b4b30585532e9708e322e1a0876d2933af71a",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.44
+    },
+    {
+      "id": "fadc5186e-0",
+      "kind": "gotcha",
+      "text": "Storing a `Runtime` value in a thread-local resulted in a panic due to the inability to access the parker.",
+      "files": [
+        "tokio/src/park/mod.rs",
+        "tokio/src/park/thread.rs",
+        "tokio/src/runtime/blocking/shutdown.rs",
+        "tokio/src/runtime/enter.rs",
+        "tokio/src/runtime/thread_pool/mod.rs",
+        "tokio/tests/rt_common.rs"
+      ],
+      "commit": "adc5186ebd1290c2f144e153a87e147d257f8b0f",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "ff0006006-0",
+      "kind": "decision",
+      "text": "Instead of of requiring `time::advance` to be called in order to advance the value returned by `Instant::now`, calls to `time::Driver::park_timeout` will use the provided duration to advance the time.",
+      "files": [
+        "tokio/src/runtime/context.rs",
+        "tokio/src/time/clock.rs",
+        "tokio/src/time/driver/entry.rs",
+        "tokio/src/time/driver/mod.rs",
+        "tokio/src/time/driver/registration.rs",
+        "tokio/src/time/tests/mod.rs",
+        "tokio/src/time/tests/test_delay.rs",
+        "tokio/src/time/tests/test_queue.rs",
+        "tokio/tests/time_delay.rs",
+        "tokio/tests/time_delay_queue.rs"
+      ],
+      "commit": "f0006006ed9938115011c42f26cff16842eb534f",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f798e8682-0",
+      "kind": "decision",
+      "text": "The `LocalSet` docs have been updated to show the usage with `#[tokio::main]` rather than with manually created runtimes, where applicable.",
+      "files": [
+        "tokio/src/task/local.rs",
+        "tokio/tests/task_local_set.rs"
+      ],
+      "commit": "798e86821f6e06fba552bd670c5887ce3b6ff698",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.86
+    },
+    {
+      "id": "f64063281-0",
+      "kind": "gotcha",
+      "text": "This was due to the scheduler shutdown logic not expecting tasks to get scheduled once the worker was in the shutdown process.",
+      "files": [
+        "tokio/src/runtime/thread_pool/worker.rs",
+        "tokio/tests/rt_basic.rs",
+        "tokio/tests/rt_common.rs"
+      ],
+      "commit": "6406328176cdecf15cad69b327597a4d4d0b8e20",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.62
+    },
+    {
+      "id": "f619d730d-0",
+      "kind": "gotcha",
+      "text": "While this is nice in some cases, it only really logically  makes sense because the scope of a \"thread\" is clear (the thread).",
+      "files": [
+        "tokio/src/task/mod.rs",
+        "tokio/src/task/task_local.rs",
+        "tokio/tests/task_local.rs"
+      ],
+      "commit": "619d730d610bbfd0a13285178d6bf3d89a29d6a3",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f619d730d-1",
+      "kind": "decision",
+      "text": "Instead of using the runtime task as the thread-local scope, the proposed task-local API allows the user to define any arbitrary scope.",
+      "files": [
+        "tokio/src/task/mod.rs",
+        "tokio/src/task/task_local.rs",
+        "tokio/tests/task_local.rs"
+      ],
+      "commit": "619d730d610bbfd0a13285178d6bf3d89a29d6a3",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f7f580071-0",
+      "kind": "decision",
+      "text": "Instead of duplicating `TcpStream::poll_peek`, a private method is now used by both `poll_peek` methods that uses the fact that only a `&TcpStream` is required.",
+      "files": [
+        "tokio/src/net/tcp/split.rs",
+        "tokio/src/net/tcp/stream.rs",
+        "tokio/tests/tcp_split.rs"
+      ],
+      "commit": "7f580071f3e5d475db200d2101ff35be0b4f6efe",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.94
+    },
+    {
+      "id": "ff9ea576c-0",
+      "kind": "decision",
+      "text": "Use `notify_all()` instead of `notify_one()` to ensure that the correct sender is woken.",
+      "files": [
+        "tokio/src/sync/broadcast.rs",
+        "tokio/src/sync/tests/loom_broadcast.rs"
+      ],
+      "commit": "f9ea576ccae5beffeaa2f2c48c2c0d2f9449673b",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.6
+    },
+    {
+      "id": "f4996e276-0",
+      "kind": "decision",
+      "text": "Simply using #vis #sig instead of #vis fn #name(#inputs) #ret",
+      "files": [
+        "tests-integration/tests/macros_main.rs",
+        "tokio-macros/src/entry.rs"
+      ],
+      "commit": "4996e276733a13fd16b2a08f617570ea201718ba",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "fbe832f20-0",
+      "kind": "decision",
+      "text": "I initially opened this PR against `tokio-compat`, but we decided that a compatibility layer for current versions of the `tokio` and `futures-io` crates (rather than for compatibility with legacy code) ought to go in `tokio-util` instead.",
+      "files": [
+        "tokio-util/src/cfg.rs",
+        "tokio-util/src/compat.rs",
+        "tokio-util/src/lib.rs"
+      ],
+      "commit": "be832f20cb30bc014cd2518617d9a7ce72f6480c",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f6232c747-0",
+      "kind": "gotcha",
+      "text": "This is *not* a breaking change due to the fact that the macros were broken without the `macros` feature flag in the first place.",
+      "files": [
+        "tokio/src/macros/join.rs",
+        "tokio/src/macros/mod.rs",
+        "tokio/src/macros/select.rs",
+        "tokio/src/macros/try_join.rs"
+      ],
+      "commit": "6232c74724ab05fe164e95a8985065f44b5973bd",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f560d0fa5-0",
+      "kind": "decision",
+      "text": "Covered by existing loom tests after changing casualty check to be immediate rather than deferred.",
+      "files": [
+        "tokio/src/task/harness.rs"
+      ],
+      "commit": "560d0fa548314e223601ed83429daf237d72afbd",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fab24a655-0",
+      "kind": "gotcha",
+      "text": "Because the `StreamMap` API moves streams during runtime, both streams and keys must be `Unpin`.",
+      "files": [
+        "tokio/src/stream/mod.rs",
+        "tokio/src/stream/stream_map.rs",
+        "tokio/src/util/mod.rs",
+        "tokio/src/util/rand.rs",
+        "tokio/tests/stream_stream_map.rs"
+      ],
+      "commit": "ab24a655adc1eb0d0c6951d5df2b815c671ac7d2",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f0605abac-0",
+      "kind": "decision",
+      "text": "sync: Use yield rather than block on read method (#2258)",
+      "files": [
+        "tokio/src/sync/rwlock.rs"
+      ],
+      "commit": "0605abacfc3b1b20f1eb02a182ed411ac3f2bfe6",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f7207bf35-0",
+      "kind": "decision",
+      "text": "If there is an existing Delay, reset that rather than replacing it as if it's already been polled the task will be waiting for a notification before it will poll again, and dropping the Delay means that that notification will never be performed.",
+      "files": [
+        "tokio/src/time/delay_queue.rs",
+        "tokio/tests/time_delay_queue.rs"
+      ],
+      "commit": "7207bf355e2b6418bb0d757859a5cdcdedf32530",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.84
+    },
+    {
+      "id": "facf8a7da-0",
+      "kind": "gotcha",
+      "text": "Because futures must be pinned in order to be polled, the necessary invariant of such a list --- that entries may not move while in the list --- may be upheld by making the waiter node `!Unpin`.",
+      "files": [
+        "benches/sync_rwlock.rs",
+        "benches/sync_semaphore.rs",
+        "tokio/src/coop.rs",
+        "tokio/src/sync/batch_semaphore.rs",
+        "tokio/src/sync/mod.rs",
+        "tokio/src/sync/mutex.rs",
+        "tokio/src/sync/rwlock.rs",
+        "tokio/src/sync/semaphore.rs",
+        "tokio/src/sync/semaphore_ll.rs",
+        "tokio/src/sync/tests/loom_semaphore_batch.rs",
+        "tokio/src/sync/tests/mod.rs",
+        "tokio/src/sync/tests/semaphore_batch.rs"
+      ],
+      "commit": "acf8a7da7a64bf08d578db9a9836a8e061765314",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.82
+    },
+    {
+      "id": "facf8a7da-1",
+      "kind": "decision",
+      "text": "These allocations are owned by the semaphore, rather than by the task awaiting permits from the semaphore.",
+      "files": [
+        "benches/sync_rwlock.rs",
+        "benches/sync_semaphore.rs",
+        "tokio/src/coop.rs",
+        "tokio/src/sync/batch_semaphore.rs",
+        "tokio/src/sync/mod.rs",
+        "tokio/src/sync/mutex.rs",
+        "tokio/src/sync/rwlock.rs",
+        "tokio/src/sync/semaphore.rs",
+        "tokio/src/sync/semaphore_ll.rs",
+        "tokio/src/sync/tests/loom_semaphore_batch.rs",
+        "tokio/src/sync/tests/mod.rs",
+        "tokio/src/sync/tests/semaphore_batch.rs"
+      ],
+      "commit": "acf8a7da7a64bf08d578db9a9836a8e061765314",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.82
+    },
+    {
+      "id": "f00725f68-0",
+      "kind": "gotcha",
+      "text": "Because these futures' wait queue nodes are no longer in the main list guarded by the lock, their `Drop` impls will complete immediately, and they may be dropped while still in the list of tasks to notify.",
+      "files": [
+        "tokio/src/sync/batch_semaphore.rs",
+        "tokio/src/sync/tests/loom_semaphore_batch.rs",
+        "tokio/src/util/linked_list.rs"
+      ],
+      "commit": "00725f6876821f2ec5246a807563e35c5e53f3e1",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.9
+    },
+    {
+      "id": "f00725f68-1",
+      "kind": "decision",
+      "text": "Because these futures' wait queue nodes are no longer in the main list guarded by the lock, their `Drop` impls will complete immediately, and they may be dropped while still in the list of tasks to notify.",
+      "files": [
+        "tokio/src/sync/batch_semaphore.rs",
+        "tokio/src/sync/tests/loom_semaphore_batch.rs",
+        "tokio/src/util/linked_list.rs"
+      ],
+      "commit": "00725f6876821f2ec5246a807563e35c5e53f3e1",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.9
+    },
+    {
+      "id": "ffa4fe9ef-0",
+      "kind": "decision",
+      "text": "An operation was performed with `+` instead of `wrapping_add`.",
+      "files": [
+        "tokio/src/runtime/queue.rs",
+        "tokio/tests/rt_common.rs"
+      ],
+      "commit": "fa4fe9ef6feea7c8c88c81559797e57da7368b36",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.84
+    },
+    {
+      "id": "fcf4cbc14-0",
+      "kind": "gotcha",
+      "text": "Enable testing of edge cases caused by io errors.",
+      "files": [
+        "tokio-test/src/io.rs",
+        "tokio-test/tests/io.rs"
+      ],
+      "commit": "cf4cbc142bd8198d2112cf671c120740fdc4e132",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f58ba45a3-0",
+      "kind": "gotcha",
+      "text": "This is harder to happen in practice due to the first bug preventing the queue from filling up 100%, but could still happen.",
+      "files": [
+        "tokio/src/loom/std/atomic_u16.rs",
+        "tokio/src/loom/std/atomic_u32.rs",
+        "tokio/src/loom/std/atomic_u8.rs",
+        "tokio/src/loom/std/mod.rs",
+        "tokio/src/runtime/queue.rs",
+        "tokio/src/runtime/tests/loom_queue.rs",
+        "tokio/src/runtime/tests/queue.rs"
+      ],
+      "commit": "58ba45a38cc101e695895cc39d8ee4ce74176397",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fd294c992-0",
+      "kind": "decision",
+      "text": "Use logical CPUs instead of physical by default (#2391)",
+      "files": [
+        "tokio/src/loom/std/mod.rs"
+      ],
+      "commit": "d294c992e7236d5279d9e1a49b4536b21ccbc835",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 1.0
+    },
+    {
+      "id": "f3137c6f0-0",
+      "kind": "decision",
+      "text": "### Changes - rt: threadpool uses logical CPU count instead of physical by default (#2391)",
+      "files": [
+        "tokio/src/lib.rs"
+      ],
+      "commit": "3137c6f07dabc4edc37acf717fd8c565bd78927b",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fa8195848-0",
+      "kind": "decision",
+      "text": "A value of `None` is no longer sent to the channel when the final sender has been dropped.",
+      "files": [
+        "tokio/src/sync/broadcast.rs",
+        "tokio/tests/sync_broadcast.rs"
+      ],
+      "commit": "a81958484941ddcc2f1955fb6873c827f694ec9b",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.75
+    },
+    {
+      "id": "f1bf19280-0",
+      "kind": "gotcha",
+      "text": "However, if `num_cpus` returns a value greater than `max_threads`, then the function would panic.",
+      "files": [
+        "tokio/src/runtime/builder.rs",
+        "tokio/tests/rt_threaded.rs"
+      ],
+      "commit": "1bf1928088e5cc545eee447b38da7a785099059f",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.7
+    },
+    {
+      "id": "f2c53bebe-0",
+      "kind": "decision",
+      "text": "runtime: mem::forget instead of keeping track of dropped state (#2451)",
+      "files": [
+        "tokio/src/runtime/task/harness.rs"
+      ],
+      "commit": "2c53bebe56d584f1d6b710e9b39df6452d655a26",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "ffa9743f0-0",
+      "kind": "gotcha",
+      "text": "This is not considered a breaking change as the macro never worked if used from outside of the crate due to the generated code referencing crate-private types.",
+      "files": [
+        "tokio/src/macros/scoped_tls.rs"
+      ],
+      "commit": "fa9743f0d4bff0da7790c2ad9b4c00f3efe17dc8",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f20b5df90-0",
+      "kind": "gotcha",
+      "text": "Because these methods will poll the `run_until` future before polling spawned tasks, it is possible for that task to _always_ deterministically starve the entire `LocalSet` so that no local tasks can proceed.",
+      "files": [
+        "tokio/src/coop.rs",
+        "tokio/src/macros/cfg.rs",
+        "tokio/src/task/local.rs",
+        "tokio/tests/task_local_set.rs"
+      ],
+      "commit": "20b5df90372ac97d817d2e3666773dd9561f057f",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.62
+    },
+    {
+      "id": "f187af2e6-0",
+      "kind": "gotcha",
+      "text": "The task can be awaited by an arbitrary amount of tasks due to the usage of an intrusive list.",
+      "files": [
+        "tokio/src/sync/cancellation_token.rs",
+        "tokio/src/sync/mod.rs",
+        "tokio/src/sync/tests/loom_cancellation_token.rs",
+        "tokio/src/sync/tests/mod.rs",
+        "tokio/src/util/intrusive_double_linked_list.rs",
+        "tokio/src/util/mod.rs"
+      ],
+      "commit": "187af2e6a323be4193c82ad95f9aa32d2ae16869",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.86
+    },
+    {
+      "id": "fcc8a6625-0",
+      "kind": "decision",
+      "text": "Replace an ad hoc read/write lock with RwLock.",
+      "files": [
+        "tokio/src/loom/std/mod.rs",
+        "tokio/src/loom/std/parking_lot.rs",
+        "tokio/src/sync/broadcast.rs",
+        "tokio/tests/sync_broadcast.rs"
+      ],
+      "commit": "cc8a6625982b5fc0694d05b4e9fb7d6a592702a1",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.88
+    },
+    {
+      "id": "f1cc01683-0",
+      "kind": "decision",
+      "text": "`tokio::test` and related macros now use the absolute path `::core::prelude::v1::test` to refer to the built-in `test` macro.",
+      "files": [
+        "tokio-macros/src/entry.rs",
+        "tokio/tests/macros_test.rs"
+      ],
+      "commit": "1cc016833569e2dbae3b0431b7c87d5e75ef5de6",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f8fda5f19-0",
+      "kind": "gotcha",
+      "text": "This, however, didn't work due to `std::fs::DirBuilder` not having a Copy/Clone traits implemented, which are necessary  for constructing an instance to move-capture it  into  a closure.",
+      "files": [
+        "tokio/src/fs/dir_builder.rs",
+        "tokio/src/fs/mod.rs",
+        "tokio/src/fs/os/unix/dir_builder_ext.rs",
+        "tokio/src/fs/os/unix/mod.rs",
+        "tokio/tests/fs_dir.rs"
+      ],
+      "commit": "8fda5f1984e5c56548ea5bb0cf7d0f5c57c3a190",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.99
+    },
+    {
+      "id": "f9f63911a-0",
+      "kind": "gotcha",
+      "text": "The impact of this should be relatively contained though, because tasks that behaved in this way in the past probably ignored `Pending` _anyway_, so whether a resource returned `Pending` due to coop or due to lack of progress may not make a difference to it.",
+      "files": [
+        "tokio/src/coop.rs",
+        "tokio/src/io/registration.rs",
+        "tokio/src/process/mod.rs",
+        "tokio/src/runtime/task/join.rs",
+        "tokio/src/stream/iter.rs",
+        "tokio/src/sync/batch_semaphore.rs",
+        "tokio/src/sync/mpsc/chan.rs",
+        "tokio/src/sync/oneshot.rs",
+        "tokio/src/time/driver/registration.rs"
+      ],
+      "commit": "9f63911adc5b809fd3df7cfbb736897a86895e0c",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.89
+    },
+    {
+      "id": "ff7574d90-0",
+      "kind": "gotcha",
+      "text": "This took me a bit to catch on to because I didn't really think there was any reason to investigate the individual documentation of each half.",
+      "files": [
+        "tokio/src/net/tcp/stream.rs"
+      ],
+      "commit": "f7574d902381c3708b1f295890807885b4559a9c",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fb9e3d2ed-0",
+      "kind": "gotcha",
+      "text": "Because `tracing` has separate concepts of \"opening/closing\" and \"entering/exiting\" a span, we enter these spans every time the spawned task is polled.",
+      "files": [
+        "examples/chat.rs",
+        "tokio/src/macros/cfg.rs",
+        "tokio/src/task/blocking.rs",
+        "tokio/src/task/local.rs",
+        "tokio/src/task/spawn.rs",
+        "tokio/src/util/mod.rs",
+        "tokio/src/util/trace.rs"
+      ],
+      "commit": "b9e3d2edde33a12ead6df3895caeafa90f9db7e4",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.87
+    },
+    {
+      "id": "f04a28260-0",
+      "kind": "gotcha",
+      "text": "When this drop happens in an asynchronous context, we previously would issue a cryptic panic due to trying to block in an asynchronous context.",
+      "files": [
+        "tokio/src/runtime/blocking/shutdown.rs",
+        "tokio/src/runtime/mod.rs",
+        "tokio/tests/task_blocking.rs"
+      ],
+      "commit": "04a2826084743e80762a32fcee912a3dfbb86a63",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.81
+    },
+    {
+      "id": "f21f72604-0",
+      "kind": "decision",
+      "text": "### Changes - coop: returning `Poll::Pending` no longer decrements the task budget (#2549)",
+      "files": [
+        "tokio/src/lib.rs"
+      ],
+      "commit": "21f726041cf9a4ca408d97394af220caf90312ed",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f7f29acd9-0",
+      "kind": "gotcha",
+      "text": "This test demonstrates a panic that occurs when the user inserts an item with an instant in the past, and then tries to reset the timeout using the returned key",
+      "files": [
+        "tokio/src/time/delay_queue.rs",
+        "tokio/tests/time_delay_queue.rs"
+      ],
+      "commit": "7f29acd964dfca9c9e90a87af607a7897eb8ea67",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.96
+    },
+    {
+      "id": "f0366a3e6-0",
+      "kind": "gotcha",
+      "text": "Previously, we would fail to reset the coop budget in this case, making it so that `coop::poll_proceed` would perpetually yield `Poll::Pending` in nested executers even when run in `block_in_place`.",
+      "files": [
+        "tokio/src/runtime/thread_pool/worker.rs",
+        "tokio/tests/task_blocking.rs"
+      ],
+      "commit": "0366a3e6d1aa4e7bf4a1c717680dd0947589264b",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.9
+    },
+    {
+      "id": "f8feebab7-0",
+      "kind": "gotcha",
+      "text": "This does not impact benchmarks, primarily due to the existing implementation not being \"done\" and also having a lock around allocating and releasing.",
+      "files": [
+        "tokio/src/io/driver/mod.rs",
+        "tokio/src/io/driver/scheduled_io.rs",
+        "tokio/src/io/registration.rs",
+        "tokio/src/loom/std/atomic_ptr.rs",
+        "tokio/src/util/bit.rs",
+        "tokio/src/util/slab.rs",
+        "tokio/src/util/slab/addr.rs",
+        "tokio/src/util/slab/entry.rs",
+        "tokio/src/util/slab/generation.rs",
+        "tokio/src/util/slab/mod.rs",
+        "tokio/src/util/slab/page.rs",
+        "tokio/src/util/slab/shard.rs"
+      ],
+      "commit": "8feebab7cdef2fbeb810d18509b1443b6b9f60b1",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.93
+    }
+  ],
+  "probes": [
+    {
+      "id": "p1c28c3b0",
+      "task": "macros: prepare tokio-macros 0.3.1 (#3042)",
+      "files": [
+        "tokio-macros/src/lib.rs"
+      ],
+      "commit": "1c28c3b0a867b0147293055fe648d1185f9648a9",
+      "required": [],
+      "stale": [
+        "fc78c9168-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p6d0ba19a",
+      "task": "sync: make oneshot::Sender::poll_closed public again (#3032)",
+      "files": [
+        "tokio/src/sync/oneshot.rs"
+      ],
+      "commit": "6d0ba19af51015dcd80558ae768215448e285fdf",
+      "required": [
+        "f9f63911a-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pfe2b9976",
+      "task": "util: upgrade tokio-util to bytes 0.6 (#3052)",
+      "files": [
+        "tokio-util/src/codec/framed_impl.rs",
+        "tokio-util/src/io/mod.rs",
+        "tokio-util/src/io/poll_read_buf.rs",
+        "tokio-util/src/io/read_buf.rs",
+        "tokio-util/src/io/reader_stream.rs",
+        "tokio-util/src/lib.rs",
+        "tokio/src/io/util/async_read_ext.rs",
+        "tokio/src/io/util/read_buf.rs",
+        "tokio/tests/io_read_buf.rs"
+      ],
+      "commit": "fe2b9976755407b85c82b5cdee9d8c5e16e3d6c6",
+      "required": [
+        "fbe832f20-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pd7865533",
+      "task": "Revert \"util: upgrade tokio-util to bytes 0.6 (#3052)\" (#3060)",
+      "files": [
+        "tokio-util/src/codec/framed_impl.rs",
+        "tokio-util/src/io/mod.rs",
+        "tokio-util/src/io/poll_read_buf.rs",
+        "tokio-util/src/io/read_buf.rs",
+        "tokio-util/src/io/reader_stream.rs",
+        "tokio-util/src/lib.rs",
+        "tokio/src/io/util/async_read_ext.rs",
+        "tokio/src/io/util/read_buf.rs",
+        "tokio/tests/io_read_buf.rs"
+      ],
+      "commit": "d78655337a68bded305782a8a8b4ac7be42aa6a7",
+      "required": [
+        "fbe832f20-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p34eb47dd",
+      "task": "runtime: block_on should NOT be called from async context (#3070)",
+      "files": [
+        "tokio/src/runtime/mod.rs"
+      ],
+      "commit": "34eb47dde51d4c37d95cde5a1610b6852f8a24b1",
+      "required": [
+        "f04a28260-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pfede3db7",
+      "task": "tracing: replace future names with spawn locations in task spans (#3074)",
+      "files": [
+        "tokio/build.rs",
+        "tokio/src/runtime/handle.rs",
+        "tokio/src/runtime/mod.rs",
+        "tokio/src/task/blocking.rs",
+        "tokio/src/task/local.rs",
+        "tokio/src/task/spawn.rs",
+        "tokio/src/util/trace.rs"
+      ],
+      "commit": "fede3db76aef95c010c3e0c3da3b732380285097",
+      "required": [
+        "fb9e3d2ed-0",
+        "f798e8682-0"
+      ],
+      "stale": [
+        "f0e729aa3-0",
+        "f524e6631-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p06c7e73e",
+      "task": "stream: fix StreamMap Default bound (#3093)",
+      "files": [
+        "tokio/src/stream/stream_map.rs"
+      ],
+      "commit": "06c7e73e9941ae8d7f84e978b24cb2e0664453de",
+      "required": [
+        "fab24a655-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p0b3918bc",
+      "task": "rt: bring back a public Handle type (#3076)",
+      "files": [
+        "tokio/src/runtime/basic_scheduler.rs",
+        "tokio/src/runtime/handle.rs",
+        "tokio/src/runtime/mod.rs",
+        "tokio/src/runtime/thread_pool/mod.rs"
+      ],
+      "commit": "0b3918bce956567cccc617213a56c339a5a21d6f",
+      "required": [],
+      "stale": [
+        "f0e729aa3-1",
+        "f38e602f4-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pa52f5071",
+      "task": "sync: add acquire_many and try_acquire_many to `Sempahore` (#3067)",
+      "files": [
+        "tokio/src/sync/semaphore.rs"
+      ],
+      "commit": "a52f5071bf5ecf31c44e8aba5d8611400c50eb71",
+      "required": [
+        "facf8a7da-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p685da8da",
+      "task": "fs: small documentation fixes (#3133)",
+      "files": [
+        "tokio/src/fs/copy.rs",
+        "tokio/src/fs/mod.rs",
+        "tokio/src/fs/read_to_string.rs",
+        "tokio/src/fs/write.rs"
+      ],
+      "commit": "685da8dadd8821d1053ce7ecaf01ab5ee231bef9",
+      "required": [
+        "f8fda5f19-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p02b1117d",
+      "task": "net: add TcpStream::ready and non-blocking ops (#3130)",
+      "files": [
+        "tokio/src/io/driver/interest.rs",
+        "tokio/src/io/driver/mod.rs",
+        "tokio/src/io/driver/ready.rs",
+        "tokio/src/io/driver/registration.rs",
+        "tokio/src/io/driver/scheduled_io.rs",
+        "tokio/src/io/mod.rs",
+        "tokio/src/macros/cfg.rs",
+        "tokio/src/net/tcp/stream.rs",
+        "tokio/src/signal/unix/driver.rs",
+        "tokio/tests/tcp_stream.rs"
+      ],
+      "commit": "02b1117dca1c1e1fcc700bff4d6a93c33bfbc7d8",
+      "required": [
+        "f7f580071-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p4e39c9b8",
+      "task": "net: restore TcpStream::{poll_read_ready, poll_write_ready} (#2743)",
+      "files": [
+        "tokio/src/net/tcp/stream.rs",
+        "tokio/tests/tcp_stream.rs"
+      ],
+      "commit": "4e39c9b818eb8af064bb9f45f47e3cfc6593de95",
+      "required": [
+        "f7f580071-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pf927f01a",
+      "task": "macros: fix rustfmt on 1.48.0 (#3160)",
+      "files": [
+        "tokio-macros/src/entry.rs"
+      ],
+      "commit": "f927f01a34d7cedf0cdc820f729a7a6cd56e83dd",
+      "required": [
+        "f1cc01683-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p5e406a7a",
+      "task": "macros: fix outdated documentation (#3180)",
+      "files": [
+        "tokio-macros/src/lib.rs"
+      ],
+      "commit": "5e406a7a47699d93fa2a77fb72553600cb7abd0f",
+      "required": [],
+      "stale": [
+        "fc78c9168-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pa6051a61",
+      "task": "sync: make add_permits panic with usize::MAX >> 3 permits (#3188)",
+      "files": [
+        "tokio/src/sync/batch_semaphore.rs",
+        "tokio/tests/sync_semaphore.rs"
+      ],
+      "commit": "a6051a61ec5c96113f4b543de3ec55431695347a",
+      "required": [
+        "f9f63911a-0",
+        "facf8a7da-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pa125ebd7",
+      "task": "rt: fix panic in task abort when off rt (#3159)",
+      "files": [
+        "tokio/src/runtime/thread_pool/worker.rs",
+        "tokio/tests/task_abort.rs"
+      ],
+      "commit": "a125ebd745f31098aa170cb1009ff0fe34508d37",
+      "required": [
+        "f0366a3e6-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p52cd2400",
+      "task": "task: add missing feature flags for task_local and spawn_blocking (#3237)",
+      "files": [
+        "tokio/src/task/blocking.rs",
+        "tokio/src/task/task_local.rs"
+      ],
+      "commit": "52cd240053b2e1dd5835186539f563c3496dfd7d",
+      "required": [
+        "fb9e3d2ed-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p3f29212c",
+      "task": "fs: use cfgs on fns instead of OS ext traits (#3264)",
+      "files": [
+        "tokio/src/fs/dir_builder.rs",
+        "tokio/src/fs/mod.rs",
+        "tokio/src/fs/open_options.rs",
+        "tokio/src/fs/os/mod.rs",
+        "tokio/src/fs/os/unix/dir_builder_ext.rs",
+        "tokio/src/fs/os/unix/dir_entry_ext.rs",
+        "tokio/src/fs/os/unix/mod.rs",
+        "tokio/src/fs/os/unix/open_options_ext.rs",
+        "tokio/src/fs/os/windows/mod.rs",
+        "tokio/src/fs/os/windows/open_options_ext.rs",
+        "tokio/src/fs/read_dir.rs",
+        "tokio/src/fs/symlink.rs"
+      ],
+      "commit": "3f29212cb7743462451293b65d4bb8b5b4973fc5",
+      "required": [
+        "f8fda5f19-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pd74d1730",
+      "task": "time: remove `Box` from `Sleep` (#3278)",
+      "files": [
+        "tokio-stream/src/lib.rs",
+        "tokio-stream/src/throttle.rs",
+        "tokio-stream/src/timeout.rs",
+        "tokio-test/src/io.rs",
+        "tokio-util/src/time/delay_queue.rs",
+        "tokio/src/macros/select.rs",
+        "tokio/src/sync/mod.rs",
+        "tokio/src/time/driver/entry.rs",
+        "tokio/src/time/driver/sleep.rs",
+        "tokio/src/time/interval.rs",
+        "tokio/tests/async_send_sync.rs",
+        "tokio/tests/time_sleep.rs"
+      ],
+      "commit": "d74d17307dd53215061c4a8a1f20a0e30461e296",
+      "required": [
+        "f6232c747-0",
+        "facf8a7da-1"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pfe2664a4",
+      "task": "sync: remove RwLockWriteGuard::map and RwLockWriteGuard::try_map (#3345)",
+      "files": [
+        "tokio/src/sync/rwlock.rs"
+      ],
+      "commit": "fe2664a4e11df3f7938d5e6fc244a565906bcb46",
+      "required": [
+        "f0605abac-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p770044ca",
+      "task": "chore: replace deprecated compare_and_swap with compare_exchange (#3331)",
+      "files": [
+        "tokio/src/io/split.rs",
+        "tokio/src/loom/std/atomic_u64.rs",
+        "tokio/src/runtime/queue.rs",
+        "tokio/src/sync/mpsc/block.rs",
+        "tokio/src/sync/mpsc/list.rs",
+        "tokio/src/sync/task/atomic_waker.rs",
+        "tokio/src/time/driver/entry.rs"
+      ],
+      "commit": "770044caa70465fbe5d2851a8d9a0bc0e5e7429a",
+      "required": [
+        "f58ba45a3-0",
+        "ffa4fe9ef-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p0048d437",
+      "task": "macros: improve select! error message (#3352)",
+      "files": [
+        "tokio/src/macros/select.rs"
+      ],
+      "commit": "0048d43713b65c5d0f893c13b6783ce4711e0bf1",
+      "required": [
+        "f6232c747-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p22c27b92",
+      "task": "task: wake LocalSet on spawn_local (#3369)",
+      "files": [
+        "tokio/src/task/local.rs",
+        "tokio/tests/task_local_set.rs"
+      ],
+      "commit": "22c27b9282da399574bf9d58461fe0f1869be894",
+      "required": [
+        "f798e8682-0",
+        "fb9e3d2ed-0"
+      ],
+      "stale": [
+        "f0e729aa3-0",
+        "f0e729aa3-1",
+        "f524e6631-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p40d95926",
+      "task": "macros: fix unused_braces in generated code (#3404)",
+      "files": [
+        "tokio-macros/src/entry.rs",
+        "tokio/tests/macros_test.rs"
+      ],
+      "commit": "40d959263bc16771882b2d1c9356f1ec02957c3d",
+      "required": [
+        "f1cc01683-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "p204603b7",
+      "task": "rt: reduce duplicated code in task harness (#3314)",
+      "files": [
+        "tokio/src/runtime/task/core.rs",
+        "tokio/src/runtime/task/harness.rs"
+      ],
+      "commit": "204603b7de62e9c33b153a09c432c5d627830fb8",
+      "required": [
+        "f2c53bebe-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pecc32d1d",
+      "task": "sync: add RwLock  try_read and try_write methods (#3400)",
+      "files": [
+        "tokio/src/sync/mutex.rs",
+        "tokio/src/sync/rwlock.rs",
+        "tokio/tests/sync_rwlock.rs"
+      ],
+      "commit": "ecc32d1dca2317e555d8a6b29009cf19ef8f53e8",
+      "required": [
+        "f0605abac-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pfdde5583",
+      "task": "runtime: consolidate errors for context missing (#3441)",
+      "files": [
+        "tokio/src/io/driver/mod.rs",
+        "tokio/src/runtime/blocking/pool.rs",
+        "tokio/src/runtime/context.rs",
+        "tokio/src/runtime/handle.rs",
+        "tokio/src/task/spawn.rs",
+        "tokio/src/time/driver/handle.rs",
+        "tokio/src/util/error.rs",
+        "tokio/src/util/mod.rs",
+        "tokio/tests/io_driver.rs",
+        "tokio/tests/no_rt.rs",
+        "tokio/tests/rt_basic.rs"
+      ],
+      "commit": "fdde5583f853655fec57c44928b7d5f01621b754",
+      "required": [
+        "fb9e3d2ed-0",
+        "f187af2e6-0",
+        "fab24a655-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p6f988728",
+      "task": "runtime: minimize the amount of duplicated code  (#3416)",
+      "files": [
+        "tokio/src/runtime/queue.rs",
+        "tokio/src/runtime/task/core.rs",
+        "tokio/src/runtime/task/harness.rs",
+        "tokio/src/sync/oneshot.rs"
+      ],
+      "commit": "6f988728bb1b9156b78153461c8632e44cb21a21",
+      "required": [
+        "f2c53bebe-0",
+        "f58ba45a3-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pe4f76688",
+      "task": "runtime: fix memory leak/growth when creating many runtimes (#3564)",
+      "files": [
+        "tests-integration/src/bin/test-process-signal.rs",
+        "tokio/src/io/driver/interest.rs",
+        "tokio/src/io/driver/registration.rs",
+        "tokio/src/io/poll_evented.rs",
+        "tokio/src/process/unix/driver.rs",
+        "tokio/src/process/unix/reap.rs",
+        "tokio/src/signal/mod.rs",
+        "tokio/src/signal/registry.rs",
+        "tokio/src/signal/reusable_box.rs",
+        "tokio/src/signal/unix.rs",
+        "tokio/src/signal/windows.rs",
+        "tokio/src/sync/mod.rs"
+      ],
+      "commit": "e4f76688a00fa2ce81ab6c074700995095c29e1e",
+      "required": [],
+      "stale": [
+        "f38e602f4-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p9a3603fa",
+      "task": "chore: fix several typos in docs (#3651)",
+      "files": [
+        "tokio/src/lib.rs",
+        "tokio/src/runtime/mod.rs",
+        "tokio/src/runtime/queue.rs",
+        "tokio/src/sync/mpsc/block.rs",
+        "tokio/src/task/task_local.rs",
+        "tokio/src/time/driver/handle.rs",
+        "tokio/src/util/linked_list.rs",
+        "tokio/src/util/wake.rs"
+      ],
+      "commit": "9a3603fa75ff854e007d372061edf47cf8d02690",
+      "required": [
+        "f00725f68-0",
+        "f00725f68-1",
+        "f04a28260-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "pfee76ea7",
+      "task": "chore: try to avoid `noalias` attributes on intrusive linked list (#3654)",
+      "files": [
+        "tokio/src/util/linked_list.rs"
+      ],
+      "commit": "fee76ea7d5e1f24a155d3fcd319aa2893a095c4f",
+      "required": [
+        "f00725f68-0",
+        "f00725f68-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p3a02d34d",
+      "task": "sync: document that Semaphore is fair (#3693)",
+      "files": [
+        "tokio/src/sync/semaphore.rs"
+      ],
+      "commit": "3a02d34d3a223244d8f880d87936059935313b66",
+      "required": [
+        "facf8a7da-0",
+        "facf8a7da-1"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p0ba1e3c3",
+      "task": "sync: add a MutexGuard::map method that returns a MappedMutexGuard (#2472)",
+      "files": [
+        "tokio/src/sync/mod.rs",
+        "tokio/src/sync/mutex.rs"
+      ],
+      "commit": "0ba1e3c3e1a597b55998e3e99ebe98db1bb629bd",
+      "required": [
+        "facf8a7da-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "pa39e6c24",
+      "task": "runtime: immediately drop new task when runtime is shut down (#3752)",
+      "files": [
+        "tokio/src/runtime/basic_scheduler.rs",
+        "tokio/src/runtime/queue.rs",
+        "tokio/src/runtime/tests/loom_shutdown_join.rs",
+        "tokio/src/runtime/tests/mod.rs",
+        "tokio/src/runtime/thread_pool/worker.rs",
+        "tokio/tests/rt_handle_block_on.rs"
+      ],
+      "commit": "a39e6c2439927ed9c73043401959b0b02d054630",
+      "required": [
+        "f0366a3e6-0",
+        "f58ba45a3-0"
+      ],
+      "stale": [
+        "f0e729aa3-0"
+      ],
+      "split": "tune"
+    }
+  ]
+}

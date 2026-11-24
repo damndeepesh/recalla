@@ -81,6 +81,7 @@ fn ui_bind_failure_exits_2() {
     assert!(String::from_utf8_lossy(&out.stderr).contains("cannot bind"));
 }
 
+#[cfg(unix)] // the fake opener is a shell script
 #[test]
 fn ui_opens_a_private_login_page_not_the_code_url() {
     use std::os::unix::fs::PermissionsExt;

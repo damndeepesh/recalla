@@ -124,7 +124,7 @@ flowchart LR
 - Subagent (sidechain) "user" text is the orchestrator's instructions, not the human's, so it never yields preferences, facts or user decisions.
 - Questions are skipped, including ones without a `?`.
 - `EXTRACTOR_VERSION` bump or `--rebuild`: archive backfill-only memories, then re-extract.
-- Eval gate: `tests/extract_eval.rs` over 11 synthetic sessions / 53 labels requires zero false positives. Real-data review is a standing step, because an eval written alongside the rules overfits.
+- Eval gate: `tests/extract_eval.rs` over 11 synthetic sessions / 52 labels requires zero false positives. Real-data review is a standing step, because an eval written alongside the rules overfits.
 - Measured: 2,751 real events extracted in 26 ms.
 
 ## Context packs (`pack`, `recalla pack|stats|why`)
@@ -147,9 +147,10 @@ flowchart LR
   - The store is opened lazily per call.
   - `review` and `why` only reach this project's memories plus Global ones. Global memories are read-only over MCP (CLI only), and their `why` hides source files and excerpts.
 - **Hooks** (Claude Code) never block, never write to stdout except the pack, and always exit 0. Errors go to `<data>/log/hook.log` (0600, rotated at 1 MB) (D-018).
-  - `hook session-start`: pack for `project_key(cwd)` emitted as `hookSpecificOutput.additionalContext`.
+  - `hook session-start`: first catches up the project's recent transcripts (D-027), then emits the pack for `project_key(cwd)` as `hookSpecificOutput.additionalContext`.
   - `hook capture` (Stop, PreCompact): ingests ONLY `transcript_path`, and only if it sits under `<claude root>/projects`, then extracts. The source key matches backfill's, so there are no duplicates.
   - Hook connections use a 2 s busy timeout.
+  - `hook pre-tool-use` (opt-in via `hooks install --file-recall`): for Read/Edit/Write/MultiEdit it looks up active memories with a non-stale anchor on the file (project-relative path), skips uids already injected in that session (the `injections` ledger is the dedupe), injects at most 5 items / 300 tokens as `additionalContext` (no `permissionDecision`), and records an injection.
   - Measured: session-start ≈1 ms; capture 0.13 s for a 7.4 MB first run, 0.02 s incrementally.
 - **`hooks install|uninstall|status`** edits `~/.claude/settings.json`:
   - refuses malformed JSON
@@ -158,6 +159,11 @@ flowchart LR
   - touches only entries whose command is exactly `<…/recalla> hook <sub>`; customized or merely-mentioning entries are left alone
   - backups are `create_new` (never overwritten), 0600
   - prints the MCP registration commands for Claude Code and Codex without running them
+
+## Doctor (`doctor`, `recalla doctor`)
+- Read-only health check, `Inputs` (paths, `PATH`, clock) injected so tests are hermetic. Checks, in order: binary on `PATH` (same file as the running exe), Claude hooks, Claude MCP (`.claude.json`, user or project scope), Codex MCP (`config.toml`, including the per-tool `recall` approval), database schema, data-dir mode, last capture, last injection, mirror dirty count, hook log tail.
+- Levels: ok, warn, fail, skip (tool not installed / no database). Exit 1 only on fail; `--json` for scripts. Each non-ok check carries a `fix`.
+- It never creates files (a read-only open of the WAL database may create `-shm`/`-wal` sidecars). The hook log only records errors, so "did it fire?" is answered from timestamps in the database.
 
 ## Code anchors (`anchor`, `recalla check|confirm`)
 - **Anchoring at extraction**, for Project/Module memories whose key is an existing dir:
@@ -176,6 +182,7 @@ flowchart LR
     - with 200 ms after hook capture
     - in full via `recalla check`
 - **MCP `remember`** anchors a new memory exactly as extraction does (paths named in the text, project-scoped, root must be a real project dir), so agent-saved memories go stale too.
+- **Forget** (`recalla forget <id>`): archive by uid prefix (≥4 hex; ambiguous lists candidates, exit 2; unknown exit 1), sync the mirror. Allowed for Global memories (human path). Undo with confirm.
 - **Confirm** (`recalla confirm`, MCP `review confirm`): re-resolve the anchors, clear the reasons, set the memory Active. Symbol anchors stay symbol-only.
 - **Pack:** the "Needs re-verify ⚠" lines show the reason, e.g. `(symbol changed: Store::insert)`.
 - **Redaction:** `cwd` and `git_branch` use `redact_path` (layers 1–2, no entropy), so random path components don't break project keys (D-020).
@@ -245,6 +252,7 @@ Use WAL.
 | `backfill_300mb` | 319.5 MB, 601 files (~80% Claude / ~20% Codex), 158k events, archive on | ingest 14.5 s + extract 7.0 s = 21.5 s (14.9 MB/s), 9.7k memories, 2.4k redactions | <300 s |
 | no-op rerun | same corpus | 0.03 s | <5 s |
 | `hook_session_start_p95`, in-process | 100k memories, 50 projects, ~3k visible, ~200 anchors | p50 11.4 ms, p95 11.7 ms, p99 12.0 ms | p95 <100 ms |
+| `hook_pre_tool_use_p95`, in-process | same, 400 calls over 40 anchored files, new session each | p50 1.2 ms, p95 1.4 ms, p99 1.6 ms | p95 <100 ms |
 | session-start, spawned binary | same | p50 15.6 ms, p95 18.0 ms, p99 21.0 ms (first exec ~210 ms, one-off OS cost) | |
 | `mcp_recall_p95`, no query | same | p50 11.3 ms, p95 11.7 ms | |
 | `mcp_recall_p95`, FTS query | same | p50 32.8 ms, p95 40.2 ms | |
@@ -362,7 +370,7 @@ GET /api/connect
 {"hooks":[{"event":"SessionStart","installed":false},{"event":"Stop","installed":false},{"event":"PreCompact","installed":false}],
  "settings_path":"~/.claude/settings.json","settings_exists":true,"settings_error":null,
  "mcp":{"claude_code_command":"claude mcp add --scope user recalla -- /usr/local/bin/recalla mcp",
-        "codex_toml":"[mcp_servers.recalla]\ncommand = \"/usr/local/bin/recalla\"\nargs = [\"mcp\"]\n"},
+        "codex_toml":"[mcp_servers.recalla]\ncommand = \"/usr/local/bin/recalla\"\nargs = [\"mcp\"]\n[mcp_servers.recalla.tools.recall]\napproval_mode = \"approve\"\n\n[mcp_servers.recalla.tools.why]\napproval_mode = \"approve\"\n"},
  "binary_path":"/usr/local/bin/recalla","data_dir":"~/.local/share/recalla",
  "db":{"exists":true,"bytes":163840,"schema_version":8,"expected_schema_version":8},"mirror_dir":"~/.local/share/recalla/mirror",
  "last_capture_at":1793530800000,"last_injection":{"at":1795402977295,"via":"hook","project":"/work/proj"},

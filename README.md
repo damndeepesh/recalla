@@ -15,7 +15,7 @@ It turns your existing session history into compact, source-linked memories, fla
 </div>
 
 > [!WARNING]
-> **Alpha (v0.3.0).** Imports Claude Code and Codex history and works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Extraction is rule-based, precise but not exhaustive, and still being tuned on real histories. See [ROADMAP.md](ROADMAP.md) for what's next, and please [open an issue](https://github.com/damndeepesh/recalla/issues) if it misses or invents something on your logs.
+> **Alpha (v0.3.1).** Imports Claude Code and Codex history and works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Extraction is rule-based, precise but not exhaustive, and still being tuned on real histories. See [ROADMAP.md](ROADMAP.md) for what's next, and please [open an issue](https://github.com/damndeepesh/recalla/issues) if it misses or invents something on your logs.
 
 ---
 
@@ -52,7 +52,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for components and data flow.
 
 ## Status
 
-Alpha (v0.3.0). Everything in the MVP is built and covered by tests and an end-to-end script.
+Alpha (v0.3.1). Everything in the MVP is built and covered by tests and an end-to-end script.
 
 | Component | State |
 | --- | --- |
@@ -75,7 +75,7 @@ cargo install recalla
 cargo install --git https://github.com/damndeepesh/recalla
 ```
 
-Needs a stable Rust toolchain. macOS and Linux are tested in CI; Windows is untested.
+Needs a stable Rust toolchain. macOS, Linux and Windows run the Rust test suite in CI.
 
 Then, in your terminal:
 
@@ -98,13 +98,13 @@ Measured on an Apple M2, reproducible from a checkout:
 | Session-start hook with 100k memories | p95 13 ms | `make perf` |
 | MCP tool descriptions | about 430 tokens for all 4 tools | `make e2e` |
 | Binary size | 10 MB (each language grammar is a cargo feature) | `cargo build --release` |
-| Extraction quality | precision 1.00, recall 0.92 on a hand-labeled **synthetic** eval (53 labels). Treat this as a regression gate, not a claim about your logs. | `cargo test --test extract_eval` |
+| Extraction quality | precision 1.00, recall 1.00 on a hand-labeled **synthetic** eval (52 labels). Treat this as a regression gate, not a claim about your logs. | `cargo test --test extract_eval` |
 
 `make e2e` runs 79 end-to-end checks on the release binary: planted secrets never reach the database, hooks never touch your other settings, MCP works in both protocol versions, anchors flag the right function, and the mirror rebuilds identically.
 
 ## Known limits
 
-- **Extraction is rule-based.** It is precise but misses implicit rules, and it can still pick up a stray sentence. Check what it found with `recalla search`. To drop a wrong memory, ask your agent to forget it through the MCP `review` tool (reversible with `recalla confirm <id>`); a standalone `recalla forget` command is the first post-release item. Please [open an issue](https://github.com/damndeepesh/recalla/issues) for anything it gets wrong.
+- **Extraction is rule-based.** It is precise but misses implicit rules, and it can still pick up a stray sentence. Check what it found with `recalla search`. To drop a wrong memory, run `recalla forget <id>` (reversible with `recalla confirm <id>`). Please [open an issue](https://github.com/damndeepesh/recalla/issues) for anything it gets wrong.
 - **Anchors need code to anchor to.** A memory is anchored when it names a symbol that exists in a file from the same session (or a file path in its text). Prose-only histories produce few anchors.
 - **Claude Code gets the hooks.** Codex is covered by `backfill` and by MCP; native Codex hooks are on the roadmap.
 - **English only** for extraction phrases.
@@ -124,8 +124,10 @@ recalla pack --budget 1500    # see the context pack for the current project
 recalla search "rate limit"   # inspect memories
 recalla why <id>              # where a memory came from
 recalla stats                 # what was injected, and its token cost
+recalla doctor                # is it wired up, and did it fire? (hooks, MCP, db, last capture/injection)
 recalla check                 # flag memories whose anchored code changed
-recalla confirm <id>          # re-verify a flagged memory
+recalla confirm <id>          # re-verify a flagged memory (also undoes forget)
+recalla forget <id>           # drop a wrong memory (archived, never deleted)
 recalla hooks uninstall       # remove only Recalla's hook entries
 recalla ui                    # local dashboard on 127.0.0.1 (Ctrl-C to stop; --port, --no-open)
 
@@ -166,7 +168,7 @@ Privacy model:
 - **Request checks.** `Host`, `Origin` and a CSRF header are verified, and a strict CSP is set on every response. Reads use a read-only database connection.
 - **Same redaction as everywhere else.** The dashboard shows what is already in the database; the raw archive is never served.
 
-Limits: it runs only while the command is running, it is local only (no remote or team access), there is no native Windows build yet (use WSL), and the token-savings figure only appears once there is enough data. Details: [ARCHITECTURE.md](ARCHITECTURE.md#dashboard-server-ui).
+Limits: it runs only while the command is running, it is local only (no remote or team access), and the token-savings figure only appears once there is enough data. Details: [ARCHITECTURE.md](ARCHITECTURE.md#dashboard-server-ui).
 
 ## Privacy and security
 

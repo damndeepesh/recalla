@@ -7,6 +7,7 @@
 pub mod anchor;
 pub mod archive;
 pub mod cli;
+pub mod doctor;
 pub mod extract;
 pub mod harness;
 pub mod hook;

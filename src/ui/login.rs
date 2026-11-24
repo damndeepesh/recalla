@@ -5,7 +5,6 @@
 
 use std::fs::{self, DirBuilder, OpenOptions};
 use std::io::{self, Write};
-use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -31,7 +30,19 @@ pub fn run_dir(data_dir: &Path) -> PathBuf {
 /// # Errors
 /// I/O errors, or `PermissionDenied` when the directory is group/world accessible.
 pub fn ensure_private_dir(dir: &Path) -> io::Result<()> {
-    DirBuilder::new().recursive(true).mode(0o700).create(dir)?;
+    let mut builder = DirBuilder::new();
+    builder.recursive(true);
+    #[cfg(unix)]
+    std::os::unix::fs::DirBuilderExt::mode(&mut builder, 0o700);
+    builder.create(dir)?;
+    check_owner_only(dir)
+}
+
+/// Unix: refuses a directory that group or others can enter. Elsewhere the
+/// per-user profile ACLs already keep the data dir private, so nothing to check.
+#[cfg(unix)]
+fn check_owner_only(dir: &Path) -> io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
     let mode = fs::metadata(dir)?.permissions().mode();
     if mode & 0o077 != 0 {
         return Err(io::Error::new(
@@ -43,6 +54,12 @@ pub fn ensure_private_dir(dir: &Path) -> io::Result<()> {
             ),
         ));
     }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+#[allow(clippy::unnecessary_wraps)] // same signature as the unix check
+fn check_owner_only(_dir: &Path) -> io::Result<()> {
     Ok(())
 }
 
@@ -74,11 +91,11 @@ fn page_html(url: &str) -> String {
 pub fn write_page(dir: &Path, port: u16, code: &str) -> io::Result<PathBuf> {
     ensure_private_dir(dir)?;
     let path = dir.join(format!("{PREFIX}{}{SUFFIX}", &random_hex()?[..16]));
-    let mut f = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .mode(0o600)
-        .open(&path)?;
+    let mut opts = OpenOptions::new();
+    opts.write(true).create_new(true);
+    #[cfg(unix)]
+    std::os::unix::fs::OpenOptionsExt::mode(&mut opts, 0o600);
+    let mut f = opts.open(&path)?;
     f.write_all(page_html(&login_url(port, code)).as_bytes())?;
     Ok(path)
 }
@@ -123,6 +140,8 @@ impl PageCleanup {
 mod tests {
     use super::*;
     use crate::ui::security::LOGIN_TTL;
+    #[cfg(unix)]
+    use std::os::unix::fs::PermissionsExt;
 
     fn wait_gone(p: &Path) -> bool {
         (0..60).any(|_| {
@@ -136,14 +155,17 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let dir = run_dir(tmp.path());
         let path = write_page(&dir, 4242, "abc").unwrap();
-        assert_eq!(
-            fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
-            0o700
-        );
-        assert_eq!(
-            fs::metadata(&path).unwrap().permissions().mode() & 0o777,
-            0o600
-        );
+        #[cfg(unix)]
+        {
+            assert_eq!(
+                fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
+                0o700
+            );
+            assert_eq!(
+                fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+                0o600
+            );
+        }
         let name = path.file_name().unwrap().to_string_lossy().into_owned();
         assert!(name.starts_with("login-") && name.rsplit('.').next() == Some("html"));
         let html = fs::read_to_string(&path).unwrap();
@@ -151,6 +173,7 @@ mod tests {
         assert!(html.contains("http://127.0.0.1:4242/?c=abc"));
     }
 
+    #[cfg(unix)]
     #[test]
     fn open_dir_is_refused() {
         let tmp = tempfile::tempdir().unwrap();

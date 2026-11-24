@@ -143,7 +143,7 @@ pub(super) fn now_ms() -> i64 {
 
 /// `path` with the home directory shown as `~`, sanitized.
 pub(super) fn tilde(path: &Path) -> String {
-    tilde_in(path, std::env::var_os("HOME").as_deref().map(Path::new))
+    tilde_in(path, crate::paths::home_dir().as_deref().map(Path::new))
 }
 
 fn tilde_in(path: &Path, home: Option<&Path>) -> String {
@@ -423,7 +423,19 @@ fn memory_detail(ctx: &Ctx, _: &Request, p: &Params) -> ApiResult {
                 "path": a.path, "symbol": a.symbol, "stale_reason": a.stale_reason,
             })).collect::<Vec<_>>(),
             "injections": d.injections.iter().map(injection_brief_json).collect::<Vec<_>>(),
+            "relations": relations_json(&read_store(ctx)?, &d.row.uid)?,
         }),
+    ))
+}
+
+/// Supersede/conflict links of a memory: `[{relation, uid, reason}]`.
+fn relations_json(store: &Store, uid: &str) -> Result<Value, ApiError> {
+    let m = store.get(uid)?.ok_or(ApiError::NotFound)?;
+    let rels = crate::ops::relation_lines(store, &m).map_err(ApiError::BadRequest)?;
+    Ok(Value::Array(
+        rels.into_iter()
+            .map(|(relation, uid, reason)| json!({ "relation": relation, "uid": uid, "reason": reason }))
+            .collect(),
     ))
 }
 

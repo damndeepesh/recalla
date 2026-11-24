@@ -143,6 +143,13 @@ $B confirm "$(sqlite3 "$D/recalla.db" "select substr(uid,1,8) from memories wher
 ok "confirm re-anchors" $?
 $B check --project "$PROJ" --data-dir "$D" 2>&1 | grep -q '0 newly stale'
 ok "check clean after confirm" $?
+uid=$(sqlite3 "$D/recalla.db" "select substr(uid,1,8) from memories where status='active' limit 1")
+$B forget "$uid" --data-dir "$D" 2>&1 | grep -q Archived
+ok "forget archives a memory" $?
+[ "$(sqlite3 "$D/recalla.db" "select status from memories where uid like '$uid%'")" = archived ]
+ok "forgotten memory is archived, not deleted" $?
+$B confirm "$uid" --data-dir "$D" >/dev/null 2>&1
+ok "confirm restores a forgotten memory" $?
 
 echo "== 7. MCP over stdio (both protocol eras)"
 MCP=$(printf '%s\n' \
@@ -184,6 +191,10 @@ echo "== 8. hooks: settings safety and hook behaviour"
 # Use the real settings as the template when present (read-only copy), else a synthetic one.
 SRC=$HOME/.claude/settings.json
 [ -f "$SRC" ] || { SRC=$W/synthetic-settings.json; echo '{"model":"x","hooks":{"SessionStart":[],"PreToolUse":[{"hooks":[]}],"PostToolUse":[{"hooks":[]}],"Stop":[]}}' > "$SRC"; }
+# The real file may already have Recalla installed; strip our entries so the template is the "before" state.
+cp "$SRC" "$W/template.json"
+$B hooks uninstall --settings "$W/template.json" >/dev/null 2>&1
+SRC=$W/template.json
 cp "$SRC" "$W/settings.json"
 $B hooks install --settings "$W/settings.json" >/dev/null 2>&1
 ok "hooks install (on a copy of real settings)" $?
@@ -220,6 +231,16 @@ OUTX=$(
 ok "capture refuses a path outside the root, silently, exit 0" $?
 echo 'garbage' | $B hook session-start --data-dir "$D" >/dev/null 2>&1
 ok "garbage hook stdin exits 0" $?
+
+echo "== 8a. doctor"
+$B doctor --data-dir "$W/no-such-data" --settings "$W/settings.json" >"$W/doctor.txt" 2>&1; rc=$?
+[ $rc = 1 ] && grep -q 'fix:' "$W/doctor.txt"
+ok "doctor on an empty data dir exits 1 with fixes" $?
+$B doctor --data-dir "$D" --settings "$W/settings.json" --json 2>/dev/null | python3 -c "
+import json,sys; d=json.load(sys.stdin); assert [c['name'] for c in d['checks']][0]=='binary' and 'ok' in d"
+ok "doctor --json is valid" $?
+[ ! -e "$W/no-such-data" ]
+ok "doctor never creates the data dir" $?
 
 echo "== 8b. markdown mirror + rebuild"
 MD=$D/mirror

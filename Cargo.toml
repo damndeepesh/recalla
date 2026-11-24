@@ -1,6 +1,6 @@
 [package]
 name = "recalla"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 rust-version = "1.85"
 description = "Local-first memory engine for coding agents: backfilled, provenance-linked, code-anchored memories."
@@ -11,7 +11,7 @@ keywords = ["ai", "agents", "memory", "mcp", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 # Keep the published crate to what users need; internal agent state, CI and
 # dev-only docs stay in the repo.
-exclude = [".agent/", "scripts/", "web/", ".github/", ".claude/", ".gitleaks.toml", "CLAUDE.md", "AGENTS.md", "Makefile", "rust-toolchain.toml"]
+exclude = ["bench/", ".agent/", "scripts/", "web/", ".github/", ".claude/", ".gitleaks.toml", "CLAUDE.md", "AGENTS.md", "Makefile", "rust-toolchain.toml"]
 
 # `cargo binstall recalla` downloads the prebuilt binary from the GitHub release.
 [package.metadata.binstall]
@@ -42,6 +42,7 @@ tree-sitter-rust = { version = "0.24", optional = true }
 tree-sitter-typescript = { version = "0.23", optional = true }
 httparse = "1"
 zstd = "0.13"
+getrandom = "0.4"
 
 [features]
 default = ["lang-rust", "lang-python", "lang-go", "lang-ts", "lang-js"]

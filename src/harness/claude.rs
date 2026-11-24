@@ -51,7 +51,7 @@ impl Harness for ClaudeCode {
 pub fn default_root() -> Option<PathBuf> {
     root_from_env(
         std::env::var_os("CLAUDE_CONFIG_DIR"),
-        std::env::var_os("HOME"),
+        crate::paths::home_dir(),
     )
 }
 

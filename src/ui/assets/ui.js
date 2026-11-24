@@ -1,7 +1,7 @@
 // Shared components. One of each: row, flag, kind dot, path chip, token ruler,
 // states, paged list, dialogs, copy. Everything renders through dom.h().
-import { h, icon, copyText, num, baseName, midPath, time, inline } from "./dom.js";
-import { memoryHref, packHref } from "./router.js";
+import { h, icon, copyText, num, baseName, midPath, time, inline, short } from "./dom.js";
+import { memoryHref, packHref, sessionHref } from "./router.js";
 import { illustration } from "./charts.js";
 
 // ---- messages ----
@@ -78,6 +78,34 @@ export const VIA_LABEL = {
   mcp: "Agent asked",
   cli: "Command line",
 };
+
+// ---- provenance ----
+export const ORIGIN = {
+  remember: "Saved by the agent",
+  extract: "Learned from a session",
+  extractor: "Learned from a session",
+  backfill: "Learned from imported history",
+  mirror: "Restored from the markdown mirror",
+};
+
+/** One provenance entry: origin, agent, session link, file/commit, excerpt. */
+export function provItem(p) {
+  const where = [p.file, p.line != null ? `line ${p.line}` : null].filter(Boolean).join(", ");
+  return h(
+    "li",
+    null,
+    h(
+      "div",
+      { class: "cluster small" },
+      h("strong", null, ORIGIN[p.origin] ?? p.origin),
+      p.harness ? h("span", { class: "muted" }, AGENT_LABEL[p.harness] ?? p.harness) : null,
+      p.session_id ? h("a", { href: sessionHref(p.harness ?? "any", p.session_id) }, "Open session") : null,
+      where ? h("code", { class: "muted" }, where) : null,
+      p.git_commit ? h("code", { class: "muted", title: p.git_commit }, `commit ${short(p.git_commit)}`) : null,
+    ),
+    p.excerpt ? h("blockquote", null, p.excerpt) : null,
+  );
+}
 
 // ---- small pieces ----
 export const flag = (text, tone = "") => h("span", { class: `flag ${tone}` }, text);

@@ -176,7 +176,13 @@ impl Env {
     }
 
     pub fn session_path(&self, cwd: &str, session: &str) -> PathBuf {
-        let dir = self.root.join("projects").join(cwd.replace('/', "-"));
+        // Claude Code's rule: every non-alphanumeric becomes `-` (a Windows
+        // `C:\x` must not stay absolute, or `join` would drop the root).
+        let name: String = cwd
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+            .collect();
+        let dir = self.root.join("projects").join(name);
         fs::create_dir_all(&dir).unwrap();
         dir.join(format!("{session}.jsonl"))
     }

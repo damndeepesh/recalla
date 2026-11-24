@@ -49,6 +49,23 @@ pub(super) fn fts_query(query: &str) -> Option<String> {
     (!terms.is_empty()).then(|| terms.join(" "))
 }
 
+/// Like [`fts_query`] but any token may match (OR), for natural-language task
+/// descriptions where requiring every word finds nothing. BM25 still ranks
+/// memories sharing more or rarer words higher. Distinct tokens, capped.
+pub(super) fn fts_query_any(query: &str) -> Option<String> {
+    const MAX_TERMS: usize = 24;
+    let mut seen = std::collections::HashSet::new();
+    let terms: Vec<String> = query
+        .split(|c: char| !c.is_alphanumeric() && c != '_')
+        .filter(|t| t.chars().count() >= 3)
+        .map(str::to_lowercase)
+        .filter(|t| seen.insert(t.clone()))
+        .take(MAX_TERMS)
+        .map(|t| format!("\"{t}\""))
+        .collect();
+    (!terms.is_empty()).then(|| terms.join(" OR "))
+}
+
 /// Appends `value` to `params` and returns its `?N` placeholder.
 fn bind(params: &mut Vec<Value>, value: impl Into<Value>) -> String {
     params.push(value.into());
@@ -74,7 +91,29 @@ impl Store {
         filter: &Filter,
         limit: usize,
     ) -> Result<Vec<Hit>, StoreError> {
-        let Some(fts) = fts_query(query) else {
+        self.search_fts(fts_query(query), filter, limit)
+    }
+
+    /// Ranked search where any query word may match (see [`fts_query_any`]).
+    ///
+    /// # Errors
+    /// `Sqlite` on failure. A query with no usable words returns an empty list.
+    pub fn search_any(
+        &self,
+        query: &str,
+        filter: &Filter,
+        limit: usize,
+    ) -> Result<Vec<Hit>, StoreError> {
+        self.search_fts(fts_query_any(query), filter, limit)
+    }
+
+    fn search_fts(
+        &self,
+        fts: Option<String>,
+        filter: &Filter,
+        limit: usize,
+    ) -> Result<Vec<Hit>, StoreError> {
+        let Some(fts) = fts else {
             return Ok(Vec::new());
         };
         let limit = i64::try_from(limit).unwrap_or(i64::MAX);
@@ -158,6 +197,36 @@ mod tests {
         );
         assert_eq!(fts_query("a\0b"), Some("\"a\" \"b\"".into()));
         assert_eq!(fts_query("  \t\n\0"), None);
+    }
+
+    #[test]
+    fn any_query_ors_distinct_words_and_ranks_by_overlap() {
+        assert_eq!(
+            fts_query_any("Fix the Glob, glob ** a"),
+            Some("\"fix\" OR \"the\" OR \"glob\"".into())
+        );
+        assert_eq!(fts_query_any(" a ** "), None);
+        let mut s = Store::open_in_memory().unwrap();
+        add(
+            &mut s,
+            Kind::Fact,
+            Scope::Global,
+            "glob builder drops separators",
+        );
+        add(
+            &mut s,
+            Kind::Fact,
+            Scope::Global,
+            "unrelated tokio runtime note",
+        );
+        let hits = s
+            .search_any("fix glob separators today", &Filter::default(), 10)
+            .unwrap();
+        assert_eq!(texts(&hits), vec!["glob builder drops separators"]);
+        assert!(
+            all(&s, "fix glob separators today").is_empty(),
+            "AND search unchanged"
+        );
     }
 
     #[test]

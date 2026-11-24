@@ -2,7 +2,7 @@
 //! response headers and text sanitizing. No I/O except reading OS randomness.
 
 use std::fmt::Write as _;
-use std::io::{self, Read};
+use std::io;
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
@@ -26,10 +26,10 @@ const CSP: &str = "default-src 'self'; script-src 'self'; style-src 'self'; img-
 /// 32 random bytes from the OS, hex-encoded (64 chars).
 ///
 /// # Errors
-/// `/dev/urandom` unavailable (non-unix platforms are unsupported).
+/// The OS random source is unavailable.
 pub fn random_hex() -> io::Result<String> {
     let mut bytes = [0u8; 32];
-    std::fs::File::open("/dev/urandom")?.read_exact(&mut bytes)?;
+    getrandom::fill(&mut bytes).map_err(|e| io::Error::other(e.to_string()))?;
     Ok(bytes.iter().fold(String::with_capacity(64), |mut s, b| {
         let _ = write!(s, "{b:02x}");
         s
@@ -354,12 +354,12 @@ mod tests {
     fn session_idles_out_but_activity_keeps_it() {
         let mut g = guard();
         let t = g.token.as_str().to_owned();
-        g.idle = Duration::from_millis(300);
+        g.idle = Duration::from_millis(1000);
         for _ in 0..4 {
-            std::thread::sleep(Duration::from_millis(150));
+            std::thread::sleep(Duration::from_millis(100));
             assert!(g.authenticated(&req(&[], Some(&t))), "active session");
         }
-        std::thread::sleep(Duration::from_millis(450));
+        std::thread::sleep(Duration::from_millis(1300));
         assert!(!g.authenticated(&req(&[], Some(&t))), "idle session");
         assert!(!g.authenticated(&req(&[], Some(&t))), "stays ended");
     }

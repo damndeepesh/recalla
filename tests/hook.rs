@@ -214,6 +214,39 @@ fn capture_resumes_a_growing_transcript() {
     assert_eq!((report.files_unchanged, report.events_added), (1, 0));
 }
 
+/// The Stop hook can fire before the last records of a turn are written, and a
+/// finished session never fires it again: the next session start catches up.
+#[test]
+fn session_start_catches_up_a_transcript_tail_that_capture_missed() {
+    let env = Env::new();
+    let path = transcript(&env);
+    assert_silent_ok(&hook(&env, "capture", &capture_payload(&path)));
+    let mut f = fs::OpenOptions::new().append(true).open(&path).unwrap();
+    let late = json!({"type": "user", "uuid": "u-late", "sessionId": "eval-hook", "cwd": PROJECT,
+        "timestamp": "2026-11-01T11:00:00.000Z", "message": {"role": "user", "content": "Never edit generated files."}});
+    writeln!(f, "{late}").unwrap();
+    let out = hook(&env, "session-start", &start_payload());
+    assert!(out.status.success(), "{:?}", out.status);
+    assert!(log(&env).is_empty(), "{}", log(&env));
+    let report = env.ingest();
+    assert_eq!((report.files_unchanged, report.events_added), (1, 0));
+}
+
+/// The session that is starting is not re-read: it is still being written.
+#[test]
+fn session_start_skips_its_own_transcript() {
+    let env = Env::new();
+    let path = transcript(&env);
+    assert_silent_ok(&hook(&env, "capture", &capture_payload(&path)));
+    let mut f = fs::OpenOptions::new().append(true).open(&path).unwrap();
+    writeln!(f, "{}", json!({"type": "user", "uuid": "u2", "sessionId": "eval-hook", "cwd": PROJECT,
+        "timestamp": "2026-11-01T11:00:00.000Z", "message": {"role": "user", "content": "Never edit generated files."}})).unwrap();
+    let payload =
+        json!({"session_id": "eval-hook", "cwd": PROJECT, "source": "resume"}).to_string();
+    hook(&env, "session-start", &payload);
+    assert_eq!(env.ingest().events_added, 1);
+}
+
 #[test]
 fn capture_refuses_paths_outside_the_claude_root() {
     let env = Env::new();
@@ -280,4 +313,118 @@ fn capture_updates_the_mirror_and_still_prints_nothing() {
     let n = env.store().memory_uids().unwrap().len();
     assert!(n > 0, "extraction found nothing");
     assert_eq!(files.len(), n);
+}
+
+fn anchored_memory(env: &Env, text: &str, path: &str) -> String {
+    let mut store = recalla::ops::open_or_create(&env.data).unwrap();
+    let new = NewMemory {
+        kind: Kind::Gotcha,
+        text: text.into(),
+        scope: Scope::Project(PROJECT.into()),
+        confidence: 0.9,
+        importance: 3,
+    };
+    let m = store
+        .insert(&new, &Provenance::new(Origin::Remember))
+        .unwrap();
+    let uid = m.uid().to_owned();
+    let anchor = recalla::model::Anchor {
+        path: path.into(),
+        symbol: None,
+        lang: None,
+        content_hash: None,
+        git_commit: None,
+    };
+    store.add_anchor(&uid, &anchor).unwrap();
+    uid
+}
+
+fn pre_tool(tool: &str, file: &str, session: &str) -> String {
+    json!({"hook_event_name": "PreToolUse", "tool_name": tool, "session_id": session,
+           "cwd": PROJECT, "tool_input": {"file_path": file}})
+    .to_string()
+}
+
+#[test]
+fn pre_tool_use_injects_anchored_memories_once_per_session() {
+    let env = Env::new();
+    anchored_memory(
+        &env,
+        "billing.rs rounds cents half-even, not half-up",
+        "src/billing.rs",
+    );
+    anchored_memory(&env, "unrelated file note", "src/other.rs");
+    let file = format!("{PROJECT}/src/billing.rs");
+
+    let out = hook(&env, "pre-tool-use", &pre_tool("Edit", &file, "s-1"));
+    assert!(out.status.success() && out.stderr.is_empty());
+    let v: Value = serde_json::from_slice(&out.stdout).unwrap();
+    let h = &v["hookSpecificOutput"];
+    assert_eq!(h["hookEventName"], "PreToolUse");
+    assert!(
+        h.get("permissionDecision").is_none(),
+        "never decides permissions"
+    );
+    let text = h["additionalContext"].as_str().unwrap();
+    assert!(
+        text.contains("half-even") && !text.contains("unrelated"),
+        "{text}"
+    );
+
+    // Same session, same file: nothing more. A new session gets it again.
+    assert_silent_ok(&hook(&env, "pre-tool-use", &pre_tool("Read", &file, "s-1")));
+    let again = hook(&env, "pre-tool-use", &pre_tool("Read", &file, "s-2"));
+    assert!(!again.stdout.is_empty());
+    // The ledger recorded both injections as hook injections.
+    let stats = Store::open(paths::db_path(&env.data))
+        .unwrap()
+        .injection_stats()
+        .unwrap();
+    assert_eq!(stats.injections, 2);
+}
+
+#[test]
+fn pre_tool_use_ignores_other_tools_outside_files_and_missing_data() {
+    let env = Env::new();
+    assert_silent_ok(&hook(
+        &env,
+        "pre-tool-use",
+        &pre_tool("Read", &format!("{PROJECT}/a.rs"), "s"),
+    ));
+    anchored_memory(&env, "a.rs is special", "a.rs");
+    for payload in [
+        pre_tool("Bash", &format!("{PROJECT}/a.rs"), "s"),
+        pre_tool("Read", "/elsewhere/a.rs", "s"),
+        pre_tool("Read", &format!("{PROJECT}/b.rs"), "s"),
+        pre_tool("Read", &format!("{PROJECT}/a.rs/../../x"), "s"),
+        r#"{"tool_name":"Read"}"#.to_owned(),
+        "not json".to_owned(),
+    ] {
+        let out = hook(&env, "pre-tool-use", &payload);
+        assert!(out.status.success(), "{payload}");
+        assert!(out.stdout.is_empty(), "{payload}: {:?}", out.stdout);
+    }
+}
+
+#[test]
+fn pre_tool_use_stays_within_its_token_cap() {
+    let env = Env::new();
+    for i in 0..12 {
+        anchored_memory(&env, &format!("note {i}: {}", "word ".repeat(60)), "big.rs");
+    }
+    let out = hook(
+        &env,
+        "pre-tool-use",
+        &pre_tool("Edit", &format!("{PROJECT}/big.rs"), "s"),
+    );
+    let v: Value = serde_json::from_slice(&out.stdout).unwrap();
+    let text = v["hookSpecificOutput"]["additionalContext"]
+        .as_str()
+        .unwrap();
+    assert!(
+        recalla::pack::est_tokens(text) <= 300,
+        "{}",
+        recalla::pack::est_tokens(text)
+    );
+    assert!(text.lines().count() <= 6);
 }

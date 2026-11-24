@@ -1,0 +1,2 @@
+# Embedded assets and fixtures must be byte-identical on every checkout.
+* text=auto eol=lf

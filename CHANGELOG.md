@@ -4,9 +4,40 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-24
+
+### Added
+- `recalla hooks install --file-recall`: opt-in `PreToolUse` hook that, before Read/Edit/Write, injects the memories anchored to that file (<= 300 tokens, once per memory per session, never blocks). p95 1.4 ms on 100k memories (D-030).
+- Unconfirmed, low-confidence memories fade in pack ranking after 30 days (down to half weight); `confirm` resets it and `pack --explain` shows the `decay` factor. Nothing is archived or deleted (D-029).
+- Dashboard **Review** queue: memories that need re-verification (stale anchors, contradictions) with keep, forget, edit and promote actions, plus `POST /api/memories/{uid}/edit` (redacted new text supersedes the old) and `relations` on the memory detail API.
+- `recalla promote <id> [--global | --project KEY]` (and `POST /api/memories/{uid}/promote`): move a memory to every project or pin it to one. The original is superseded, not deleted.
+- Contradicting preferences/decisions are resolved at extraction: a newer, at-least-as-confident rule supersedes an unconfirmed older one, otherwise the pair is flagged for re-verification; `why` shows the link. A confirmed rule is never demoted automatically (D-028).
+- `recalla pack --explain`: per-candidate score parts and why each was included or dropped.
+- `recalla doctor`: checks hooks, MCP registration, database and last capture/injection.
+
+### Changed
+- `backfill --pick` and `--list` group sessions by project: each project shows its session count, size and last activity, with `~` for your home. Pick projects first, then import all their sessions or choose individual ones.
+
+### Fixed
+- Windows: the home directory falls back to `%USERPROFILE%` (Claude and Codex roots, data dir, doctor, dashboard), the dashboard opens with `cmd /C start`, and hook commands for `recalla.exe` are recognised by `hooks install/uninstall` and `doctor`. CI now runs the whole Rust test suite on Windows (anchors, mirror, UI API included), not just a build. Only permission/symlink tests and the bash e2e script stay Unix-only.
+- `cargo install recalla` failed on Windows: the dashboard login page used Unix-only file permissions unconditionally. Now gated like the rest of the crate; CI builds on Windows.
+
+### Added
+- `recalla forget <id>`: archive a wrong memory from the CLI (undo with `recalla confirm`). Closes #27.
+
+### Added
+- `bench/` (`membench`): a neutral benchmark for coding-agent memory tools. Ground truth is mined from the git history of six public repositories (18 suites, 240 probes), scored on right-fact recall at a token budget, noise, staleness against code changes, provenance, extraction and token savings, with a generic MCP adapter for any memory server, a written report (totals, tune vs holdout, where each tool loses) and raw per-probe JSON. `make bench`, `make bench-check`. `membench real` runs the same benchmark on your own repository's history, locally. See `bench/README.md` and `bench/SCORING.md`.
+
+### Changed
+- Extractor precision: a decision needs at least 5 words and an object ("Decided upfront, not bolted on later." is dropped) (closes #15); test-run procedures collapse to the base command, so `cargo test --test x name` and `go test ./pkg/...` become `cargo test` / `go test` (closes #16); a gotcha's explanation must share a word with the failing command or output (closes #17).
+- `recalla pack --query` (and the MCP `recall` query) now lifts memories sharing any word with the query, BM25-ranked, instead of requiring every word, so a task description actually finds related memories. `recalla search` still requires all words.
+- Gotcha extraction accepts a plain "because" when the sentence states a fact about the code and is about the failing command or output ("The history rewrite was blocked because force-pushing needs explicit approval"). Sentences about the assistant's own step ("I'll retry because...", "Let me...", "We need...") are still ignored. On the benchmark's session-backfill tier extraction recall went from 0.05 to 0.08 and usefulness from 0.04 to 0.08; extractor precision stays 1.00.
+- `recalla pack --query` now focuses the pack on the task: memories anchored to a file the query names rank first, weak matches (under a quarter of the best score) and near-duplicates are dropped, and preferences are always kept. A query that matches nothing leaves the pack unchanged. On the benchmark's holdout probes this cut the pack from 869 to 518 tokens while recall went from 0.91 to 0.95.
+
 ## [0.3.0] - 2026-11-23
 
 ### Added
+- Extractor: bare imperatives with a scope or limit word ("Use terraform plan before any apply", "Keep the binary under 5 MB") are now preferences, and "Switched X to Y" (up to 6 words between) is a decision. Closes #13, #14. Eval on the synthetic corpus: recall 0.92 to 1.00, precision unchanged at 1.00.
 - `recalla backfill --dir PATH`, `--session ID|FILE` (both repeatable), `--list` and `--pick`: import one project or a few sessions instead of the whole history. `--pick` asks for Claude Code or Codex, lists that tool's sessions, and imports the numbers you choose. A selector that matches nothing is an error and writes nothing.
 
 ### Changed

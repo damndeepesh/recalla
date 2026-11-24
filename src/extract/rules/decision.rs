@@ -23,7 +23,7 @@ const MAX_ADR_CHARS: usize = 400;
 
 static PHRASE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        r"(?is)\b(?:decided\b|decision:|we['\u{2019}]ll use\b|we will use\b|going with\b|chose\b.+\bover\b|switch(?:ed)? to\b|settled on\b|picked\b.+\bbecause\b)",
+        r"(?is)\b(?:decided\b|decision:|decision\s+for\s+(?:this|the)\s+[\w\- ]{1,24}:\s+\S+\s+\S+\s+\S+|we['\u{2019}]ll use\b|we will use\b|going with\b|chose\b.+\bover\b|switch(?:ed)? to\b|^(?:we\s+)?switched\b(?:\s+[\w\-./`']+){1,6}?\s+to\b|settled on\b|picked\b.+\bbecause\b)",
     )
     .expect("valid regex")
 });
@@ -71,12 +71,55 @@ fn spoken(ctx: &EventCtx<'_>, project: Option<&str>, confidence: f32) -> Vec<Can
         .collect()
 }
 
+/// A decision needs substance: at least this many words.
+const MIN_WORDS: usize = 5;
+
+/// Adverbs that can follow "decided" without naming what was decided.
+const BARE_ADVERBS: &[&str] = &[
+    "upfront",
+    "early",
+    "late",
+    "later",
+    "earlier",
+    "already",
+    "finally",
+    "together",
+    "again",
+    "then",
+    "now",
+    "today",
+    "here",
+    "there",
+    "otherwise",
+    "wisely",
+    "quickly",
+];
+
+/// True when the word right after the marker is a stray adverb or ends a
+/// clause ("Decided upfront, not bolted on later."), so no object is named.
+fn lacks_object(after_marker: &str) -> bool {
+    let Some(first) = after_marker.split_whitespace().next() else {
+        return true;
+    };
+    let word = first.trim_end_matches(|c: char| !c.is_alphanumeric());
+    first.ends_with([',', ';', '.', '!']) && !word.is_empty()
+        || BARE_ADVERBS.contains(&word.to_lowercase().as_str())
+        || (word.len() > 3 && word.to_lowercase().ends_with("ly"))
+}
+
 fn states_decision(sentence: &str) -> bool {
-    !is_question(sentence)
-        && PHRASE
-            .find(sentence)
-            .is_some_and(|m| !is_quoted(sentence, m.start()))
-        && !NOT_A_DECISION.is_match(sentence)
+    if is_question(sentence)
+        || sentence.split_whitespace().count() < MIN_WORDS
+        || NOT_A_DECISION.is_match(sentence)
+    {
+        return false;
+    }
+    PHRASE.find(sentence).is_some_and(|m| {
+        // Only a bare "decided" can be followed by nothing decided; the other
+        // phrases ("chose X over Y", "going with X") carry their object.
+        let bare = m.as_str().eq_ignore_ascii_case("decided");
+        !(is_quoted(sentence, m.start()) || bare && lacks_object(&sentence[m.end()..]))
+    })
 }
 
 /// `## D-NNN Title` blocks inside a Write/Edit to `DESIGN_DECISIONS.md`.
@@ -158,6 +201,64 @@ mod tests {
             },
             Some("/work/app"),
         )
+    }
+
+    #[test]
+    fn labeled_project_decisions_count() {
+        let hit = run(
+            StoredKind::UserText,
+            "Decision for this project: all timestamps are stored as UTC epoch milliseconds.",
+        );
+        assert_eq!(hit.len(), 1);
+        for s in [
+            "Decision for this project: tbd.",
+            "What is the decision for this project: A or B?",
+            "The decision for the weekend trip is still open for now.",
+        ] {
+            assert!(
+                run(StoredKind::UserText, s).is_empty(),
+                "should not match: {s}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_decision_needs_an_object_and_five_words() {
+        for s in [
+            "We decided that the cache must be keyed by tenant.",
+            "We chose Postgres over MySQL.",
+            "Decided to keep the archive format as it is.",
+            "Going with sqlite for the local store.",
+        ] {
+            assert_eq!(run(StoredKind::UserText, s).len(), 1, "{s}");
+        }
+        for s in [
+            "Decided upfront, not bolted on later.",
+            "We decided.",
+            "Decided quickly and moved on.",
+            "Going with it.",
+        ] {
+            assert!(run(StoredKind::UserText, s).is_empty(), "{s}");
+        }
+    }
+
+    #[test]
+    fn switched_with_an_object_phrase_before_to() {
+        for s in [
+            "Switched the default tags to the new cost-center key in providers.tf.",
+            "We switched the retry policy to exponential backoff.",
+        ] {
+            assert_eq!(run(StoredKind::AssistantText, s).len(), 1, "{s}");
+        }
+        for s in [
+            // First-person narration of an edit, not a stated choice.
+            "I switched the button and modal components to named exports.",
+            // Too far from "to" to be one clause.
+            "Switched one two three four five six seven to eight.",
+            "Have we switched the tags to the new key?",
+        ] {
+            assert!(run(StoredKind::AssistantText, s).is_empty(), "{s}");
+        }
     }
 
     fn tool(name: &str, input: &Value) -> Vec<Candidate> {

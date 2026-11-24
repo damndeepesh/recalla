@@ -155,6 +155,28 @@ fn eval_precision_and_recall() {
     }
 }
 
+/// Imperative prompts ("Decision for this project: ...", "Rule: ...", "We always ...",
+/// "Going forward, ..."): every label found, nothing extra, including the near-misses.
+#[test]
+fn imperative_prompts_are_extracted_exactly() {
+    let doc: Value = serde_json::from_str(
+        &fs::read_to_string("tests/fixtures/extract/imperative.json").unwrap(),
+    )
+    .unwrap();
+    let sessions = doc["sessions"].as_array().unwrap().clone();
+    let env = Env::new();
+    for s in &sessions {
+        env.write_session(s);
+    }
+    env.backfill();
+    let by_kind = score(&sessions, &env.active());
+    for (kind, t) in &by_kind {
+        println!("{kind:<12} tp {} fp {} fn {}", t.tp, t.fp, t.fn_);
+        assert_eq!((t.fp, t.fn_), (0, 0), "{kind}");
+    }
+    assert!(!by_kind.is_empty());
+}
+
 fn rust_cli(sessions: &[Value]) -> &Value {
     sessions.iter().find(|s| s["id"] == "rust-cli").unwrap()
 }

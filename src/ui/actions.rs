@@ -15,8 +15,9 @@ use super::sync::{self, JobSpec};
 use crate::hook;
 use crate::hooks_cfg::{self, CfgError};
 use crate::mirror;
-use crate::model::Status;
+use crate::model::{Scope, Status};
 use crate::ops::{self, PackArgs};
+use crate::pack;
 use crate::paths;
 use crate::store::{
     DEFAULT_BUSY, InjectionFilter, Store, StoreError, Via, saved_pct, schema_version,
@@ -45,6 +46,8 @@ pub fn routes() -> Vec<Route> {
         route(Method::Post, "/api/memories/{uid}/confirm", memory_confirm),
         route(Method::Post, "/api/memories/{uid}/forget", memory_forget),
         route(Method::Post, "/api/memories/{uid}/restore", memory_restore),
+        route(Method::Post, "/api/memories/{uid}/promote", memory_promote),
+        route(Method::Post, "/api/memories/{uid}/edit", memory_edit),
         route(Method::Post, "/api/test-recall", test_recall),
         route(Method::Post, "/api/sync", sync_start),
         route(Method::Get, "/api/sync/status", sync_status),
@@ -192,6 +195,67 @@ fn memory_restore(ctx: &Ctx, _: &Request, p: &Params) -> ApiResult {
     memory_action(ctx, p, Act::Restore)
 }
 
+/// Body `{"scope": "global"}` (default) or `{"scope": "project", "project": KEY}`.
+/// Answers with the new memory; the original is superseded by it.
+fn memory_promote(ctx: &Ctx, req: &Request, p: &Params) -> ApiResult {
+    let id = checked("uid", p.get("uid").ok_or(ApiError::NotFound)?, 64)?;
+    let body = json_body(req)?;
+    let target = match string_field(&body, "scope", 16)?.as_deref() {
+        None | Some("global") => Scope::Global,
+        Some("project") => {
+            Scope::Project(string_field(&body, "project", 500)?.ok_or_else(|| {
+                ApiError::BadRequest("project scope needs a project key".to_owned())
+            })?)
+        }
+        Some(_) => return Err(ApiError::BadRequest("invalid scope".to_owned())),
+    };
+    let mut store = write_store(ctx)?;
+    let uid = match store.memories_by_uid_prefix(id)?.as_slice() {
+        [] => return Err(ApiError::NotFound),
+        [one] => one.uid.clone(),
+        _ => {
+            return Err(ApiError::Conflict(
+                "id prefix matches several memories; use a longer one".to_owned(),
+            ));
+        }
+    };
+    let new_uid = ops::promote(&mut store, &uid, &target).map_err(ApiError::BadRequest)?;
+    if let Some(warning) = mirror::sync_best_effort(&mut store, &ctx.data_dir) {
+        eprintln!("recalla ui: {warning}");
+    }
+    let detail = store
+        .ui_memory_detail(&new_uid)?
+        .ok_or(ApiError::NotFound)?;
+    ok(&super::api::memory_row_json(&detail.row))
+}
+
+/// Body `{"text": "..."}`. The text is redacted and the original superseded
+/// by a confirmed memory carrying it. Answers with the new memory.
+fn memory_edit(ctx: &Ctx, req: &Request, p: &Params) -> ApiResult {
+    let id = checked("uid", p.get("uid").ok_or(ApiError::NotFound)?, 64)?;
+    let body = json_body(req)?;
+    let text = string_field(&body, "text", ops::MAX_EDIT_CHARS * 4)?
+        .ok_or_else(|| ApiError::BadRequest("text is required".to_owned()))?;
+    let mut store = write_store(ctx)?;
+    let uid = match store.memories_by_uid_prefix(id)?.as_slice() {
+        [] => return Err(ApiError::NotFound),
+        [one] => one.uid.clone(),
+        _ => {
+            return Err(ApiError::Conflict(
+                "id prefix matches several memories; use a longer one".to_owned(),
+            ));
+        }
+    };
+    let new_uid = ops::edit(&mut store, &uid, &text).map_err(ApiError::BadRequest)?;
+    if let Some(warning) = mirror::sync_best_effort(&mut store, &ctx.data_dir) {
+        eprintln!("recalla ui: {warning}");
+    }
+    let detail = store
+        .ui_memory_detail(&new_uid)?
+        .ok_or(ApiError::NotFound)?;
+    ok(&super::api::memory_row_json(&detail.row))
+}
+
 /// A writable connection to the existing database.
 fn write_store(ctx: &Ctx) -> Result<Store, ApiError> {
     let db = paths::db_path(&ctx.data_dir);
@@ -299,6 +363,7 @@ fn test_recall(ctx: &Ctx, req: &Request, _: &Params) -> ApiResult {
         "saved_pct": saved_pct(to_u64(pack.est_tokens), Some(to_u64(base.candidate_tokens)))
             .map(|v| (v * 10.0).round() / 10.0),
         "memories": memories,
+        "explain": pack::explain_json(&pack.decisions),
     }))
 }
 

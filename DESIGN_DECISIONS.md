@@ -173,3 +173,51 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Why: Lax cookies ride top-level GET navigations, which is what the chain is, but never cross-site fetch/XHR/iframes; no GET mutates, and every POST still needs the Host allowlist, a matching Origin and the CSRF header, so a cross-site page can at most load the shell and cannot read a response.
 - Rejected: a 200 interstitial with meta refresh instead of the 302 (more moving parts, not needed once Lax works); a plain `http://` URL in argv (leaks the code, see D-023); keeping Strict and printing the link only (breaks the headline "opens your browser" flow).
 - Supersedes: the `SameSite=Strict` part of D-022/D-023.
+
+## D-025 Memory benchmark: separate crate, public-repo ground truth, black-box adapters (2026-11-23)
+
+- Context: self-run memory benchmarks are distrusted (vendors dispute each other's LoCoMo scores), and a suite written by Recalla's author would be tuned to Recalla's rules.
+- Decision: `bench/` is a standalone cargo crate (`membench`, own `[workspace]`, `publish = false`, not part of `make check`'s dependency graph) that does not link `recalla`. Every tool, Recalla included, is driven as a black box through an adapter (CLI or MCP stdio). Ground truth is mined deterministically from the git history of pinned public repos (no LLM): causal/decision sentences from commit messages are the facts, a later commit touching the same files is the task, and a fact is stale when the lines its commit added no longer survive. Suites are data (`bench/suites/*.json`) with a tuning split and a held-out split that the extractor is never tuned against. Scoring and weights are fixed in `bench/SCORING.md` before results are published. Dataset building (`fetch`) uses the network; running a suite is offline.
+- Why: ground truth that comes from other people's repos cannot be fitted to our extractor; a separate crate keeps the benchmark neutral enough to move to its own repo and keeps `recalla` free of benchmark dependencies.
+- Rejected: a hand-written synthetic suite as the headline (author bias; kept only as a smoke test); an LLM judge (non-reproducible, costs money); linking the `recalla` crate for the Recalla adapter (would give it a path other tools do not have).
+
+## D-026 Benchmark scoring: n/a over zero, extraction only from ingestion, tempfile dependency (2026-11-24)
+
+- Context: first results scored tools on things they cannot do (Recalla got provenance 0.00 and extraction 1.00 after `remember`, which keeps no source and only echoes the feed), and benchmark scratch dirs were predictable paths under `/tmp`.
+- Decision: a metric a tool has no interface for is n/a and excluded from its total; extraction is measured only for tools that ingest session transcripts; provenance only where a tool keeps a source (transcript sessions carry the commit as their id). Totals are an equal-weight mean of the pillars that apply, with `core` (usefulness + token savings) as the comparable column. The miner drops sentences that depend on their commit ("Because of this", "This change", conventional-commit subjects, bullets) after a hand spot-check found about a fifth of live facts weak (`bench/SPOTCHECK.md`). `bench/` depends on `tempfile` (private, auto-cleaned scratch directories; replaces hand-built `/tmp` paths flagged in security review).
+- Why: scoring a tool zero for a missing feature punishes honest interfaces and misleads; an echo is not extraction.
+- Rejected: scoring missing pillars as 0 (rewards tools that pretend); a hand-rolled temp directory (path traversal and clobbering risk).
+
+## D-027 SessionStart catches up recent transcripts (2026-11-24)
+- Context: a live `claude -p` run stored no assistant text. The Stop hook ran before the last records of the turn (the final reply) were written, and a finished session never fires it again.
+- Decision: `hook session-start` first re-ingests the project's 3 newest transcripts modified in the last 24 h (not the starting session; dir name = cwd with every non-alphanumeric char as `-`), extracts if anything changed, then builds the pack. Failures are logged and never cost the session its pack.
+- Why: ingest is incremental, so unchanged files are a cheap skip; the pack also gains memories from the previous session.
+- Rejected: sleeping in the Stop hook until the file settles (adds latency to every turn end, still racy); relying on `recalla backfill`.
+
+## D-028 Contradiction handling: conservative detector, newest wins only when safe (2026-11-24)
+
+- Context: preferences and decisions change ("tabs" then "spaces"); the pack must not inject both as if both held. Wrongly hiding a good memory is worse than keeping two.
+- Decision: at extraction (`extract::pipeline`), each newly stored preference/decision is compared with live rules of the same scope (`extract::conflict`, pure). A conflict is either opposed alternatives from one curated group (tabs/spaces, WAL/rollback journal, npm/pnpm/yarn/bun, ...) on a shared subject, or a polarity flip (never/don't vs not) over near-identical wording (word-set Jaccard >= 0.7, >= 2 content words each). A newer rule at least as confident as an older, unconfirmed (< 0.9) one supersedes it via `Store::supersede`; anything else flags the newcomer `needs_reverify`, and the older rule too unless it is confirmed (>= 0.9): automatic detection never demotes a confirmed rule. Supersede needs the newcomer's confidence >= the older's, so a weaker (e.g. assistant-derived) rule cannot replace a stronger user-stated one. Both write a `conflicts` relation (new -> old); `why` shows the link and recomputes the reason from the texts, so no schema change.
+- Reversible: `confirm` (-> `set_status(Active)`) clears both relation kinds and restores the memory. `extract --rebuild` re-runs detection through the restore path.
+- Consequences: no LLM, deterministic, O(rules in scope) per new rule. Misses paraphrased conflicts by design. The group list is code, so extending it is a reviewed change.
+- Rejected: embedding similarity (network/model, nondeterministic); superseding on any textual overlap (false positives); storing the reason in a new column (migration for derivable data).
+
+## D-029 Decay of unconfirmed memories is ranking-only (2026-11-24)
+
+- Context: low-confidence memories nobody re-confirmed keep crowding packs long after they stopped being true.
+- Decision: `pack::decay` multiplies the score by `0.5..=1` for memories below `CONFIRMED_CONFIDENCE`: full weight for 30 days since `updated_at`, then an exponential fade (120-day constant) to half. Confirmed memories and re-extracted ones (`updated_at` bumps) are unaffected. Shown as the `decay` factor in `pack --explain`.
+- Why: pack-only keeps D-004 intact (nothing is archived or deleted), is deterministic, and `confirm` resets it by construction.
+- Rejected: auto-archiving by age (loses memories silently, breaks the never-hard-delete promise in spirit); a per-memory TTL column (schema change for no extra signal).
+
+## D-030 File-level recall via PreToolUse ships opt-in (2026-11-24)
+
+- Context: a session-start pack cannot know which file the agent will open. A PreToolUse hook can inject the memories anchored to that file just in time. Contract checked against the Claude Code hooks docs: stdin has `tool_name`, `session_id`, `cwd`, absolute `tool_input.file_path`; context-only injection is `hookSpecificOutput.additionalContext` with exit 0 and no `permissionDecision`; plain stdout is not context for this event; `MultiEdit` is not in the documented tool list, so it stays in the matcher only as a harmless extra.
+- Decision: `recalla hook pre-tool-use` (matcher `Read|Edit|Write|MultiEdit`) injects up to 5 anchored, non-stale, active memories (<= 300 tokens) once per memory per session, deduped through the injection ledger (so anything the session-start pack already showed is skipped). It never decides permissions and exits 0 on every error. It is installed only with `hooks install --file-recall`; uninstall removes it by the same exact-command rule; other PreToolUse entries are never touched.
+- Why opt-in: the plan says to ship by default only if a per-file bench beats session-start-only on tokens and right-fact recall. That bench is not run yet (it needs full-history clones), so the default stays off. p95 is 1.4 ms in-process on 100k memories (`make perf`).
+- Rejected: injecting on every tool (noise); a separate dedupe table (the ledger already has the data); blocking with `permissionDecision` to force a re-read (changes agent behaviour).
+
+## D-031 `getrandom` for login and session secrets (2026-11-24)
+
+- Context: `random_hex` read `/dev/urandom`, which does not exist on Windows, so the dashboard could not start there.
+- Decision: use the `getrandom` crate (OS CSPRNG on every platform). It was already in the lockfile through other dependencies, so it adds no new code to the build.
+- Rejected: hand-written Windows FFI (`unsafe` is forbidden in this crate); `rand` (far larger for one call).

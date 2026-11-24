@@ -51,7 +51,7 @@ impl Harness for Codex {
 /// Codex home from the environment: `CODEX_HOME`, else `$HOME/.codex`.
 #[must_use]
 pub fn default_root() -> Option<PathBuf> {
-    root_from_env(std::env::var_os("CODEX_HOME"), std::env::var_os("HOME"))
+    root_from_env(std::env::var_os("CODEX_HOME"), crate::paths::home_dir())
 }
 
 /// Pure form of [`default_root`]. Empty values count as unset.

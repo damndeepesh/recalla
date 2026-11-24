@@ -20,17 +20,25 @@ const MID_CONFIDENCE: f32 = 0.7;
 const IMPORTANCE: u8 = 2;
 
 /// Verbs that make "please X" a standing rule rather than a one-off request.
-const PLEASE_VERBS: &str = "use|keep|write|add|run|make|ensure|avoid|stick|follow|prefer|put|name|\
+const PLEASE_VERBS: &str = "use|keep|write|add|make|ensure|avoid|stick|follow|prefer|put|name|\
     format|document|commit|store|return|log|handle|validate|install|pin|always|never|do|don'?t";
+
+/// Verbs that make "we always X" a team convention rather than narration.
+const TEAM_VERBS: &str = "use|run|squash|rebase|merge|commit|write|put|name|keep|add|log|test|review|format|pin|tag|branch|document";
 
 static FILLER: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)^(?:(?:also|and|but|ok|okay|so|btw|then|yes|yeah)\b[,:]?\s+)+")
         .expect("valid regex")
 });
 
+/// A bare imperative ("Use X before any Y", "Keep the binary under 5 MB") is
+/// only a standing rule when it carries a scope or limit word; "Use the
+/// staging db" alone is a one-off instruction.
+const BARE_RULE: &str = r"(?:use|keep|run|write|commit|pin|set|name|put)\s+.+?\b(?:every|all|any|each|before|after|under|below|at\s+least|at\s+most|no\s+more\s+than)\b";
+
 static MARKER: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(&format!(
-        r"(?is)^(?:always\b|never\b|don['’]?t\b|do not\b|make sure\b|please\s+(?:{PLEASE_VERBS})\b|(?:(?:i|we)\s+)?prefer\b|instead of\b|from now on\b|remember\b|stop\s+\w+ing\b|avoid\b|use\s+.+?,?\s+not\s+\S)"
+        r"(?is)^(?:always\b|never\b|going forward\s*[,:]|(?:standing\s+)?(?:rule|convention|policy)\s*:|we\s+always\s+(?:{TEAM_VERBS})\b|don['’]?t\b|do not\b|make sure\b|please\s+(?:{PLEASE_VERBS})\b|(?:(?:i|we)\s+)?prefer\b|instead of\b|from now on\b|remember\b|stop\s+\w+ing\b|avoid\b|use\s+.+?,?\s+not\s+\S|{BARE_RULE})"
     ))
     .expect("valid regex")
 });
@@ -134,6 +142,49 @@ mod tests {
 
     fn user(text: &str) -> Vec<Candidate> {
         run(StoredKind::UserText, text)
+    }
+
+    #[test]
+    fn labeled_rules_and_team_conventions_count() {
+        for s in [
+            "Rule: no network calls in unit tests.",
+            "Convention: error types live in src/error.rs.",
+            "Standing rule: every endpoint gets a rate limit.",
+            "Going forward, log with tracing instead of println.",
+            "We always squash merge PRs in this repo.",
+        ] {
+            assert_eq!(user(s).len(), 1, "should match: {s}");
+        }
+        for s in [
+            "We always forgot to bump the version.",
+            "I always squash merge here, is that ok?",
+            "Rule of thumb for later, maybe.",
+            "Going forward is the plan we discussed yesterday.",
+            "Please run the tests.",
+        ] {
+            assert!(user(s).is_empty(), "should not match: {s}");
+        }
+    }
+
+    #[test]
+    fn bare_imperatives_count_only_with_a_scope_or_limit_word() {
+        for s in [
+            "Use terraform plan before any apply, no exceptions.",
+            "Use context deadlines on every outbound HTTP call.",
+            "Keep the binary under 5 MB.",
+            "Run the linter after all edits.",
+        ] {
+            assert_eq!(user(s).len(), 1, "should match: {s}");
+        }
+        for s in [
+            "Use the staging database for this task.",
+            "Keep going.",
+            "Run the tests.",
+            "Should we use caching before every request?",
+            "If you use the cache before any write it breaks.",
+        ] {
+            assert!(user(s).is_empty(), "should not match: {s}");
+        }
     }
 
     #[test]

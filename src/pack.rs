@@ -4,6 +4,7 @@
 //! (D-016), so the real token count is always lower.
 
 use std::collections::HashMap;
+use std::fmt::Write as _;
 
 use serde_json::{Value, json};
 
@@ -15,6 +16,9 @@ const MAX_LINE_CHARS: usize = 300;
 const MAX_REASON_CHARS: usize = 80;
 /// Recency half-life-ish constant, in days.
 const RECENCY_DAYS: f64 = 90.0;
+/// An unconfirmed memory keeps full weight this long, then fades.
+const DECAY_GRACE_DAYS: f64 = 30.0;
+const DECAY_DAYS: f64 = 120.0;
 const MS_PER_DAY: f64 = 86_400_000.0;
 /// Section titles in output order; the last one holds `needs_reverify`.
 const TITLES: [&str; 7] = [
@@ -45,6 +49,8 @@ pub struct Pack {
     pub est_tokens: usize,
     /// Included memories, best ranked first.
     pub included_uids: Vec<String>,
+    /// Every ranked candidate with its score parts and outcome, best first.
+    pub decisions: Vec<Decision>,
 }
 
 const fn kind_weight(kind: Kind) -> f64 {
@@ -61,15 +67,137 @@ const fn kind_weight(kind: Kind) -> f64 {
 /// `kind_weight x confidence x (1 + ln seen_count) x recency`, where recency
 /// is `0.5 + 0.5 exp(-age_days / 90)` from `updated_at`. `query_boost` is the
 /// memory's normalized search relevance in `0..=1` (`None`: not a hit),
-/// which multiplies the score by `1.5 + boost`.
+/// which multiplies the score by `1.5 + boost`. `decay` fades memories below
+/// [`crate::ops::CONFIRMED_CONFIDENCE`] after a grace period, down to half
+/// weight; `confirm` (or a newer sighting) resets it. Ranking only: nothing is
+/// ever deleted or archived by it.
 #[must_use]
 pub fn score(m: &Memory, now_ms: i64, query_boost: Option<f64>) -> f64 {
-    #[allow(clippy::cast_precision_loss)] // ms timestamps are far below 2^52
-    let age_days = (now_ms - m.updated_at).max(0) as f64 / MS_PER_DAY;
-    let recency = 0.5 + 0.5 * (-age_days / RECENCY_DAYS).exp();
-    let seen = f64::from(m.seen_count.max(1)).ln() + 1.0;
-    let base = kind_weight(m.kind) * f64::from(m.confidence) * seen * recency;
-    base * query_boost.map_or(1.0, |q| 1.5 + q.clamp(0.0, 1.0))
+    ScoreParts::of(m, now_ms, query_boost).total()
+}
+
+/// The factors of [`score`], for `pack --explain`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ScoreParts {
+    pub kind_weight: f64,
+    pub confidence: f64,
+    /// `1 + ln(seen_count)`.
+    pub seen: f64,
+    pub recency: f64,
+    /// `1` for confirmed memories, else `0.5..=1` by time since last update.
+    pub decay: f64,
+    /// `1.5 + boost` for a query hit, 1 otherwise.
+    pub query: f64,
+}
+
+impl ScoreParts {
+    fn of(m: &Memory, now_ms: i64, query_boost: Option<f64>) -> Self {
+        #[allow(clippy::cast_precision_loss)] // ms timestamps are far below 2^52
+        let age_days = (now_ms - m.updated_at).max(0) as f64 / MS_PER_DAY;
+        Self {
+            kind_weight: kind_weight(m.kind),
+            confidence: f64::from(m.confidence),
+            seen: f64::from(m.seen_count.max(1)).ln() + 1.0,
+            recency: 0.5 + 0.5 * (-age_days / RECENCY_DAYS).exp(),
+            decay: decay(f64::from(m.confidence), age_days),
+            query: query_boost.map_or(1.0, |q| 1.5 + q.clamp(0.0, 1.0)),
+        }
+    }
+
+    fn total(self) -> f64 {
+        self.kind_weight * self.confidence * self.seen * self.recency * self.decay * self.query
+    }
+}
+
+fn decay(confidence: f64, age_days: f64) -> f64 {
+    if confidence >= f64::from(crate::ops::CONFIRMED_CONFIDENCE) {
+        return 1.0;
+    }
+    0.5 + 0.5 * (-(age_days - DECAY_GRACE_DAYS).max(0.0) / DECAY_DAYS).exp()
+}
+
+/// Why a candidate is not in the pack.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Dropped {
+    /// No visible text after sanitizing.
+    NoText,
+    /// Its section already holds the maximum number of items.
+    SectionCap,
+    /// It would not fit the remaining token budget.
+    Budget,
+}
+
+impl Dropped {
+    const fn label(self) -> &'static str {
+        match self {
+            Self::NoText => "no visible text",
+            Self::SectionCap => "section cap",
+            Self::Budget => "over budget",
+        }
+    }
+}
+
+/// One ranked candidate and what happened to it (`pack --explain`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Decision {
+    pub uid: String,
+    pub kind: Kind,
+    pub section: &'static str,
+    /// `active` or `needs_reverify` (the anchored code changed).
+    pub status: Status,
+    pub parts: ScoreParts,
+    pub score: f64,
+    /// `None`: included.
+    pub dropped: Option<Dropped>,
+}
+
+impl Decision {
+    fn json(&self) -> Value {
+        let r = |x: f64| (x * 1000.0).round() / 1000.0;
+        json!({
+            "uid": self.uid, "kind": self.kind.to_string(), "section": self.section,
+            "status": self.status.to_string(), "score": r(self.score),
+            "parts": {
+                "kind_weight": r(self.parts.kind_weight), "confidence": r(self.parts.confidence),
+                "seen": r(self.parts.seen), "recency": r(self.parts.recency), "decay": r(self.parts.decay), "query": r(self.parts.query),
+            },
+            "included": self.dropped.is_none(),
+            "dropped": self.dropped.map(Dropped::label),
+        })
+    }
+}
+
+/// Renders decisions as a plain table, best ranked first.
+#[must_use]
+pub fn explain_text(decisions: &[Decision]) -> String {
+    let mut out = String::from(
+        "uid       kind        status          score  kind×conf×seen×recency×decay×query  outcome\n",
+    );
+    for d in decisions {
+        let uid8: String = d.uid.chars().take(8).collect();
+        let p = d.parts;
+        let _ = writeln!(
+            out,
+            "{uid8:<9} {:<11} {:<14} {:>6.3}  {:.2}×{:.2}×{:.2}×{:.2}×{:.2}×{:.2}  {}",
+            d.kind.to_string(),
+            d.status.to_string(),
+            d.score,
+            p.kind_weight,
+            p.confidence,
+            p.seen,
+            p.recency,
+            p.decay,
+            p.query,
+            d.dropped.map_or("included", Dropped::label),
+        );
+    }
+    out
+}
+
+/// The explain table as JSON.
+#[must_use]
+pub fn explain_json(decisions: &[Decision]) -> Value {
+    Value::Array(decisions.iter().map(Decision::json).collect())
 }
 
 /// Min-max normalizes search scores (higher is better) into `0..=1`. A single
@@ -85,6 +213,81 @@ pub fn query_boosts(hits: &[(String, f64)]) -> HashMap<String, f64> {
             (uid.clone(), norm)
         })
         .collect()
+}
+
+/// Hits scoring under this share of the best hit are too weak to spend budget on.
+const HIT_CUTOFF: f64 = 0.25;
+/// Word overlap at which two memories count as the same statement.
+const NEAR_DUPLICATE: f64 = 0.85;
+
+fn word_set(text: &str) -> std::collections::HashSet<String> {
+    text.split(|c: char| !c.is_alphanumeric())
+        .filter(|w| w.chars().count() >= 3)
+        .map(str::to_lowercase)
+        .collect()
+}
+
+fn overlap(a: &std::collections::HashSet<String>, b: &std::collections::HashSet<String>) -> f64 {
+    let union = a.union(b).count();
+    if union == 0 {
+        return 0.0;
+    }
+    #[allow(clippy::cast_precision_loss)]
+    {
+        a.intersection(b).count() as f64 / union as f64
+    }
+}
+
+/// Narrows a pack to what a task needs. `hits` are the memories matching the
+/// task text (BM25 score, higher better) and `file_uids` those anchored to a
+/// file the task names. Keeps file matches and hits scoring at least
+/// `HIT_CUTOFF` of the best, drops near-duplicates, and always keeps
+/// preferences (cheap and always relevant). File matches get the top boost.
+/// With no usable hit the memories come back unchanged and unboosted, so a
+/// vague query never empties a pack.
+#[must_use]
+#[allow(clippy::implicit_hasher)] // callers always use the default hasher
+pub fn focus(
+    memories: &[Memory],
+    hits: &[(String, f64)],
+    file_uids: &std::collections::HashSet<String>,
+) -> (Vec<Memory>, HashMap<String, f64>) {
+    let best = hits.iter().map(|h| h.1).fold(f64::NEG_INFINITY, f64::max);
+    let strong: Vec<(String, f64)> = hits
+        .iter()
+        .filter(|h| h.1 >= best * HIT_CUTOFF)
+        .cloned()
+        .collect();
+    if strong.is_empty() && file_uids.is_empty() {
+        return (memories.to_vec(), HashMap::new());
+    }
+    let mut boosts = query_boosts(&strong);
+    for uid in file_uids {
+        boosts.insert(uid.clone(), 1.0);
+    }
+    let mut relevant: Vec<&Memory> = memories
+        .iter()
+        .filter(|m| boosts.contains_key(&m.uid))
+        .collect();
+    relevant.sort_by(|a, b| {
+        boosts[&b.uid]
+            .total_cmp(&boosts[&a.uid])
+            .then_with(|| a.uid.cmp(&b.uid))
+    });
+    let mut kept: Vec<(&Memory, std::collections::HashSet<String>)> = Vec::new();
+    for m in relevant {
+        let w = word_set(&m.text);
+        if kept.iter().all(|(_, k)| overlap(&w, k) < NEAR_DUPLICATE) {
+            kept.push((m, w));
+        }
+    }
+    let keep: std::collections::HashSet<&str> = kept.iter().map(|(m, _)| m.uid.as_str()).collect();
+    let focused = memories
+        .iter()
+        .filter(|m| keep.contains(m.uid.as_str()) || m.kind == Kind::Preference)
+        .cloned()
+        .collect();
+    (focused, boosts)
 }
 
 /// Whitespace collapsed to single spaces, cut to `max` chars with `…`.
@@ -212,11 +415,12 @@ pub fn build(
     now_ms: i64,
 ) -> Pack {
     let label = one_line(project_label, MAX_LINE_CHARS);
-    let empty = || Pack {
+    let empty = |decisions: Vec<Decision>| Pack {
         markdown: String::new(),
         json: pack_json(&label, budget, 0, &[]),
         est_tokens: 0,
         included_uids: Vec::new(),
+        decisions,
     };
 
     // The header is sized with the largest number it can show, so filling in
@@ -224,23 +428,40 @@ pub fn build(
     let mut cost = Cost::default();
     cost.add(header(&label, budget, budget).len());
     if cost.est() > budget {
-        return empty();
+        return empty(Vec::new());
     }
 
-    let mut ranked: Vec<(f64, &Memory)> = memories
+    let mut ranked: Vec<(ScoreParts, f64, &Memory)> = memories
         .iter()
-        .map(|m| (score(m, now_ms, query_hits.get(&m.uid).copied()), m))
+        .map(|m| {
+            let parts = ScoreParts::of(m, now_ms, query_hits.get(&m.uid).copied());
+            (parts, parts.total(), m)
+        })
         .collect();
-    ranked.sort_by(|a, b| b.0.total_cmp(&a.0).then_with(|| a.1.uid.cmp(&b.1.uid)));
+    ranked.sort_by(|a, b| b.1.total_cmp(&a.1).then_with(|| a.2.uid.cmp(&b.2.uid)));
+    let mut decisions: Vec<Decision> = Vec::with_capacity(ranked.len());
 
     let mut sections: [Vec<String>; TITLES.len()] = Default::default();
     let mut included: Vec<(&Memory, String)> = Vec::new();
-    for (_, m) in ranked {
+    for (parts, score, m) in ranked {
+        let s = section(m);
+        let mut decision = Decision {
+            uid: m.uid.clone(),
+            kind: m.kind,
+            section: TITLES[s],
+            status: m.status,
+            parts,
+            score,
+            dropped: None,
+        };
         let Some((line, text)) = item(m) else {
+            decision.dropped = Some(Dropped::NoText);
+            decisions.push(decision);
             continue;
         };
-        let s = section(m);
         if sections[s].len() >= SECTION_CAP[s] {
+            decision.dropped = Some(Dropped::SectionCap);
+            decisions.push(decision);
             continue;
         }
         let mut next = cost;
@@ -252,10 +473,13 @@ pub fn build(
             cost = next;
             sections[s].push(line);
             included.push((m, text));
+        } else {
+            decision.dropped = Some(Dropped::Budget);
         }
+        decisions.push(decision);
     }
     if included.is_empty() {
-        return empty();
+        return empty(decisions);
     }
 
     let render = |est: usize| {
@@ -288,6 +512,7 @@ pub fn build(
         markdown,
         est_tokens: shown,
         included_uids: included.iter().map(|(m, _)| m.uid.clone()).collect(),
+        decisions,
     }
 }
 
@@ -379,6 +604,24 @@ mod tests {
     const NOW: i64 = 1_000_000_000_000;
     const DAY: i64 = 86_400_000;
 
+    #[test]
+    fn unconfirmed_memories_fade_after_a_grace_period_and_confirm_resets_it() {
+        let day = 86_400_000_i64;
+        let mut m = mem("a", Kind::Decision, "use sqlite");
+        m.updated_at = NOW - 20 * day;
+        assert!(
+            (ScoreParts::of(&m, NOW, None).decay - 1.0).abs() < 1e-9,
+            "inside grace"
+        );
+        m.updated_at = NOW - 400 * day;
+        let faded = ScoreParts::of(&m, NOW, None).decay;
+        assert!((0.5..0.56).contains(&faded), "{faded}");
+        let mut confirmed = m.clone();
+        confirmed.confidence = 0.9;
+        assert!((ScoreParts::of(&confirmed, NOW, None).decay - 1.0).abs() < 1e-9);
+        assert!(score(&confirmed, NOW, None) > score(&m, NOW, None));
+    }
+
     fn mem(uid: &str, kind: Kind, text: &str) -> Memory {
         Memory {
             uid: format!("{uid:0<32}"),
@@ -441,11 +684,15 @@ mod tests {
         };
         assert!(score(&seen, NOW, None) > score(&fact, NOW, None));
 
-        let old = Memory {
-            updated_at: NOW - 900 * DAY,
+        let confirmed = Memory {
+            confidence: 0.9,
             ..fact.clone()
         };
-        let (new, aged) = (score(&fact, NOW, None), score(&old, NOW, None));
+        let old = Memory {
+            updated_at: NOW - 900 * DAY,
+            ..confirmed.clone()
+        };
+        let (new, aged) = (score(&confirmed, NOW, None), score(&old, NOW, None));
         assert!(aged < new && aged > new * 0.49);
 
         assert!(score(&fact, NOW, Some(0.0)) > score(&fact, NOW, None));
@@ -453,7 +700,7 @@ mod tests {
         // A future updated_at doesn't boost beyond "fresh".
         let future = Memory {
             updated_at: NOW + DAY,
-            ..fact.clone()
+            ..confirmed.clone()
         };
         assert!((score(&future, NOW, None) - new).abs() < 1e-12);
     }
@@ -591,5 +838,94 @@ mod tests {
             NOW,
         );
         assert!(p.markdown.starts_with("# Recalla memory · project a b · "));
+    }
+
+    #[test]
+    fn focus_drops_weak_hits_duplicates_and_non_hits_but_keeps_preferences() {
+        use std::collections::HashSet;
+        let ms = vec![
+            mem(
+                "a",
+                Kind::Gotcha,
+                "glob builder drops separators when empty",
+            ),
+            mem(
+                "b",
+                Kind::Gotcha,
+                "glob builder drops separators when empty!",
+            ),
+            mem("c", Kind::Gotcha, "weak partial match about glob"),
+            mem("d", Kind::Gotcha, "tokio runtime shutdown ordering"),
+            mem("e", Kind::Preference, "use tabs"),
+            mem("f", Kind::Fact, "anchored to the named file only"),
+        ];
+        let id = |c: &str| format!("{c:0<32}");
+        let hits = vec![(id("a"), 10.0), (id("b"), 9.0), (id("c"), 1.0)];
+        let files: HashSet<String> = [id("f")].into();
+        let (kept, boosts) = focus(&ms, &hits, &files);
+        let uids: Vec<String> = kept.iter().map(|m| m.uid.clone()).collect();
+        // c is under the cutoff, b duplicates a, d never matched.
+        assert_eq!(uids, vec![id("a"), id("e"), id("f")]);
+        assert!((boosts[&id("f")] - 1.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn focus_with_no_signal_returns_everything_unboosted() {
+        let ms = vec![mem("a", Kind::Fact, "one"), mem("d", Kind::Fact, "two")];
+        let (kept, boosts) = focus(&ms, &[], &std::collections::HashSet::new());
+        assert_eq!(kept.len(), 2);
+        assert!(boosts.is_empty());
+    }
+
+    #[test]
+    fn decisions_cover_every_candidate_with_outcome_and_matching_score() {
+        let mut ms: Vec<Memory> = (0..12)
+            .map(|i| mem(&format!("{i:02x}"), Kind::Task, &format!("task number {i}")))
+            .collect();
+        ms.push(mem("f0", Kind::Fact, "\u{200B}"));
+        ms.push(mem("f1", Kind::Preference, "use tabs"));
+        let p = build(&ms, 1500, "x", &HashMap::new(), NOW);
+        assert_eq!(p.decisions.len(), ms.len());
+        let dropped = |d: Dropped| p.decisions.iter().filter(|x| x.dropped == Some(d)).count();
+        assert_eq!(dropped(Dropped::NoText), 1);
+        assert_eq!(dropped(Dropped::SectionCap), 4); // 12 tasks, cap 8
+        let included = p.decisions.iter().filter(|d| d.dropped.is_none()).count();
+        assert_eq!(included, p.included_uids.len());
+        // Sorted best first; the stored score equals the product of the parts.
+        let scores: Vec<f64> = p.decisions.iter().map(|d| d.score).collect();
+        assert!(scores.windows(2).all(|w| w[0] >= w[1]));
+        let d = &p.decisions[0];
+        let prod = d.parts.kind_weight
+            * d.parts.confidence
+            * d.parts.seen
+            * d.parts.recency
+            * d.parts.query;
+        assert!((prod - d.score).abs() < 1e-12);
+    }
+
+    #[test]
+    fn tight_budget_marks_the_rest_over_budget_and_query_part_shows() {
+        let ms = vec![
+            mem("a", Kind::Fact, "alpha fact that is fairly long text here"),
+            mem("b", Kind::Fact, "beta fact that is fairly long text here"),
+        ];
+        let hits: HashMap<String, f64> = [(format!("{:0<32}", "b"), 1.0)].into();
+        let p = build(&ms, 45, "x", &hits, NOW);
+        let by = |c: &str| {
+            p.decisions
+                .iter()
+                .find(|d| d.uid.starts_with(c))
+                .unwrap()
+                .clone()
+        };
+        assert!((by("b").parts.query - 2.5).abs() < 1e-9);
+        assert!((by("a").parts.query - 1.0).abs() < 1e-9);
+        assert_eq!(by("b").dropped, None);
+        assert_eq!(by("a").dropped, Some(Dropped::Budget));
+        let text = explain_text(&p.decisions);
+        assert!(
+            text.contains("over budget") && text.contains("included"),
+            "{text}"
+        );
     }
 }

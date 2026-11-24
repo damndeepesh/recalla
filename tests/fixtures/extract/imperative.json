@@ -1,0 +1,74 @@
+{
+  "_doc": "Imperative-prompt eval sessions (same schema as sessions.json); kept separate so UI tests that count sessions are unaffected.",
+  "sessions": [
+    {
+      "id": "imperative",
+      "cwd": "/tmp/eval/imperative",
+      "turns": [
+        {
+          "user": "Decision for this project: all timestamps are stored as UTC epoch milliseconds."
+        },
+        {
+          "assistant": "Got it, I'll use epoch milliseconds."
+        },
+        {
+          "user": "Never call the billing API from the worker crate."
+        },
+        {
+          "user": "From now on, put every migration in db/migrations with a numeric prefix."
+        },
+        {
+          "user": "Rule: no network calls in unit tests."
+        },
+        {
+          "user": "Convention: error types live in src/error.rs."
+        },
+        {
+          "user": "We always squash merge PRs in this repo."
+        },
+        {
+          "user": "Going forward, log with tracing instead of println."
+        },
+        {
+          "user": "Use the staging database for this task."
+        },
+        {
+          "user": "Rule of thumb question: should we ever call the billing API from the worker crate?"
+        },
+        {
+          "user": "Please run the tests."
+        }
+      ],
+      "expected": [
+        {
+          "kind": "decision",
+          "contains": "timestamps are stored as UTC epoch milliseconds"
+        },
+        {
+          "kind": "preference",
+          "contains": "Never call the billing API from the worker crate"
+        },
+        {
+          "kind": "preference",
+          "contains": "put every migration in db/migrations"
+        },
+        {
+          "kind": "preference",
+          "contains": "no network calls in unit tests"
+        },
+        {
+          "kind": "preference",
+          "contains": "error types live in src/error.rs"
+        },
+        {
+          "kind": "preference",
+          "contains": "always squash merge PRs"
+        },
+        {
+          "kind": "preference",
+          "contains": "log with tracing instead of println"
+        }
+      ]
+    }
+  ]
+}

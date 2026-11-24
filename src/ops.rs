@@ -11,9 +11,11 @@ use serde_json::json;
 use thiserror::Error;
 
 use crate::anchor;
-use crate::model::{Scope, Status};
+use crate::extract::conflict::{Analyzed, detect};
+use crate::model::{Kind, Memory, NewMemory, Origin, Provenance, Scope, Status};
 use crate::pack;
 use crate::paths;
+use crate::redact::redact;
 use crate::store::{DEFAULT_BUSY, Filter, NewInjection, Store, StoreError, Via};
 
 #[derive(Clone)]
@@ -100,15 +102,16 @@ fn build_pack(store: &Store, args: &PackArgs) -> Result<(pack::Pack, Baseline), 
     let memories = store
         .memories_for_project(project, &[Status::Active, Status::NeedsReverify])
         .map_err(|e| e.to_string())?;
-    let boosts = match args.query.as_deref() {
+    let (memories, boosts) = match args.query.as_deref() {
         Some(q) => {
             let hits = store
-                .search(q, &Filter::default(), SEARCH_LIMIT)
+                .search_any(q, &Filter::default(), SEARCH_LIMIT)
                 .map_err(|e| e.to_string())?;
             let scored: Vec<_> = hits.into_iter().map(|h| (h.memory.uid, h.score)).collect();
-            pack::query_boosts(&scored)
+            let files = files_anchored(store, project, q)?;
+            pack::focus(&memories, &scored, &files)
         }
-        None => HashMap::new(),
+        None => (memories, HashMap::new()),
     };
     let label = project.map_or("global", |p| {
         Path::new(p)
@@ -178,6 +181,26 @@ pub fn confirm(store: &mut Store, uid: &str) -> Result<usize, String> {
 /// Best-matching memories considered for a `--query` boost.
 const SEARCH_LIMIT: usize = 50;
 
+/// Uids of memories anchored to a file the query names (`src/a.rs`, ...).
+fn files_anchored(
+    store: &Store,
+    project: Option<&str>,
+    query: &str,
+) -> Result<std::collections::HashSet<String>, String> {
+    let paths = crate::extract::text::path_tokens(query);
+    let Some(project) = project.filter(|_| !paths.is_empty()) else {
+        return Ok(std::collections::HashSet::new());
+    };
+    let rows = store
+        .anchors_for_project(project)
+        .map_err(|e| e.to_string())?;
+    Ok(rows
+        .into_iter()
+        .filter(|(_, _, a, _)| paths.iter().any(|p| p == &a.path))
+        .map(|(uid, ..)| uid)
+        .collect())
+}
+
 /// Outcome of [`why`].
 pub enum Why {
     Found(String),
@@ -234,10 +257,12 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
         });
         prov.push((p, file, events));
     }
+    let rels = relation_lines(store, &m)?;
     if json {
         return Ok(Why::Found(format!(
             "{}\n",
             json!({
+                "relations": rels.iter().map(|l| json!({"relation": l.0, "other": l.1, "reason": l.2})).collect::<Vec<_>>(),
                 "uid": clean(&m.uid), "kind": m.kind.to_string(),
                 "text": truncate_chars(&m.text, 2000),
                 "scope": clean(&m.scope.to_string()), "confidence": m.confidence,
@@ -280,6 +305,7 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
                 .map(|e| format!("    > {}", truncate_chars(e, EVENT_CHARS))),
         );
     }
+    lines.extend(relation_text(&rels));
     if !m.anchors.is_empty() {
         lines.push("anchors".to_owned());
         lines.extend(m.anchors.iter().map(|a| match &a.symbol {
@@ -288,6 +314,148 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
         }));
     }
     Ok(Why::Found(lines.join("\n") + "\n"))
+}
+
+/// Moves a memory to another scope (promote to global, or pin to a project):
+/// stores it in `target`, supersedes the original with it, and returns the
+/// new uid. The uid is a function of scope, so this is a new memory (D-004).
+/// Anchors are not carried over: they are relative to the old project.
+/// Undo by archiving the new memory and `confirm`ing the original.
+///
+/// # Errors
+/// A message when the memory is missing, is not live, is a task, or is
+/// already in `target`.
+pub fn promote(store: &mut Store, uid: &str, target: &Scope) -> Result<String, String> {
+    let m = store
+        .get(uid)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("No memory matches {uid}"))?;
+    if !matches!(m.status, Status::Active | Status::NeedsReverify) {
+        return Err(format!(
+            "memory is {}; only live memories can move",
+            m.status
+        ));
+    }
+    if m.kind == Kind::Task {
+        return Err("tasks are tied to one piece of work and cannot be promoted".to_owned());
+    }
+    if &m.scope == target {
+        return Err("memory is already in that scope".to_owned());
+    }
+    let new = NewMemory {
+        kind: m.kind,
+        text: m.text.clone(),
+        scope: target.clone(),
+        confidence: m.confidence,
+        importance: m.importance,
+    };
+    let prov = m
+        .provenance
+        .first()
+        .cloned()
+        .unwrap_or_else(|| Provenance::new(Origin::Remember));
+    let moved = store.insert(&new, &prov).map_err(|e| e.to_string())?;
+    store
+        .supersede(&m.uid, moved.uid())
+        .map_err(|e| e.to_string())?;
+    Ok(moved.uid().to_owned())
+}
+
+/// Longest memory text an edit may carry (same cap as `remember`).
+pub const MAX_EDIT_CHARS: usize = 1000;
+
+/// Replaces a memory's text: the redacted new text is stored as a confirmed
+/// memory in the same kind and scope, and supersedes the original. Returns
+/// the new uid. Anchors are re-resolved from the new text when it has a
+/// project; the original stays in history.
+///
+/// # Errors
+/// A message when the memory is missing or not live, the text is empty,
+/// too long or unchanged, or the store fails.
+pub fn edit(store: &mut Store, uid: &str, text: &str) -> Result<String, String> {
+    let m = store
+        .get(uid)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("No memory matches {uid}"))?;
+    if !matches!(m.status, Status::Active | Status::NeedsReverify) {
+        return Err(format!(
+            "memory is {}; only live memories can be edited",
+            m.status
+        ));
+    }
+    let clean = redact(text.trim()).text.into_owned();
+    let clean = clean.split_whitespace().collect::<Vec<_>>().join(" ");
+    if clean.is_empty() {
+        return Err("text is empty".to_owned());
+    }
+    if clean.chars().count() > MAX_EDIT_CHARS {
+        return Err(format!(
+            "text is over {MAX_EDIT_CHARS} characters; keep one short, atomic memory"
+        ));
+    }
+    if clean == m.text {
+        return Err("text is unchanged".to_owned());
+    }
+    let new = NewMemory {
+        kind: m.kind,
+        text: clean,
+        scope: m.scope.clone(),
+        confidence: m.confidence.max(CONFIRMED_CONFIDENCE),
+        importance: m.importance,
+    };
+    let moved = store
+        .insert(&new, &Provenance::new(Origin::Remember))
+        .map_err(|e| e.to_string())?;
+    let new_uid = moved.uid().to_owned();
+    store
+        .supersede(&m.uid, &new_uid)
+        .map_err(|e| e.to_string())?;
+    confirm(store, &new_uid)?;
+    Ok(new_uid)
+}
+
+/// `(relation, other uid, reason)` for the memory's supersede/conflict links,
+/// phrased from this memory's side. The reason is recomputed from the two
+/// texts, so nothing but the link is stored.
+///
+/// # Errors
+/// A message when the store cannot be read.
+pub fn relation_lines(store: &Store, m: &Memory) -> Result<Vec<(String, String, String)>, String> {
+    let mine = Analyzed::new(&m.text);
+    let mut out = Vec::new();
+    for (src, dst, kind) in store.relations_of(&m.uid).map_err(|e| e.to_string())? {
+        let (other, outgoing) = if src == m.uid {
+            (dst, true)
+        } else {
+            (src, false)
+        };
+        let label = match (kind.as_str(), outgoing) {
+            ("supersedes", true) => "supersedes",
+            ("supersedes", false) => "superseded-by",
+            ("conflicts", true) => "contradicts",
+            ("conflicts", false) => "contradicted-by",
+            _ => continue,
+        };
+        let reason = store
+            .get(&other)
+            .map_err(|e| e.to_string())?
+            .and_then(|o| detect(&mine, &Analyzed::new(&o.text)))
+            .map_or_else(String::new, |c| c.reason());
+        out.push((label.to_owned(), clean(&other), reason));
+    }
+    Ok(out)
+}
+
+fn relation_text(rels: &[(String, String, String)]) -> Vec<String> {
+    if rels.is_empty() {
+        return Vec::new();
+    }
+    let mut out = vec!["relations".to_owned()];
+    out.extend(
+        rels.iter()
+            .map(|(rel, other, reason)| format!("  {rel} {other}  {reason}")),
+    );
+    out
 }
 
 /// Opens the existing store; never creates one.

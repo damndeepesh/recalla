@@ -19,3 +19,18 @@
 
 - [x] `recalla ui`: local dashboard with connector status (branch feature/ui)
 - [ ] PR for feature/ui, then release v0.2.0 (version bump, CHANGELOG, publish, tag) on the user's go
+
+## v0.4.0 (plan: .agent/plans/v0.4.0.md)
+
+- [x] 1 fix/capture-and-e2e: tail catch-up at SessionStart, e2e template fix, `make live`
+- [x] 2 feature/doctor
+- [x] 3 feature/extract-imperative
+- [x] 4 feature/pack-explain
+- [x] 5 feature/supersede-contradiction
+- [x] 6 feature/promote-global
+- [x] 7 feature/triage-ui
+- [x] 8 feature/pretooluse-recall (opt-in; per-file bench pending)
+- [x] 9 feature/ttl-decay
+- [x] fix/windows-full: USERPROFILE, `cmd /C start`, `.exe` hook matching, `cargo test` on Windows CI; grouped `backfill --pick`/`--list`
+- [x] fix/windows-anchors: anchors integration tests run on Windows (test helper joined an absolute cwd onto the Claude root)
+- [x] chore/release-0.3.1: version, changelog; dev -> main, tag v0.3.1, cargo publish

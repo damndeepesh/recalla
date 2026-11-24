@@ -1,0 +1,694 @@
+{
+  "name": "ripgrep-e1",
+  "repo": {
+    "url": "https://github.com/BurntSushi/ripgrep",
+    "license": "MIT-OR-Unlicense",
+    "t0": "02f08f3800611c214f8f51cd3bf8fcc9b24de331",
+    "t1": "ff712bfd9d0f26e08cf03a0a51b1f04440e074ba",
+    "head": "8ec6ef373f1845b5f9d9f341e8709cf86de057b8"
+  },
+  "facts": [
+    {
+      "id": "f9fc9f368-0",
+      "kind": "gotcha",
+      "text": "This permits doing `rg -a test /dev/sda1` for example, where as before /dev/sda1 was skipped because it wasn't a regular file.",
+      "files": [
+        "src/main.rs"
+      ],
+      "commit": "9fc9f368f5dc3d7d78fb8e68bea1c0a07a2aa32f",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.11
+    },
+    {
+      "id": "f2dce0dc0-0",
+      "kind": "gotcha",
+      "text": "The issue was that I got a bit overzealous with partial error reporting.",
+      "files": [
+        "ignore/src/gitignore.rs",
+        "ignore/src/walk.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "2dce0dc0df3c9ade3d89dd1ed673213d76760509",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.17
+    },
+    {
+      "id": "fe8a30cb8-0",
+      "kind": "decision",
+      "text": "We instead switch to writing ANSI escape sequences directly and ignore the TERMINFO database.",
+      "files": [
+        "ci/script.sh",
+        "doc/rg.1",
+        "src/app.rs",
+        "src/args.rs",
+        "src/atty.rs",
+        "src/main.rs",
+        "src/out.rs",
+        "src/printer.rs",
+        "src/search_buffer.rs",
+        "src/search_stream.rs",
+        "src/terminal_win.rs",
+        "src/worker.rs"
+      ],
+      "commit": "e8a30cb8934106e63f9d0938c547e535acb7b888",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.04
+    },
+    {
+      "id": "f0473df1e-0",
+      "kind": "gotcha",
+      "text": "The problem is that Regex::new interprets hex escaped byte sequences as *Unicode codepoints* by default, but we want them to actually stand for their raw byte values.",
+      "files": [
+        "grep/src/literals.rs",
+        "grep/src/search.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "0473df1ef5721143941fb7f883e22b17292b35bb",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f160f0489-0",
+      "kind": "decision",
+      "text": "Instead of `Ok(n) if n == 0` we can just write `Ok(0)`.",
+      "files": [
+        "src/main.rs"
+      ],
+      "commit": "160f04894fea3fe47d1ce6231102aa52085bb4ef",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fbb70f967-0",
+      "kind": "decision",
+      "text": "Instead of creating a particular atomic once and cloning it, we created a new value for each worker.",
+      "files": [
+        "ignore/src/walk.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "bb70f967437279e49fb87df23ae567c276e4cc33",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.25
+    },
+    {
+      "id": "fde5cb7d2-0",
+      "kind": "gotcha",
+      "text": "The reason why the ^C handling was removed is because it is irrevocably broken on Windows and is impossible to do correctly and efficiently in ANSI terminals.",
+      "files": [
+        "src/args.rs",
+        "src/main.rs"
+      ],
+      "commit": "de5cb7d22e00c18dfce082a68b0cf45924b56e7f",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.06
+    },
+    {
+      "id": "fde5cb7d2-1",
+      "kind": "decision",
+      "text": "This means that ripgrep will no longer try to reset your colors in your terminal if you kill it while searching.",
+      "files": [
+        "src/args.rs",
+        "src/main.rs"
+      ],
+      "commit": "de5cb7d22e00c18dfce082a68b0cf45924b56e7f",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.06
+    },
+    {
+      "id": "fb187c1a8-0",
+      "kind": "decision",
+      "text": "There is no longer any \"smart\" handling of the 'bold' style.",
+      "files": [
+        "doc/rg.1",
+        "src/app.rs",
+        "src/args.rs",
+        "src/printer.rs",
+        "termcolor/src/lib.rs"
+      ],
+      "commit": "b187c1a8175d88b743e2e225dbec98661f7a2f94",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f95cea776-0",
+      "kind": "gotcha",
+      "text": "In particular, we don't use the blocking semantics of MsQueue because we *don't know when iteration finishes*.",
+      "files": [
+        "ignore/src/walk.rs"
+      ],
+      "commit": "95cea77625f978a21b1d923e54d13f9217f0ef30",
+      "split": "tune",
+      "state": "live",
+      "survival": 0.89
+    },
+    {
+      "id": "f79d40d0e-0",
+      "kind": "decision",
+      "text": "The other issue this fixes is that binary detection is now applied to every buffer instead of just the first one.",
+      "files": [
+        "src/search_buffer.rs",
+        "src/search_stream.rs"
+      ],
+      "commit": "79d40d0e20a5710476b43c58c42db5124c2010a1",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f0c298f60-0",
+      "kind": "gotcha",
+      "text": "However, due to the bug in clap this wasn't necessary for ripgrep to do unless the user passed `-h`.",
+      "files": [
+        "build.rs",
+        "src/app.rs",
+        "src/args.rs"
+      ],
+      "commit": "0c298f60a68ed9c98192adaa23f1f517366ce336",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.4
+    },
+    {
+      "id": "fc50b8b41-0",
+      "kind": "gotcha",
+      "text": "This was slightly trickier than it might appear because the gitignore implementation actually modifies the glob before compiling it.",
+      "files": [
+        "globset/src/glob.rs",
+        "globset/src/lib.rs",
+        "ignore/src/gitignore.rs",
+        "ignore/src/lib.rs",
+        "ignore/src/types.rs"
+      ],
+      "commit": "c50b8b4125dc7f1181944dd92d0aca97c2450421",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.97
+    },
+    {
+      "id": "f4c78ca8b-0",
+      "kind": "decision",
+      "text": "Add explicit example of `*.foo` instead of `<glob>` in examples.",
+      "files": [
+        "doc/rg.1",
+        "src/app.rs"
+      ],
+      "commit": "4c78ca8b70e2c434ecaab3f175525aae81229f9d",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f112b3c5e-0",
+      "kind": "gotcha",
+      "text": "We cannot ever re-run regexes on a *subset* of a matched line, because it doesn't take into account zero width assertions on the edges of the regex.",
+      "files": [
+        "src/printer.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "112b3c5e0ae232fdbce90cd505c57f2c4abc4a22",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "ff2d1c582-0",
+      "kind": "gotcha",
+      "text": "This worked inside vim actually because heading is also only shown if tty is stdout (which is not the case when rg is called from vim).",
+      "files": [
+        "src/app.rs",
+        "src/args.rs"
+      ],
+      "commit": "f2d1c582a803a237924093be2f5e0ee45e8782ee",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.36
+    },
+    {
+      "id": "f84f4b4ef-0",
+      "kind": "gotcha",
+      "text": "The new method is necessary because it necessarily entails a performance hit for trying to match all parents.",
+      "files": [
+        "ignore/src/gitignore.rs",
+        "ignore/tests/gitignore_matched_path_or_any_parents_tests.rs"
+      ],
+      "commit": "84f4b4ef688413c227be226aa071bbc9298c394b",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.42
+    },
+    {
+      "id": "fe7c06b92-0",
+      "kind": "gotcha",
+      "text": "Print the context if there's a context left to be printed after returning early from a search (because of --max-count).",
+      "files": [
+        "src/search_stream.rs"
+      ],
+      "commit": "e7c06b92fb996adcbc40d1f025e29c44de5383e8",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fcd575d99-0",
+      "kind": "decision",
+      "text": "The corresponding change in `walkdir` retains the `sort_by` name, but gives the comparator a pair of `&DirEntry` values instead of a pair of `&OsStr` values.",
+      "files": [
+        "ignore/src/lib.rs",
+        "ignore/src/walk.rs",
+        "src/args.rs"
+      ],
+      "commit": "cd575d99f854110a184c731e1eab3397259a12a7",
+      "split": "holdout",
+      "state": "live",
+      "survival": 0.89
+    },
+    {
+      "id": "f2a14bf22-0",
+      "kind": "gotcha",
+      "text": "This is because `^` is actually allowed to match after the end of a trailing new line, which means `^$` matches both before and after the trailing new line when multiline mode is enabled.",
+      "files": [
+        "src/printer.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "2a14bf22491b01cabe882bfaa116a4aea048047f",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f4d341323-0",
+      "kind": "decision",
+      "text": "clippy: main.rs: call Clone() on trait instead of ref-counted pointers and pass Arc<Args> by ref more often.",
+      "files": [
+        "src/main.rs"
+      ],
+      "commit": "4d34132365a00219f0c0baca9e05b119621dbd79",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.08
+    },
+    {
+      "id": "f93943793-0",
+      "kind": "gotcha",
+      "text": "Previously, we would bail out of using memory maps if we could detect ahead of time that opening a memory map would fail.",
+      "files": [
+        "src/main.rs",
+        "src/worker.rs"
+      ],
+      "commit": "93943793c314e0566ed57d7c0642c3b818c76c50",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "f35350470-0",
+      "kind": "gotcha",
+      "text": "It turns out ripgrep doesn't need any fancy logging.",
+      "files": [
+        "src/args.rs",
+        "src/logger.rs",
+        "src/main.rs"
+      ],
+      "commit": "35350470942920574e58170c1ab9d419f68af6da",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.79
+    },
+    {
+      "id": "f224c112e-0",
+      "kind": "gotcha",
+      "text": "We do this because a zero value for --max-columns isn't particularly meaningful.",
+      "files": [
+        "src/app.rs",
+        "src/args.rs"
+      ],
+      "commit": "224c112e0509ab2aeb28de05efbbce9486a55eff",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.69
+    },
+    {
+      "id": "f706323ad-0",
+      "kind": "gotcha",
+      "text": "The bugs reported in the aforementioned issue are probably caused by not enabling the `literal_separator` option in `GlobBuilder`.",
+      "files": [
+        "globset/src/glob.rs"
+      ],
+      "commit": "706323ad8f2600db7d46482a7d95972b1416c0eb",
+      "split": "holdout",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f2d68054b-0",
+      "kind": "gotcha",
+      "text": "This technique is preferred over the console APIs because it seems like where the future is heading, but also because it avoids needing to use an intermediate buffer to deal with the Windows console in a multithreaded environment.",
+      "files": [
+        "termcolor/src/lib.rs",
+        "wincolor/src/win.rs"
+      ],
+      "commit": "2d68054b1da6ba7515118bbe98c80e4c5330cad5",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fc4a5bc06-0",
+      "kind": "gotcha",
+      "text": "We aren't using Travis' Cargo cache any more (because it actually seems to slow down builds), so there's no reason to clean out old build outputs.",
+      "files": [
+        "ci/script.sh"
+      ],
+      "commit": "c4a5bc06c5e445015a422398cfb69a34815390d4",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "f361698b9-0",
+      "kind": "gotcha",
+      "text": "In particular, this was due to a bug where the directory name `.` caused the leading `.` in a hidden directory to get stripped, which in turn caused the ignore rules to fail.",
+      "files": [
+        "ignore/src/gitignore.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "361698b90a6b31feac78ac2f16082342f750a1e1",
+      "split": "holdout",
+      "state": "unknown",
+      "survival": 0.58
+    },
+    {
+      "id": "fe2516ed0-0",
+      "kind": "decision",
+      "text": "This way we only have to specify the default values once in `GlobOptions::default()` rather than replicated in both code and tests.",
+      "files": [
+        "globset/src/glob.rs",
+        "globset/src/lib.rs"
+      ],
+      "commit": "e2516ed0957b10c0a2d49e5cc402c44f04f30a43",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "f1f70e918-0",
+      "kind": "decision",
+      "text": "This update brings with it a new feature of the regex crate which will now use SIMD optimizations automatically at runtime with no necessary compile time flags.",
+      "files": [
+        "ci/before_deploy.sh",
+        "src/args.rs"
+      ],
+      "commit": "1f70e9187ceca65e7196f65e8cad1cba65efb47c",
+      "split": "tune",
+      "state": "unknown",
+      "survival": 0.0
+    },
+    {
+      "id": "fcd08707c-0",
+      "kind": "decision",
+      "text": "* Regexes like `\\s*{` no longer emit incomprehensible errors.",
+      "files": [
+        "grep/src/literals.rs",
+        "grep/src/nonl.rs",
+        "grep/src/search.rs",
+        "grep/src/word_boundary.rs",
+        "src/args.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "cd08707c7c82058559bd5557efb3c1d0379dbf1d",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.4
+    },
+    {
+      "id": "f507801c1-0",
+      "kind": "decision",
+      "text": "This improves support for submodules, which seem to use a '.git' file instead of a '.git' directory to indicate a worktree.",
+      "files": [
+        "ignore/src/dir.rs",
+        "tests/tests.rs"
+      ],
+      "commit": "507801c1f2efdc45ea25227a613c2e38cdecf88b",
+      "split": "holdout",
+      "state": "stale",
+      "survival": 0.04
+    },
+    {
+      "id": "fbf51058e-0",
+      "kind": "decision",
+      "text": "However, once the atty bug was fixed, atty::is(Stdin) no longer returned true, causing `rg foo` searches to fail.",
+      "files": [
+        "tests/tests.rs"
+      ],
+      "commit": "bf51058eb27458c4f01d4cbf8bf4ee0d80fac61e",
+      "split": "tune",
+      "state": "stale",
+      "survival": 0.0
+    },
+    {
+      "id": "fb64475ae-0",
+      "kind": "gotcha",
+      "text": "Upstream deprecated env::home_dir because of minor bugs in some corner cases.",
+      "files": [
+        "ignore/src/gitignore.rs"
+      ],
+      "commit": "b64475aeac00c430b58ff953a27d0d448161625e",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    },
+    {
+      "id": "fd09e2f6a-0",
+      "kind": "decision",
+      "text": "This makes it clear that the `bytes` API of the regex crate should be used instead of the Unicode API.",
+      "files": [
+        "globset/src/glob.rs"
+      ],
+      "commit": "d09e2f6af1821c4d6fcdcfb7278e57c76c1f5c76",
+      "split": "tune",
+      "state": "live",
+      "survival": 1.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "p8eabe47b",
+      "task": "ignore: always use literal_separator for gitignore patterns (#1093)",
+      "files": [
+        "ignore/src/gitignore.rs"
+      ],
+      "commit": "8eabe47b571d42992908e8ba17c525e6b58432d7",
+      "required": [
+        "fc50b8b41-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p23be3cf8",
+      "task": "ignore: fix handling of **",
+      "files": [
+        "ignore/src/gitignore.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "23be3cf850386ec0d4d8724fb9bf5ddeaab2c27d",
+      "required": [
+        "fc50b8b41-0"
+      ],
+      "stale": [],
+      "split": "tune"
+    },
+    {
+      "id": "paeaa5fc1",
+      "task": "globset: fix repeated use of **",
+      "files": [
+        "globset/src/glob.rs",
+        "ignore/src/gitignore.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "aeaa5fc1b13bd5b903ef5660d3a6cb26b6745945",
+      "required": [
+        "fc50b8b41-0",
+        "fe2516ed0-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p9c940b45",
+      "task": "globset: permit ** to appear anywhere",
+      "files": [
+        "globset/src/glob.rs",
+        "globset/src/lib.rs",
+        "ignore/src/dir.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "9c940b45f4f81b51eee7dcf5836fb3680cf6b62c",
+      "required": [
+        "fc50b8b41-0",
+        "fe2516ed0-0"
+      ],
+      "stale": [],
+      "split": "holdout"
+    },
+    {
+      "id": "p4691d110",
+      "task": "ripgrep: don't skip stdout in --files mode",
+      "files": [
+        "src/args.rs"
+      ],
+      "commit": "4691d1103417a68905f0fa77adb1a6988c808fdc",
+      "required": [],
+      "stale": [
+        "f0c298f60-0",
+        "fde5cb7d2-1",
+        "ff2d1c582-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "p12a6ca45",
+      "task": "config: add --no-ignore-dot flag",
+      "files": [
+        "src/app.rs",
+        "src/args.rs",
+        "tests/feature.rs"
+      ],
+      "commit": "12a6ca45f9dad30864715dfecd917bb571b687d4",
+      "required": [],
+      "stale": [
+        "fe8a30cb8-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pafb89bcd",
+      "task": "fmt: shorten --ignore-file-case-insensitive description",
+      "files": [
+        "src/app.rs"
+      ],
+      "commit": "afb89bcdadf85d9c721739d004552ed3c8a9afa0",
+      "required": [],
+      "stale": [
+        "fe8a30cb8-0",
+        "ff2d1c582-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pf3164f26",
+      "task": "exit: tweak exit status logic",
+      "files": [
+        "doc/rg.1.txt.tpl",
+        "src/args.rs",
+        "src/main.rs",
+        "src/messages.rs",
+        "src/subject.rs",
+        "tests/regression.rs"
+      ],
+      "commit": "f3164f2615ce18d3ea7b5ce122dfe2a381d1b3f4",
+      "required": [],
+      "stale": [
+        "f4d341323-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pdf440020",
+      "task": "ripgrep: remove extra new-line after Clap output",
+      "files": [
+        "src/args.rs"
+      ],
+      "commit": "df4400209afd7703baa6fa5524468f8459eb48bf",
+      "required": [],
+      "stale": [
+        "f0c298f60-0",
+        "fde5cb7d2-1"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pa7d26c8f",
+      "task": "binary: rejigger ripgrep's handling of binary files",
+      "files": [
+        "doc/rg.1.txt.tpl",
+        "grep-printer/src/standard.rs",
+        "grep-printer/src/summary.rs",
+        "grep-searcher/src/line_buffer.rs",
+        "grep-searcher/src/searcher/core.rs",
+        "grep-searcher/src/searcher/glue.rs",
+        "grep-searcher/src/searcher/mod.rs",
+        "grep-searcher/src/sink.rs",
+        "src/app.rs",
+        "src/args.rs",
+        "src/search.rs",
+        "src/subject.rs"
+      ],
+      "commit": "a7d26c8f144a4957b75f71087a66692d0b25759a",
+      "required": [],
+      "stale": [
+        "f0c298f60-0",
+        "fb187c1a8-0",
+        "fde5cb7d2-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "pda9d7204",
+      "task": "ripgrep: add --pcre2-version flag",
+      "files": [
+        "src/app.rs",
+        "src/args.rs",
+        "src/main.rs"
+      ],
+      "commit": "da9d7204315164e3740099aac4a4b88fb743e4d5",
+      "required": [],
+      "stale": [
+        "f0c298f60-0",
+        "fde5cb7d2-1",
+        "f4d341323-0"
+      ],
+      "split": "tune"
+    },
+    {
+      "id": "pc2cb0a4d",
+      "task": "ripgrep: add --glob-case-insensitive",
+      "files": [
+        "src/app.rs",
+        "src/args.rs",
+        "tests/misc.rs"
+      ],
+      "commit": "c2cb0a4de4597c8f911c8ebece6aa0435ef5da6f",
+      "required": [],
+      "stale": [
+        "f0c298f60-0",
+        "ff2d1c582-0",
+        "f4c78ca8b-0"
+      ],
+      "split": "holdout"
+    },
+    {
+      "id": "p578e2d47",
+      "task": "core: simplify parallel walking using borrows",
+      "files": [
+        "src/main.rs"
+      ],
+      "commit": "578e2d47a82051275c498851763faa8b2c398c72",
+      "required": [],
+      "stale": [
+        "f4d341323-0",
+        "f93943793-0"
+      ],
+      "split": "holdout"
+    }
+  ]
+}
