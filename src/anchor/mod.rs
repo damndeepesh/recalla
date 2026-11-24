@@ -467,6 +467,7 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[cfg(unix)]
     #[test]
     fn symlink_escaping_root_is_dropped() {
         let outer = tempfile::tempdir().unwrap();
