@@ -1,6 +1,6 @@
 //! `recalla doctor`: every check against a hermetic environment (temp dirs, injected
 //! `PATH` and clock), plus the CLI's exit codes and JSON.
-
+#![cfg(unix)] // shell-script shims stand in for the binary and `claude`
 #![allow(clippy::unwrap_used)]
 
 mod common;

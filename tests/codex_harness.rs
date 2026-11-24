@@ -4,6 +4,7 @@
 
 use std::fs;
 use std::io::Write;
+#[cfg(unix)]
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 
@@ -243,6 +244,7 @@ fn parse_bytes_without_a_readable_prefix_falls_back_to_the_stem() {
     );
 }
 
+#[cfg(unix)]
 #[test]
 fn discovery_is_recursive_sorted_and_refuses_symlinks() {
     let dir = tempfile::tempdir().unwrap();

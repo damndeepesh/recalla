@@ -155,14 +155,17 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let dir = run_dir(tmp.path());
         let path = write_page(&dir, 4242, "abc").unwrap();
-        assert_eq!(
-            fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
-            0o700
-        );
-        assert_eq!(
-            fs::metadata(&path).unwrap().permissions().mode() & 0o777,
-            0o600
-        );
+        #[cfg(unix)]
+        {
+            assert_eq!(
+                fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
+                0o700
+            );
+            assert_eq!(
+                fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+                0o600
+            );
+        }
         let name = path.file_name().unwrap().to_string_lossy().into_owned();
         assert!(name.starts_with("login-") && name.rsplit('.').next() == Some("html"));
         let html = fs::read_to_string(&path).unwrap();
@@ -170,6 +173,7 @@ mod tests {
         assert!(html.contains("http://127.0.0.1:4242/?c=abc"));
     }
 
+    #[cfg(unix)]
     #[test]
     fn open_dir_is_refused() {
         let tmp = tempfile::tempdir().unwrap();
