@@ -23,7 +23,7 @@
 ## v0.4.0 (plan: .agent/plans/v0.4.0.md)
 
 - [x] 1 fix/capture-and-e2e: tail catch-up at SessionStart, e2e template fix, `make live`
-- [ ] 2 feature/doctor
+- [x] 2 feature/doctor
 - [ ] 3 feature/extract-imperative
 - [ ] 4 feature/pack-explain
 - [ ] 5 feature/supersede-contradiction

@@ -232,6 +232,16 @@ ok "capture refuses a path outside the root, silently, exit 0" $?
 echo 'garbage' | $B hook session-start --data-dir "$D" >/dev/null 2>&1
 ok "garbage hook stdin exits 0" $?
 
+echo "== 8a. doctor"
+$B doctor --data-dir "$W/no-such-data" --settings "$W/settings.json" >"$W/doctor.txt" 2>&1; rc=$?
+[ $rc = 1 ] && grep -q 'fix:' "$W/doctor.txt"
+ok "doctor on an empty data dir exits 1 with fixes" $?
+$B doctor --data-dir "$D" --settings "$W/settings.json" --json 2>/dev/null | python3 -c "
+import json,sys; d=json.load(sys.stdin); assert [c['name'] for c in d['checks']][0]=='binary' and 'ok' in d"
+ok "doctor --json is valid" $?
+[ ! -e "$W/no-such-data" ]
+ok "doctor never creates the data dir" $?
+
 echo "== 8b. markdown mirror + rebuild"
 MD=$D/mirror
 [ -d "$MD" ] && [ "$(stat -f '%Lp' "$MD" 2>/dev/null || stat -c '%a' "$MD")" = 700 ]; ok "mirror dir exists, mode 0700" $?
