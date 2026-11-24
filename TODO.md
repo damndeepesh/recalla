@@ -35,3 +35,4 @@
 - [x] fix/windows-anchors: anchors integration tests run on Windows (test helper joined an absolute cwd onto the Claude root)
 - [x] chore/release-0.3.1: version, changelog; dev -> main, tag v0.3.1, cargo publish
 - [x] feature/windows-release: Windows zip in the release workflow (next release)
+- [x] fix/windows-exe-path: hook/MCP exe path without the verbatim prefix (reported by a Windows user on 0.3.1)

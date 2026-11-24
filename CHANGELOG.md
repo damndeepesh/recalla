@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+- Fix (Windows): `hooks install` and the MCP registration recorded the binary as `\\?\C:\…` (Windows `canonicalize`), so the MCP server and the SessionStart hook failed to start. The path is now plain `C:/…` (no verbatim prefix, forward slashes, which bash and Windows both accept). Re-run `recalla hooks install` and re-add the MCP server to repair an existing install.
+
 - Release workflow also builds a Windows x86_64 binary (`recalla-vX.Y.Z-x86_64-pc-windows-msvc.zip`, with checksum and provenance). Takes effect at the next release tag.
 
 ## [0.3.1] - 2026-11-24

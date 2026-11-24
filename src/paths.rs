@@ -14,6 +14,32 @@ pub const ARCHIVE_DIR: &str = "archive";
 /// Markdown mirror directory name inside the data dir.
 pub const MIRROR_DIR: &str = "mirror";
 
+/// Windows `canonicalize` returns `\\?\C:\x`; tools and shells want `C:\x`.
+/// Drops the prefix (drive paths only; UNC `\\?\UNC\…` is left alone).
+#[must_use]
+pub fn strip_verbatim(p: PathBuf) -> PathBuf {
+    let s = p.to_string_lossy();
+    match s.strip_prefix(r"\\?\") {
+        Some(rest) if rest.as_bytes().get(1) == Some(&b':') => PathBuf::from(rest),
+        _ => p,
+    }
+}
+
+/// The running binary as an absolute path fit to write into hook and MCP
+/// config: symlinks resolved, no `\\?\` prefix, and on Windows forward
+/// slashes (hooks run under bash, which eats backslashes; Windows accepts `/`).
+///
+/// # Errors
+/// When the executable path cannot be determined or resolved.
+pub fn current_exe() -> io::Result<PathBuf> {
+    let exe = strip_verbatim(std::env::current_exe().and_then(fs::canonicalize)?);
+    Ok(if cfg!(windows) {
+        PathBuf::from(exe.to_string_lossy().replace('\\', "/"))
+    } else {
+        exe
+    })
+}
+
 /// Pure form of [`data_dir`]. Empty strings count as unset.
 #[must_use]
 pub fn data_dir_from(
@@ -178,5 +204,27 @@ mod tests {
         let fresh = dir.join("g");
         ensure_private_file(&fresh).unwrap();
         assert_eq!(mode(&fresh), 0o600);
+    }
+
+    #[test]
+    fn verbatim_prefix_is_dropped_for_drive_paths_only() {
+        let v = |s: &str| strip_verbatim(PathBuf::from(s));
+        assert_eq!(
+            v(r"\\?\C:\Users\a\recalla.exe"),
+            PathBuf::from(r"C:\Users\a\recalla.exe")
+        );
+        assert_eq!(v(r"C:\Users\a"), PathBuf::from(r"C:\Users\a"));
+        assert_eq!(v(r"\\?\UNC\srv\share"), PathBuf::from(r"\\?\UNC\srv\share"));
+        assert_eq!(v("/usr/bin/recalla"), PathBuf::from("/usr/bin/recalla"));
+    }
+
+    #[test]
+    fn current_exe_is_absolute_and_never_verbatim() {
+        let exe = current_exe().unwrap();
+        assert!(exe.is_absolute());
+        assert!(!exe.to_string_lossy().starts_with(r"\\?\"));
+        if cfg!(windows) {
+            assert!(!exe.to_string_lossy().contains('\\'));
+        }
     }
 }

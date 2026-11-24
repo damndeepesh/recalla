@@ -100,9 +100,7 @@ impl Inputs {
             settings: settings.or_else(|| claude_root.map(|r| r.join("settings.json"))),
             claude_json,
             codex_config: crate::harness::codex::default_root().map(|r| r.join("config.toml")),
-            exe: std::env::current_exe()
-                .and_then(fs::canonicalize)
-                .unwrap_or_default(),
+            exe: crate::paths::current_exe().unwrap_or_default(),
             path_var: std::env::var_os("PATH"),
             now_ms: now_ms(),
         }
@@ -222,7 +220,10 @@ fn check_binary(inputs: &Inputs) -> Check {
         )
         .hint("add its directory to PATH, e.g. `cargo install --path .` puts it in ~/.cargo/bin");
     };
-    let same = fs::canonicalize(first).is_ok_and(|c| c == inputs.exe);
+    let same = fs::canonicalize(first).is_ok_and(|c| {
+        let c = crate::paths::strip_verbatim(c);
+        c == inputs.exe || c.to_string_lossy().replace('\\', "/") == inputs.exe.to_string_lossy()
+    });
     if same {
         Check::new(
             name,
