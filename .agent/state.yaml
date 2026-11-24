@@ -1,15 +1,17 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: feature/extract-imperative
-task: "v0.4.0 steps 2+3 merged into dev; step 4 pack --explain next"
+branch: feature/pack-explain
+task: "v0.4.0 step 4 pack --explain (PR into dev); step 5 supersede-contradiction next"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "step 4: pack --explain (score parts + included/dropped reason per candidate; also in UI preview API as explain[])"
+  - "steps 2+3 merged into dev (#54, #55)"
   - "step 3: extractor handles imperative prompts (Decision for this project:, Rule:/Convention:, We always, Going forward); eval 52/0/0 + imperative 7/0/0. Bench recall not re-measured (needs REPOS clones)"
   - "step 2: recalla doctor (10 checks, read-only, --json); merged #54"
   - "step 1 done: make live 7/7, e2e 85/85, SessionStart tail catch-up; merged #53"
 next:
-  - step 4 feature/pack-explain, then 5-9 (see plan)
+  - step 5 feature/supersede-contradiction (ADR first, Opus), then 6-9 (see plan)
   - owner decision: memorybench needs paid judge keys
 blockers: []
 notes:

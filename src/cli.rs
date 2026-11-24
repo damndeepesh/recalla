@@ -27,6 +27,7 @@ use crate::model::{Kind, Memory, Scope, Status};
 use crate::ops::{
     self, PackArgs, Why, clean, open_existing, pack_for, prefix, truncate_chars, why,
 };
+use crate::pack;
 use crate::paths;
 use crate::select::{self, Selection};
 use crate::store::{Filter, Hit, Store, Via};
@@ -197,6 +198,9 @@ enum Command {
         /// Don't record this injection in the ledger.
         #[arg(long)]
         no_log: bool,
+        /// Show each candidate's score parts and why it was included or dropped.
+        #[arg(long)]
+        explain: bool,
         #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
         data_dir: Option<PathBuf>,
     },
@@ -486,6 +490,7 @@ where
             query,
             format,
             no_log,
+            explain,
             data_dir,
         } => {
             let args = PackArgs {
@@ -496,7 +501,7 @@ where
                 via: Via::Cli,
                 session_id: None,
             };
-            run_pack(&args, format, data_dir, out, err)
+            run_pack(&args, format, explain, data_dir, out, err)
         }
         Command::Mcp { data_dir, project } => {
             let data_dir = match resolve_data_dir(data_dir) {
@@ -855,6 +860,7 @@ fn run_forget(
 fn run_pack(
     args: &PackArgs,
     format: Format,
+    explain: bool,
     data_dir: Option<PathBuf>,
     out: &mut impl Write,
     err: &mut impl Write,
@@ -881,10 +887,18 @@ fn run_pack(
     };
     match pack_for(&data_dir, &args) {
         Ok(p) => {
-            let text = match format {
-                Format::Md if p.markdown.is_empty() => String::new(),
-                Format::Md => format!("{}\n", p.markdown),
-                Format::Json => format!("{}\n", p.json),
+            let text = match (format, explain) {
+                (Format::Md, false) if p.markdown.is_empty() => String::new(),
+                (Format::Md, false) => format!("{}\n", p.markdown),
+                (Format::Md, true) => {
+                    format!("{}\n\n{}", p.markdown, pack::explain_text(&p.decisions))
+                }
+                (Format::Json, false) => format!("{}\n", p.json),
+                (Format::Json, true) => {
+                    let mut j = p.json.clone();
+                    j["explain"] = pack::explain_json(&p.decisions);
+                    format!("{j}\n")
+                }
             };
             emit(out, &text, OK)
         }

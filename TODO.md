@@ -25,7 +25,7 @@
 - [x] 1 fix/capture-and-e2e: tail catch-up at SessionStart, e2e template fix, `make live`
 - [x] 2 feature/doctor
 - [x] 3 feature/extract-imperative
-- [ ] 4 feature/pack-explain
+- [x] 4 feature/pack-explain
 - [ ] 5 feature/supersede-contradiction
 - [ ] 6 feature/promote-global
 - [ ] 7 feature/triage-ui

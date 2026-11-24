@@ -17,6 +17,7 @@ use crate::hooks_cfg::{self, CfgError};
 use crate::mirror;
 use crate::model::Status;
 use crate::ops::{self, PackArgs};
+use crate::pack;
 use crate::paths;
 use crate::store::{
     DEFAULT_BUSY, InjectionFilter, Store, StoreError, Via, saved_pct, schema_version,
@@ -299,6 +300,7 @@ fn test_recall(ctx: &Ctx, req: &Request, _: &Params) -> ApiResult {
         "saved_pct": saved_pct(to_u64(pack.est_tokens), Some(to_u64(base.candidate_tokens)))
             .map(|v| (v * 10.0).round() / 10.0),
         "memories": memories,
+        "explain": pack::explain_json(&pack.decisions),
     }))
 }
 
