@@ -75,7 +75,7 @@ cargo install recalla
 cargo install --git https://github.com/damndeepesh/recalla
 ```
 
-Needs a stable Rust toolchain. macOS and Linux are tested in CI; Windows is untested.
+Needs a stable Rust toolchain. macOS, Linux and Windows run the Rust test suite in CI.
 
 Then, in your terminal:
 
@@ -168,7 +168,7 @@ Privacy model:
 - **Request checks.** `Host`, `Origin` and a CSRF header are verified, and a strict CSP is set on every response. Reads use a read-only database connection.
 - **Same redaction as everywhere else.** The dashboard shows what is already in the database; the raw archive is never served.
 
-Limits: it runs only while the command is running, it is local only (no remote or team access), there is no native Windows build yet (use WSL), and the token-savings figure only appears once there is enough data. Details: [ARCHITECTURE.md](ARCHITECTURE.md#dashboard-server-ui).
+Limits: it runs only while the command is running, it is local only (no remote or team access), and the token-savings figure only appears once there is enough data. Details: [ARCHITECTURE.md](ARCHITECTURE.md#dashboard-server-ui).
 
 ## Privacy and security
 

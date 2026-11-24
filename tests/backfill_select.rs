@@ -301,23 +301,52 @@ fn pick(env: &Env, extra: &[&str], answers: &str) -> (i32, String, String) {
     )
 }
 
+/// The menu number printed next to the project line containing `needle`.
+fn menu_number(menu: &str, needle: &str) -> usize {
+    menu.lines()
+        .find(|l| l.contains(needle) && l.contains(')'))
+        .and_then(|l| l.split(')').next()?.trim().parse().ok())
+        .unwrap_or_else(|| panic!("no menu line for {needle}:\n{menu}"))
+}
+
 #[test]
-fn pick_chooses_a_tool_then_sessions() {
+fn pick_chooses_a_tool_then_projects() {
     let env = Env::new();
-    // Menu order: claude, codex. Claude rows sort by cwd: alpha, alpha/crates/x, alpha-extra, beta.
-    let (code, out, err) = pick(&env, &[], "1\n1,4\n");
-    assert_eq!(code, 0, "{err}");
+    // Dry pass to read the menu (cancel at the project prompt).
+    let (_, menu, _) = pick(&env, &[], "1\nq\n");
     assert!(
-        out.contains("claude-code (4 sessions)") && out.contains("codex (1 sessions)"),
-        "{out}"
+        menu.contains("claude-code (4 sessions)") && menu.contains("codex (1 sessions)"),
+        "{menu}"
     );
-    assert!(out.contains("/work/beta"), "{out}");
-    assert!(out.contains("1 new") || out.contains("new"), "{out}");
+    assert!(
+        menu.contains("1 session ·") && menu.contains("last active"),
+        "{menu}"
+    );
+    let beta = menu_number(&menu, "/work/beta");
+    let extra = menu_number(&menu, "/work/alpha-extra");
+    // Two projects with one session each: choose them all.
+    let (code, out, err) = pick(&env, &[], &format!("1\n{beta},{extra}\na\n"));
+    assert_eq!(code, 0, "{err}");
+    assert!(out.contains("2 sessions"), "{out}");
     // Exactly two files were imported: a follow-up full run sees three new.
     let (_, json, _) = env.cli(&[]);
     let v: Value = serde_json::from_str(&json).unwrap();
     assert_eq!(v["files"]["unchanged"], 2, "{json}");
     assert_eq!(v["files"]["new"], 3);
+}
+
+#[test]
+fn pick_can_choose_individual_sessions() {
+    let env = Env::new();
+    let (_, menu, _) = pick(&env, &[], "1\nq\n");
+    let beta = menu_number(&menu, "/work/beta");
+    let extra = menu_number(&menu, "/work/alpha-extra");
+    let (code, out, err) = pick(&env, &[], &format!("1\n{beta},{extra}\nc\n1\n"));
+    assert_eq!(code, 0, "{err}");
+    assert!(out.contains("Import which sessions?"), "{out}");
+    let (_, json, _) = env.cli(&[]);
+    let v: Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(v["files"]["unchanged"], 1, "{json}");
 }
 
 #[test]

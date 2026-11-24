@@ -1,10 +1,12 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: feature/pretooluse-recall
-task: "v0.4.0 step 8 pretooluse-recall built opt-in (PR into dev); steps 1-9 all done after merge"
+branch: fix/windows-full
+task: "Windows completeness (USERPROFILE, opener, .exe hooks, CI tests) + grouped backfill --pick/--list; PR into dev"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "backfill --pick/--list grouped by project; Windows home/opener/.exe hook fixes; windows CI runs cargo test (check result)"
+  - "step 8 merged (#62); steps 1-9 all in dev"
   - "step 8: hook pre-tool-use + hooks install --file-recall (opt-in, D-030); tests hook/hooks/perf; p95 1.4ms. Per-file bench not run (needs REPOS clones)"
   - "steps 7, 9 merged (#60, #61)"
   - "step 9: pack decay factor for unconfirmed memories (D-029), explain shows it; bench noise/staleness not re-measured"
