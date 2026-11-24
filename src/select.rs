@@ -106,17 +106,7 @@ fn normal(p: &Path) -> PathBuf {
     let resolved = fs::canonicalize(p)
         .or_else(|_| std::path::absolute(p))
         .unwrap_or_else(|_| p.to_path_buf());
-    strip_verbatim(resolved)
-}
-
-/// Windows `canonicalize` returns `\\?\C:\x`; a recorded `cwd` or a `--dir`
-/// is `C:\x`. Drop the prefix (drive paths only) so the two compare equal.
-fn strip_verbatim(p: PathBuf) -> PathBuf {
-    let s = p.to_string_lossy();
-    match s.strip_prefix(r"\\?\") {
-        Some(rest) if rest.as_bytes().get(1) == Some(&b':') => PathBuf::from(rest),
-        _ => p,
-    }
+    crate::paths::strip_verbatim(resolved)
 }
 
 /// Indexes of `candidates` selected by `sel`, in order. With an empty
@@ -373,7 +363,7 @@ mod tests {
 
     #[test]
     fn verbatim_drive_prefix_is_stripped_but_unc_is_kept() {
-        let s = |p: &str| strip_verbatim(PathBuf::from(p));
+        let s = |p: &str| crate::paths::strip_verbatim(PathBuf::from(p));
         assert_eq!(s(r"\\?\C:\Users\me"), PathBuf::from(r"C:\Users\me"));
         assert_eq!(
             s(r"\\?\UNC\host\share"),

@@ -629,7 +629,7 @@ fn run_hooks(
     else {
         return emit(err, "error: no --settings given and HOME is unset\n", USAGE);
     };
-    let exe = match std::env::current_exe().and_then(std::fs::canonicalize) {
+    let exe = match crate::paths::current_exe() {
         Ok(e) => e,
         Err(e) => {
             return emit(
