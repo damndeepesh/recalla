@@ -24,7 +24,7 @@ jobs:
 
   windows:
     # Recalla must build and pass its Rust tests on Windows (the Makefile and
-    # scripts/e2e.sh assume a Unix shell, so they stay Linux/macOS only).
+    # scripts/e2e.sh are bash with unix paths and modes, so they stay Linux/macOS only).
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
@@ -34,10 +34,6 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
       - run: cargo build --locked --release
       - run: cargo test --locked --no-fail-fast
-      - name: End-to-end checklist (Git Bash) - probe
-        shell: bash
-        continue-on-error: true
-        run: bash scripts/e2e.sh target/release/recalla.exe
 
   bench:
     runs-on: ubuntu-latest
