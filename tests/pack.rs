@@ -328,6 +328,33 @@ fn cli_pack_json_query_and_other_projects() {
 }
 
 #[test]
+fn cli_pack_explain_lists_every_candidate_and_leaves_the_pack_intact() {
+    let env = backfilled();
+    let base = ["pack", "--project", WEB_API, "--budget", "150", "--no-log"];
+    let (_, plain, _) = env.cli(&base);
+    let (code, out, err) = env.cli(&[&base[..], &["--explain"]].concat());
+    assert_eq!(code, 0, "{err}");
+    assert!(out.starts_with(plain.trim_end()), "{out}");
+    assert!(out.contains("outcome") && out.contains("included"), "{out}");
+    assert!(
+        out.contains("over budget") || out.contains("section cap"),
+        "{out}"
+    );
+
+    let (code, out, _) = env.cli(&[&base[..], &["--explain", "--format", "json"]].concat());
+    assert_eq!(code, 0);
+    let v = json(&out);
+    let explain = v["explain"].as_array().unwrap();
+    let included = explain.iter().filter(|e| e["included"] == true).count();
+    assert_eq!(included, v["memories"].as_array().unwrap().len());
+    assert!(explain.len() > included);
+    assert!(explain[0]["parts"]["kind_weight"].is_number());
+    // Without the flag the JSON shape is unchanged.
+    let (_, out, _) = env.cli(&[&base[..], &["--format", "json"]].concat());
+    assert!(json(&out).get("explain").is_none());
+}
+
+#[test]
 fn cli_pack_with_missing_db_is_silent_success() {
     let env = Env::new();
     let (code, out, err) = env.cli(&["pack", "--project", WEB_API]);

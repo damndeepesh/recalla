@@ -19,7 +19,7 @@ Local-first memory engine for coding agents. It backfills session history into a
 - `make live`: live round trip with the real `claude` (and `codex`) CLIs, scratch data dir; needs installed hooks, not in CI
 - `recalla backfill [--dir P]... [--session ID|FILE]... [--list] [--pick] [--harness claude|codex|all] [--root R] [--codex-root C] [--data-dir D] [--no-archive] [--no-extract] [--dry-run] [--json]`: import + extract
 - `recalla extract [--rebuild]` / `recalla search <q> [--kind K] [--project P]`: re-extract / inspect memories
-- `recalla pack [--budget N] [--query Q] [--format md|json]` / `recalla stats` / `recalla why <id>`: context pack, ledger, provenance
+- `recalla pack [--budget N] [--query Q] [--format md|json] [--explain]` / `recalla stats` / `recalla why <id>`: context pack, ledger, provenance
 - `recalla doctor [--data-dir D] [--settings P] [--json]`: wiring/health check (hooks, MCP for Claude and Codex, db, last capture/injection); exit 1 on a failed check
 - `recalla check [--project P] [--json]` / `recalla confirm <id>` / `recalla forget <id>`: flag memories whose anchored code changed / re-anchor one / archive a wrong one
 - `recalla mirror [--full] [--json]` / `recalla rebuild --from-mirror [DIR] [--yes] [--allow-drop]`: sync the markdown mirror (also automatic; `--no-mirror` on backfill/extract) / restore the memory layer from it (dry run without `--yes`; safe while mcp/hooks run; `VACUUM INTO` backup `recalla.db.bak-<ts>`; `--allow-drop` to remove memories absent from the mirror)
