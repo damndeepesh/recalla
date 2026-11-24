@@ -143,7 +143,7 @@ pub(super) fn now_ms() -> i64 {
 
 /// `path` with the home directory shown as `~`, sanitized.
 pub(super) fn tilde(path: &Path) -> String {
-    tilde_in(path, std::env::var_os("HOME").as_deref().map(Path::new))
+    tilde_in(path, crate::paths::home_dir().as_deref().map(Path::new))
 }
 
 fn tilde_in(path: &Path, home: Option<&Path>) -> String {

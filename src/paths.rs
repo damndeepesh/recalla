@@ -1,7 +1,7 @@
 //! Where Recalla keeps its data, and private file/dir creation.
 //!
 //! Data dir: `$RECALLA_HOME`, else `$XDG_DATA_HOME/recalla`, else
-//! `~/.local/share/recalla`. Dirs are created 0700 and files 0600 (unix).
+//! `~/.local/share/recalla` (`~` is `$HOME`, or `%USERPROFILE%` on Windows). Dirs are created 0700 and files 0600 (unix).
 
 use std::fs;
 use std::io;
@@ -27,14 +27,25 @@ pub fn data_dir_from(
         .or_else(|| set(home).map(|h| h.join(".local/share/recalla")))
 }
 
+/// The user's home directory: `$HOME`, else `%USERPROFILE%` (Windows has no
+/// `HOME`). Empty values count as unset.
+#[must_use]
+pub fn home_dir() -> Option<std::ffi::OsString> {
+    ["HOME", "USERPROFILE"]
+        .iter()
+        .filter_map(std::env::var_os)
+        .find(|v| !v.is_empty())
+}
+
 /// Data dir from the environment. Non-UTF-8 values count as unset.
 #[must_use]
 pub fn data_dir() -> Option<PathBuf> {
     let var = |k: &str| std::env::var(k).ok();
+    let home = home_dir().and_then(|h| h.into_string().ok());
     data_dir_from(
         var("RECALLA_HOME").as_deref(),
         var("XDG_DATA_HOME").as_deref(),
-        var("HOME").as_deref(),
+        home.as_deref(),
     )
 }
 

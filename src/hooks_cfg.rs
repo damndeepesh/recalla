@@ -86,7 +86,13 @@ fn is_ours(cmd: &str, sub: Option<&str>) -> bool {
     subs.iter().any(|s| {
         cmd.strip_suffix(&format!(" hook {s}"))
             .and_then(exe_token)
-            .is_some_and(|exe| Path::new(&exe).file_name().is_some_and(|n| n == "recalla"))
+            .is_some_and(|exe| {
+                // Split on both separators: a Windows path is not one on unix.
+                matches!(
+                    exe.rsplit(['/', '\\']).next(),
+                    Some("recalla" | "recalla.exe")
+                )
+            })
     })
 }
 
@@ -471,6 +477,20 @@ pub fn mcp_hints(exe: &Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn windows_exe_path_round_trips_as_ours() {
+        let cmd = command_for(Path::new(r"C:\Users\me\.cargo\bin\recalla.exe"), "capture");
+        assert_eq!(
+            cmd,
+            r#""C:\\Users\\me\\.cargo\\bin\\recalla.exe" hook capture"#
+        );
+        assert!(is_ours(&cmd, Some("capture")));
+        assert!(!is_ours(
+            r#""C:\x\other.exe" hook capture"#,
+            Some("capture")
+        ));
+    }
 
     #[test]
     fn quoting() {

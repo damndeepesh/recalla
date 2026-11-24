@@ -1135,45 +1135,161 @@ fn pick_sessions(
     }) else {
         return Ok(None);
     };
-    let mut rows: Vec<_> = all.iter().filter(|c| c.agent == h).collect();
-    rows.sort_by(|a, b| a.cwd.cmp(&b.cwd).then_with(|| a.path.cmp(&b.path)));
-    let _ = writeln!(out, "\n{h} sessions:");
-    for (i, c) in rows.iter().enumerate() {
-        let id = select::session_ids(&c.path)
-            .into_iter()
-            .next()
-            .unwrap_or_default();
-        let id: String = id
-            .chars()
-            .rev()
-            .take(12)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
-            .collect();
-        let bytes = fs::metadata(&c.path).map_or(0, |m| m.len());
-        let cwd = c
-            .cwd
-            .as_ref()
-            .map_or_else(|| "?".to_owned(), |p| p.display().to_string());
-        let _ = writeln!(out, "  {:>3}) {cwd}  …{id}  {}", i + 1, size(bytes));
+    let groups = project_groups(all.iter().filter(|c| c.agent == h));
+    let _ = writeln!(out, "\n{h} projects:");
+    for (i, g) in groups.iter().enumerate() {
+        let _ = writeln!(
+            out,
+            "  {:>3}) {}\n       {} · {} · last active {}",
+            i + 1,
+            g.label,
+            plural(g.rows.len(), "session"),
+            size(g.bytes),
+            ago(g.newest),
+        );
     }
     let Some(chosen) = ask(
         input,
         out,
-        "Import which? [e.g. 1,3-5 or a for all, q to cancel]: ",
-        |a| select::parse_choice(a, rows.len()),
+        "Import which projects? [e.g. 1,3-5 or a for all, q to cancel]: ",
+        |a| select::parse_choice(a, groups.len()),
     ) else {
         return Ok(None);
     };
-    let sessions = chosen
-        .into_iter()
-        .filter_map(|i| select::session_ids(&rows[i].path).into_iter().next())
-        .collect();
+    let mut rows: Vec<&SessionRow> = chosen.iter().flat_map(|&i| &groups[i].rows).collect();
+    if rows.len() > 1 {
+        let total: u64 = rows.iter().map(|r| r.bytes).sum();
+        let all_of_them = plural(rows.len(), "session");
+        let prompt = format!(
+            "{all_of_them} ({}) selected. Import [a]ll or [c]hoose individually? ",
+            size(total)
+        );
+        let Some(all_sessions) = ask(input, out, &prompt, |a| {
+            match a.to_ascii_lowercase().as_str() {
+                "a" | "all" => Ok(true),
+                "c" | "choose" => Ok(false),
+                _ => Err("answer a or c".to_owned()),
+            }
+        }) else {
+            return Ok(None);
+        };
+        if !all_sessions {
+            rows.sort_by_key(|a| std::cmp::Reverse(a.modified));
+            for (i, r) in rows.iter().enumerate() {
+                let _ = writeln!(
+                    out,
+                    "  {:>3}) {}  {}  {}  {}",
+                    i + 1,
+                    r.short_id,
+                    ago(r.modified),
+                    size(r.bytes),
+                    r.cwd
+                );
+            }
+            let Some(pick) = ask(
+                input,
+                out,
+                "Import which sessions? [e.g. 1,3-5 or a for all, q to cancel]: ",
+                |a| select::parse_choice(a, rows.len()),
+            ) else {
+                return Ok(None);
+            };
+            rows = pick.into_iter().map(|i| rows[i]).collect();
+        }
+    }
     Ok(Some(Selection {
         dirs: Vec::new(),
-        sessions,
+        sessions: rows.iter().map(|r| r.id.clone()).collect(),
     }))
+}
+
+/// One session in a picker or listing.
+struct SessionRow {
+    id: String,
+    short_id: String,
+    cwd: String,
+    bytes: u64,
+    modified: Option<std::time::SystemTime>,
+}
+
+/// Sessions of one project directory, newest first.
+struct ProjectGroup {
+    label: String,
+    rows: Vec<SessionRow>,
+    bytes: u64,
+    newest: Option<std::time::SystemTime>,
+}
+
+/// Groups candidates by working directory (home shown as `~`), most recently
+/// active project first. Sessions with no recorded directory go last.
+fn project_groups<'a>(cands: impl Iterator<Item = &'a select::Candidate>) -> Vec<ProjectGroup> {
+    let home = paths::home_dir().map(PathBuf::from);
+    let mut groups: Vec<ProjectGroup> = Vec::new();
+    for c in cands {
+        let id = select::session_ids(&c.path)
+            .into_iter()
+            .next()
+            .unwrap_or_default();
+        let meta = fs::metadata(&c.path).ok();
+        let cwd = c.cwd.as_deref().map_or_else(
+            || "(unknown directory)".to_owned(),
+            |p| tilde_path(p, home.as_deref()),
+        );
+        let row = SessionRow {
+            short_id: id.chars().take(8).collect(),
+            id,
+            cwd: cwd.clone(),
+            bytes: meta.as_ref().map_or(0, fs::Metadata::len),
+            modified: meta.and_then(|m| m.modified().ok()),
+        };
+        match groups.iter_mut().find(|g| g.label == cwd) {
+            Some(g) => g.rows.push(row),
+            None => groups.push(ProjectGroup {
+                label: cwd,
+                rows: vec![row],
+                bytes: 0,
+                newest: None,
+            }),
+        }
+    }
+    for g in &mut groups {
+        g.rows.sort_by_key(|a| std::cmp::Reverse(a.modified));
+        g.bytes = g.rows.iter().map(|r| r.bytes).sum();
+        g.newest = g.rows.iter().filter_map(|r| r.modified).max();
+    }
+    groups.sort_by(|a, b| {
+        (a.label == "(unknown directory)")
+            .cmp(&(b.label == "(unknown directory)"))
+            .then_with(|| b.newest.cmp(&a.newest))
+            .then_with(|| a.label.cmp(&b.label))
+    });
+    groups
+}
+
+/// `p` with a leading home directory shown as `~`.
+fn tilde_path(p: &std::path::Path, home: Option<&std::path::Path>) -> String {
+    match home.and_then(|h| p.strip_prefix(h).ok()) {
+        Some(rest) if rest.as_os_str().is_empty() => "~".to_owned(),
+        Some(rest) => format!("~/{}", rest.display().to_string().replace('\\', "/")),
+        None => p.display().to_string(),
+    }
+}
+
+fn plural(n: usize, noun: &str) -> String {
+    format!("{n} {noun}{}", if n == 1 { "" } else { "s" })
+}
+
+/// Coarse "how long ago" for a timestamp (`today`, `3d ago`, `2mo ago`).
+fn ago(t: Option<std::time::SystemTime>) -> String {
+    let Some(secs) = t.and_then(|t| t.elapsed().ok()).map(|d| d.as_secs()) else {
+        return "unknown".to_owned();
+    };
+    match secs / 86_400 {
+        0 => "today".to_owned(),
+        d @ 1..=59 => format!("{d}d ago"),
+        d @ 60..=729 => format!("{}mo ago", d / 30),
+        d => format!("{}y ago", d / 365),
+    }
 }
 
 fn list_sessions(
@@ -1199,18 +1315,33 @@ fn list_sessions(
         format!("{}\n", json!({"sessions": rows}))
     } else {
         let mut t = String::new();
+        let mut agents: Vec<&str> = Vec::new();
         for c in &found {
-            let id = select::session_ids(&c.path)
-                .into_iter()
-                .next()
-                .unwrap_or_default();
-            let cwd = c
-                .cwd
-                .as_ref()
-                .map_or_else(|| "?".to_owned(), |p| p.display().to_string());
-            let _ = writeln!(t, "{:<7} {id}  {cwd}", c.agent);
+            if !agents.contains(&c.agent) {
+                agents.push(c.agent);
+            }
         }
-        let _ = writeln!(t, "{} session(s)", found.len());
+        for agent in agents {
+            let groups = project_groups(found.iter().filter(|c| c.agent == agent));
+            if groups.is_empty() {
+                continue;
+            }
+            let _ = writeln!(t, "{agent}");
+            for g in &groups {
+                let _ = writeln!(
+                    t,
+                    "  {}  ({}, {}, last active {})",
+                    g.label,
+                    plural(g.rows.len(), "session"),
+                    size(g.bytes),
+                    ago(g.newest)
+                );
+                for r in &g.rows {
+                    let _ = writeln!(t, "    {}  {:>8}  {}", r.id, size(r.bytes), ago(r.modified));
+                }
+            }
+        }
+        let _ = writeln!(t, "{}", plural(found.len(), "session"));
         t
     };
     emit(out, &text, OK)
@@ -1714,6 +1845,25 @@ mod tests {
         let (code, _, err) = run_args(&["recalla", "backfill", "--bogus"]);
         assert_eq!(code, 2);
         assert!(err.contains("--bogus"));
+    }
+
+    #[test]
+    fn project_labels_and_ages() {
+        use std::path::Path;
+        let home = Path::new("/home/me");
+        assert_eq!(tilde_path(Path::new("/home/me"), Some(home)), "~");
+        assert_eq!(tilde_path(Path::new("/home/me/a/b"), Some(home)), "~/a/b");
+        assert_eq!(tilde_path(Path::new("/srv/x"), Some(home)), "/srv/x");
+        assert_eq!(tilde_path(Path::new("/home/mer"), Some(home)), "/home/mer");
+        assert_eq!(plural(1, "session"), "1 session");
+        assert_eq!(plural(3, "session"), "3 sessions");
+        assert_eq!(ago(None), "unknown");
+        let day = std::time::Duration::from_secs(86_400);
+        let back = |d: u32| Some(std::time::SystemTime::now() - day * d);
+        assert_eq!(ago(back(0)), "today");
+        assert_eq!(ago(back(3)), "3d ago");
+        assert_eq!(ago(back(90)), "3mo ago");
+        assert_eq!(ago(back(800)), "2y ago");
     }
 
     #[test]

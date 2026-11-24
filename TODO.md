@@ -31,3 +31,4 @@
 - [x] 7 feature/triage-ui
 - [x] 8 feature/pretooluse-recall (opt-in; per-file bench pending)
 - [x] 9 feature/ttl-decay
+- [x] fix/windows-full: USERPROFILE, `cmd /C start`, `.exe` hook matching, `cargo test` on Windows CI; grouped `backfill --pick`/`--list`

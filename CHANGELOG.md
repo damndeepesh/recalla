@@ -13,7 +13,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - `recalla pack --explain`: per-candidate score parts and why each was included or dropped.
 - `recalla doctor`: checks hooks, MCP registration, database and last capture/injection.
 
+### Changed
+- `backfill --pick` and `--list` group sessions by project: each project shows its session count, size and last activity, with `~` for your home. Pick projects first, then import all their sessions or choose individual ones.
+
 ### Fixed
+- Windows: the home directory falls back to `%USERPROFILE%` (Claude and Codex roots, data dir, doctor, dashboard), the dashboard opens with `cmd /C start`, and hook commands for `recalla.exe` are recognised by `hooks install/uninstall` and `doctor`. CI now runs the Rust test suite on Windows, not just a build.
 - `cargo install recalla` failed on Windows: the dashboard login page used Unix-only file permissions unconditionally. Now gated like the rest of the crate; CI builds on Windows.
 
 ### Added

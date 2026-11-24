@@ -90,7 +90,7 @@ impl Inputs {
     pub fn from_env(data_dir: PathBuf, settings: Option<PathBuf>) -> Self {
         let claude_root = crate::harness::claude::default_root();
         let config_dir = std::env::var_os("CLAUDE_CONFIG_DIR").filter(|v| !v.is_empty());
-        let claude_json = match (&config_dir, std::env::var_os("HOME")) {
+        let claude_json = match (&config_dir, crate::paths::home_dir()) {
             (Some(dir), _) => Some(PathBuf::from(dir).join(".claude.json")),
             (None, Some(home)) => Some(PathBuf::from(home).join(".claude.json")),
             (None, None) => None,
@@ -200,7 +200,13 @@ fn check_binary(inputs: &Inputs) -> Check {
         .as_ref()
         .map(|p| {
             std::env::split_paths(p)
-                .map(|d| d.join("recalla"))
+                .map(|d| {
+                    d.join(if cfg!(windows) {
+                        "recalla.exe"
+                    } else {
+                        "recalla"
+                    })
+                })
                 .filter(|c| c.is_file())
                 .collect()
         })

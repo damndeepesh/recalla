@@ -60,12 +60,20 @@ pub fn login_url(port: u16, code: &str) -> String {
 /// carries the login code) in the default browser.
 #[must_use]
 pub fn opener_command(target: &Path) -> (&'static str, Vec<String>) {
+    let path = target.to_string_lossy().into_owned();
+    if cfg!(windows) {
+        // `start` takes the first quoted argument as a window title.
+        return (
+            "cmd",
+            vec!["/C".into(), "start".into(), String::new(), path],
+        );
+    }
     let program = if cfg!(target_os = "macos") {
         "open"
     } else {
         "xdg-open"
     };
-    (program, vec![target.to_string_lossy().into_owned()])
+    (program, vec![path])
 }
 
 /// Routes every deployment serves: session/ping here, data and actions from
@@ -215,8 +223,11 @@ mod tests {
         let code = "ab".repeat(32);
         let page = Path::new("/data/run/login-1234.html");
         let (program, args) = opener_command(page);
-        assert!(matches!(program, "open" | "xdg-open"));
-        assert_eq!(args, vec!["/data/run/login-1234.html".to_owned()]);
+        assert!(matches!(program, "open" | "xdg-open" | "cmd"));
+        assert_eq!(
+            args.last().map(String::as_str),
+            Some("/data/run/login-1234.html")
+        );
         assert!(!args.join(" ").contains(&code));
     }
 }

@@ -65,29 +65,33 @@ static GLOBAL_CUE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(
 mod tests {
     use super::*;
 
-    fn fake(git_dirs: &'static [&'static str]) -> impl Fn(&Path) -> bool {
-        move |p| git_dirs.iter().any(|d| Path::new(d).join(".git") == p)
+    /// Drive prefix so the fixture paths are absolute on Windows too.
+    const D: &str = if cfg!(windows) { "C:" } else { "" };
+
+    fn fake(git_dirs: &[&str]) -> impl Fn(&Path) -> bool + use<> {
+        let dirs: Vec<String> = git_dirs.iter().map(|d| format!("{D}{d}")).collect();
+        move |p| dirs.iter().any(|d| Path::new(d).join(".git") == p)
     }
 
     #[test]
     fn walks_up_to_the_git_toplevel() {
         let exists = fake(&["/work/app"]);
-        assert_eq!(project_key_from("/work/app/src/deep", &exists), "/work/app");
-        assert_eq!(project_key_from("/work/app", &exists), "/work/app");
+        let app = format!("{D}/work/app");
+        assert_eq!(project_key_from(&format!("{app}/src/deep"), &exists), app);
+        assert_eq!(project_key_from(&app, &exists), app);
     }
 
     #[test]
     fn nearest_git_wins_for_nested_repos() {
         let exists = fake(&["/work", "/work/app/vendor"]);
-        assert_eq!(
-            project_key_from("/work/app/vendor/x", &exists),
-            "/work/app/vendor"
-        );
+        let vendor = format!("{D}/work/app/vendor");
+        assert_eq!(project_key_from(&format!("{vendor}/x"), &exists), vendor);
     }
 
     #[test]
     fn falls_back_to_cwd_without_git_or_when_relative() {
-        assert_eq!(project_key_from("/gone/dir", fake(&[])), "/gone/dir");
+        let gone = format!("{D}/gone/dir");
+        assert_eq!(project_key_from(&gone, fake(&[])), gone);
         assert_eq!(project_key_from("rel/dir", |_| true), "rel/dir");
         assert_eq!(project_key_from("", |_| true), "");
     }

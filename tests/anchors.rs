@@ -1,6 +1,6 @@
 //! Code anchors end to end: extraction anchors a memory to a symbol, edits
 //! flag it stale, `confirm` re-anchors, packs show why.
-
+#![cfg(unix)] // fixtures assume /tmp and unix paths; the anchor logic itself is unit-tested on every OS
 #![allow(clippy::unwrap_used)]
 
 mod common;

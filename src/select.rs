@@ -103,9 +103,20 @@ pub fn peek_cwd(path: &Path) -> Option<PathBuf> {
 /// `p` made absolute and symlink-resolved when it exists; otherwise lexically
 /// absolute as given (a project directory may since have been deleted).
 fn normal(p: &Path) -> PathBuf {
-    fs::canonicalize(p)
+    let resolved = fs::canonicalize(p)
         .or_else(|_| std::path::absolute(p))
-        .unwrap_or_else(|_| p.to_path_buf())
+        .unwrap_or_else(|_| p.to_path_buf());
+    strip_verbatim(resolved)
+}
+
+/// Windows `canonicalize` returns `\\?\C:\x`; a recorded `cwd` or a `--dir`
+/// is `C:\x`. Drop the prefix (drive paths only) so the two compare equal.
+fn strip_verbatim(p: PathBuf) -> PathBuf {
+    let s = p.to_string_lossy();
+    match s.strip_prefix(r"\\?\") {
+        Some(rest) if rest.as_bytes().get(1) == Some(&b':') => PathBuf::from(rest),
+        _ => p,
+    }
 }
 
 /// Indexes of `candidates` selected by `sel`, in order. With an empty
@@ -358,6 +369,17 @@ mod tests {
         fs::write(&none, "{\"type\":\"user\"}\n").unwrap();
         assert_eq!(peek_cwd(&none), None);
         assert_eq!(peek_cwd(&dir.path().join("missing.jsonl")), None);
+    }
+
+    #[test]
+    fn verbatim_drive_prefix_is_stripped_but_unc_is_kept() {
+        let s = |p: &str| strip_verbatim(PathBuf::from(p));
+        assert_eq!(s(r"\\?\C:\Users\me"), PathBuf::from(r"C:\Users\me"));
+        assert_eq!(
+            s(r"\\?\UNC\host\share"),
+            PathBuf::from(r"\\?\UNC\host\share")
+        );
+        assert_eq!(s("/home/me"), PathBuf::from("/home/me"));
     }
 
     #[test]
