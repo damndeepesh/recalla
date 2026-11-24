@@ -47,6 +47,7 @@ pub fn routes() -> Vec<Route> {
         route(Method::Post, "/api/memories/{uid}/forget", memory_forget),
         route(Method::Post, "/api/memories/{uid}/restore", memory_restore),
         route(Method::Post, "/api/memories/{uid}/promote", memory_promote),
+        route(Method::Post, "/api/memories/{uid}/edit", memory_edit),
         route(Method::Post, "/api/test-recall", test_recall),
         route(Method::Post, "/api/sync", sync_start),
         route(Method::Get, "/api/sync/status", sync_status),
@@ -219,6 +220,33 @@ fn memory_promote(ctx: &Ctx, req: &Request, p: &Params) -> ApiResult {
         }
     };
     let new_uid = ops::promote(&mut store, &uid, &target).map_err(ApiError::BadRequest)?;
+    if let Some(warning) = mirror::sync_best_effort(&mut store, &ctx.data_dir) {
+        eprintln!("recalla ui: {warning}");
+    }
+    let detail = store
+        .ui_memory_detail(&new_uid)?
+        .ok_or(ApiError::NotFound)?;
+    ok(&super::api::memory_row_json(&detail.row))
+}
+
+/// Body `{"text": "..."}`. The text is redacted and the original superseded
+/// by a confirmed memory carrying it. Answers with the new memory.
+fn memory_edit(ctx: &Ctx, req: &Request, p: &Params) -> ApiResult {
+    let id = checked("uid", p.get("uid").ok_or(ApiError::NotFound)?, 64)?;
+    let body = json_body(req)?;
+    let text = string_field(&body, "text", ops::MAX_EDIT_CHARS * 4)?
+        .ok_or_else(|| ApiError::BadRequest("text is required".to_owned()))?;
+    let mut store = write_store(ctx)?;
+    let uid = match store.memories_by_uid_prefix(id)?.as_slice() {
+        [] => return Err(ApiError::NotFound),
+        [one] => one.uid.clone(),
+        _ => {
+            return Err(ApiError::Conflict(
+                "id prefix matches several memories; use a longer one".to_owned(),
+            ));
+        }
+    };
+    let new_uid = ops::edit(&mut store, &uid, &text).map_err(ApiError::BadRequest)?;
     if let Some(warning) = mirror::sync_best_effort(&mut store, &ctx.data_dir) {
         eprintln!("recalla ui: {warning}");
     }

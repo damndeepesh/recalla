@@ -43,6 +43,7 @@ export const packHref = (id) => href(["packs", String(id)]);
 const VIEWS = {
   home: () => import("./views/home.js"),
   memories: () => import("./views/memories.js"),
+  review: () => import("./views/review.js"),
   sessions: () => import("./views/sessions.js"),
   packs: () => import("./views/packs.js"),
   setup: () => import("./views/setup.js"),
