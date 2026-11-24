@@ -5,6 +5,7 @@ task: "Windows completeness (USERPROFILE, opener, .exe hooks, CI tests) + groupe
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "feature/windows-release: release.yml builds x86_64-pc-windows-msvc zip; lands in next release; web page links not added yet"
   - "release 0.3.1 (owner go 2026-11-24): everything on dev ships as 0.3.1; web/ page version bump after binaries exist"
   - "fix/windows-full merged (#63); anchors integration tests now run on Windows CI (#64); e2e.sh/make live/perf stay unix-only"
   - "backfill --pick/--list grouped by project; Windows home/opener/.exe hook fixes; windows CI runs cargo test (check result)"
