@@ -226,7 +226,8 @@ impl RuleIndex {
 
     /// Compares a just-stored rule with the live rules of its scope (D-028).
     /// A newer rule that is at least as confident supersedes an unconfirmed
-    /// older one; any other contradiction flags both for re-verification.
+    /// older one; any other contradiction flags the newcomer (and the older
+    /// rule too, unless it is confirmed) for re-verification.
     fn resolve(
         &mut self,
         store: &mut Store,
@@ -252,8 +253,12 @@ impl RuleIndex {
                 gone.push(old.uid.clone());
                 report.conflicts_superseded += 1;
             } else {
+                // A confirmed rule is the user's word: automatic detection may
+                // flag the newcomer but never demotes it.
                 store.add_relation(uid, &old.uid, crate::store::CONFLICTS)?;
-                store.set_status(&old.uid, Status::NeedsReverify)?;
+                if old.confidence < CONFIRMED_CONFIDENCE {
+                    store.set_status(&old.uid, Status::NeedsReverify)?;
+                }
                 store.set_status(uid, Status::NeedsReverify)?;
                 report.conflicts_flagged += 1;
             }
@@ -415,7 +420,7 @@ mod tests {
         );
         let r = resolve(&mut s, &mut rules, &new);
         assert_eq!((r.conflicts_superseded, r.conflicts_flagged), (0, 1));
-        assert_eq!(status(&s, &old.1), Status::NeedsReverify);
+        assert_eq!(status(&s, &old.1), Status::Active, "confirmed rule stays");
         assert_eq!(status(&s, &new.1), Status::NeedsReverify);
     }
 
