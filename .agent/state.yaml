@@ -1,10 +1,11 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: fix/capture-and-e2e
-task: "v0.4.0 step 1: capture tail catch-up, e2e fix, make live"
+branch: feature/extract-imperative
+task: "v0.4.0 step 3: extract imperative prompts (PR into dev); step 4 next"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "step 3: extractor handles 'Decision for this project:', Rule:/Convention:, We always <verb>, Going forward,; 'Please run' no longer a rule; eval 52/0/0 + imperative 7/0/0. Bench recall not re-measured (needs REPOS clones)"
   - "dev has everything through #52 (codex snippet approves only recall/why)"
   - "step 1 done: `make live` 7/7 (Claude + Codex); e2e template strips our own hooks (85/85); SessionStart catches up the project's newest transcripts (Stop hook can run before the last reply is written); scripts/live.sh + make live written"
 next:

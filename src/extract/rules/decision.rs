@@ -23,7 +23,7 @@ const MAX_ADR_CHARS: usize = 400;
 
 static PHRASE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        r"(?is)\b(?:decided\b|decision:|we['\u{2019}]ll use\b|we will use\b|going with\b|chose\b.+\bover\b|switch(?:ed)? to\b|^(?:we\s+)?switched\b(?:\s+[\w\-./`']+){1,6}?\s+to\b|settled on\b|picked\b.+\bbecause\b)",
+        r"(?is)\b(?:decided\b|decision:|decision\s+for\s+(?:this|the)\s+[\w\- ]{1,24}:\s+\S+\s+\S+\s+\S+|we['\u{2019}]ll use\b|we will use\b|going with\b|chose\b.+\bover\b|switch(?:ed)? to\b|^(?:we\s+)?switched\b(?:\s+[\w\-./`']+){1,6}?\s+to\b|settled on\b|picked\b.+\bbecause\b)",
     )
     .expect("valid regex")
 });
@@ -201,6 +201,25 @@ mod tests {
             },
             Some("/work/app"),
         )
+    }
+
+    #[test]
+    fn labeled_project_decisions_count() {
+        let hit = run(
+            StoredKind::UserText,
+            "Decision for this project: all timestamps are stored as UTC epoch milliseconds.",
+        );
+        assert_eq!(hit.len(), 1);
+        for s in [
+            "Decision for this project: tbd.",
+            "What is the decision for this project: A or B?",
+            "The decision for the weekend trip is still open for now.",
+        ] {
+            assert!(
+                run(StoredKind::UserText, s).is_empty(),
+                "should not match: {s}"
+            );
+        }
     }
 
     #[test]
