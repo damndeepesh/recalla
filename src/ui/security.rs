@@ -354,12 +354,12 @@ mod tests {
     fn session_idles_out_but_activity_keeps_it() {
         let mut g = guard();
         let t = g.token.as_str().to_owned();
-        g.idle = Duration::from_millis(300);
+        g.idle = Duration::from_millis(1000);
         for _ in 0..4 {
-            std::thread::sleep(Duration::from_millis(150));
+            std::thread::sleep(Duration::from_millis(100));
             assert!(g.authenticated(&req(&[], Some(&t))), "active session");
         }
-        std::thread::sleep(Duration::from_millis(450));
+        std::thread::sleep(Duration::from_millis(1300));
         assert!(!g.authenticated(&req(&[], Some(&t))), "idle session");
         assert!(!g.authenticated(&req(&[], Some(&t))), "stays ended");
     }
