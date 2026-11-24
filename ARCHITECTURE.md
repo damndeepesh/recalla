@@ -147,7 +147,7 @@ flowchart LR
   - The store is opened lazily per call.
   - `review` and `why` only reach this project's memories plus Global ones. Global memories are read-only over MCP (CLI only), and their `why` hides source files and excerpts.
 - **Hooks** (Claude Code) never block, never write to stdout except the pack, and always exit 0. Errors go to `<data>/log/hook.log` (0600, rotated at 1 MB) (D-018).
-  - `hook session-start`: pack for `project_key(cwd)` emitted as `hookSpecificOutput.additionalContext`.
+  - `hook session-start`: first catches up the project's recent transcripts (D-027), then emits the pack for `project_key(cwd)` as `hookSpecificOutput.additionalContext`.
   - `hook capture` (Stop, PreCompact): ingests ONLY `transcript_path`, and only if it sits under `<claude root>/projects`, then extracts. The source key matches backfill's, so there are no duplicates.
   - Hook connections use a 2 s busy timeout.
   - Measured: session-start ≈1 ms; capture 0.13 s for a 7.4 MB first run, 0.02 s incrementally.

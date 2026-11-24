@@ -143,7 +143,7 @@ fn handle(
 ) -> Result<(), HookError> {
     let payload = read_payload(input)?;
     match event {
-        Event::SessionStart => session_start(&payload, out, &ctx.data_dir),
+        Event::SessionStart => session_start(&payload, out, ctx),
         Event::Capture => capture(&payload, ctx),
     }
 }
@@ -193,13 +193,23 @@ pub fn budget_from(var: Option<&str>) -> usize {
 /// Longest `session_id` stored with an injection, in chars.
 const MAX_SESSION_ID: usize = 200;
 
-fn session_start(payload: &Value, out: &mut impl Write, data_dir: &Path) -> Result<(), HookError> {
-    let project = project_key(str_field(payload, "cwd")?);
-    let db = paths::db_path(data_dir);
+fn session_start(payload: &Value, out: &mut impl Write, ctx: &Ctx) -> Result<(), HookError> {
+    let cwd = str_field(payload, "cwd")?;
+    let project = project_key(cwd);
+    let db = paths::db_path(&ctx.data_dir);
     if !db.is_file() {
         return Ok(());
     }
     let mut store = Store::open_with_busy(&db, BUSY)?;
+    // A failed catch-up must never cost the session its pack.
+    if let Err(e) = catch_up(
+        &mut store,
+        ctx,
+        cwd,
+        payload.get("session_id").and_then(Value::as_str),
+    ) {
+        log_line(&ctx.data_dir, Event::SessionStart, &e);
+    }
     let args = PackArgs {
         budget: budget_from(std::env::var("RECALLA_BUDGET").ok().as_deref()),
         project: Some(project),
@@ -221,6 +231,84 @@ fn session_start(payload: &Value, out: &mut impl Write, data_dir: &Path) -> Resu
         "additionalContext": pack.markdown,
     }});
     writeln!(out, "{reply}").map_err(|e| HookError::Io(format!("writing stdout: {:?}", e.kind())))
+}
+
+/// Newest transcripts to re-read at session start, and how old they may be.
+const CATCH_UP_FILES: usize = 3;
+const CATCH_UP_MAX_AGE: Duration = Duration::from_secs(24 * 3600);
+
+/// Claude Code's project directory name for a working directory: every
+/// character that is not ASCII alphanumeric becomes `-`.
+fn claude_project_dir_name(cwd: &str) -> String {
+    cwd.chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '-' })
+        .collect()
+}
+
+/// Recent transcripts of this project other than the starting session.
+fn recent_transcripts(root: &Path, cwd: &str, current: Option<&str>) -> Vec<PathBuf> {
+    let dir = root.join("projects").join(claude_project_dir_name(cwd));
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let now = SystemTime::now();
+    let mut files: Vec<(SystemTime, PathBuf)> = entries
+        .flatten()
+        .filter_map(|e| {
+            let path = e.path();
+            let name = path.file_stem()?.to_str()?.to_owned();
+            if path.extension()? != "jsonl" || current == Some(name.as_str()) {
+                return None;
+            }
+            let meta = e.metadata().ok().filter(fs::Metadata::is_file)?;
+            let modified = meta.modified().ok()?;
+            (now.duration_since(modified).unwrap_or_default() <= CATCH_UP_MAX_AGE)
+                .then_some((modified, path))
+        })
+        .collect();
+    files.sort_by_key(|f| std::cmp::Reverse(f.0));
+    files
+        .into_iter()
+        .take(CATCH_UP_FILES)
+        .map(|(_, p)| p)
+        .collect()
+}
+
+/// The Stop hook can run before Claude has written the last records of a
+/// turn (the final reply), and a finished session never fires it again.
+/// Re-reading the project's latest transcripts (incremental, so unchanged
+/// files are skipped) picks up that tail before the pack is built.
+fn catch_up(
+    store: &mut Store,
+    ctx: &Ctx,
+    cwd: &str,
+    current: Option<&str>,
+) -> Result<(), HookError> {
+    let Some(root) = ctx.root.as_deref() else {
+        return Ok(());
+    };
+    let files: Vec<PathBuf> = recent_transcripts(root, cwd, current)
+        .into_iter()
+        .filter_map(|f| trusted_transcript(root, &f.to_string_lossy()).ok())
+        .collect();
+    if files.is_empty() {
+        return Ok(());
+    }
+    let opts = Options {
+        claude_root: Some(root.to_owned()),
+        codex_root: None,
+        data_dir: ctx.data_dir.clone(),
+        archive: true,
+        dry_run: false,
+    };
+    let report = ingest::run_files(store, &opts, &files);
+    if let Some(f) = report.failed.first() {
+        return Err(HookError::store(&format!("ingest failed: {}", f.error)));
+    }
+    if report.files_unchanged < files.len() as u64 {
+        extract::run(store, &extract::Options::default())?;
+    }
+    Ok(())
 }
 
 /// The canonical path of a transcript, if it is a `.jsonl` file under

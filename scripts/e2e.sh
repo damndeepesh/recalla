@@ -191,6 +191,10 @@ echo "== 8. hooks: settings safety and hook behaviour"
 # Use the real settings as the template when present (read-only copy), else a synthetic one.
 SRC=$HOME/.claude/settings.json
 [ -f "$SRC" ] || { SRC=$W/synthetic-settings.json; echo '{"model":"x","hooks":{"SessionStart":[],"PreToolUse":[{"hooks":[]}],"PostToolUse":[{"hooks":[]}],"Stop":[]}}' > "$SRC"; }
+# The real file may already have Recalla installed; strip our entries so the template is the "before" state.
+cp "$SRC" "$W/template.json"
+$B hooks uninstall --settings "$W/template.json" >/dev/null 2>&1
+SRC=$W/template.json
 cp "$SRC" "$W/settings.json"
 $B hooks install --settings "$W/settings.json" >/dev/null 2>&1
 ok "hooks install (on a copy of real settings)" $?

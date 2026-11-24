@@ -214,6 +214,39 @@ fn capture_resumes_a_growing_transcript() {
     assert_eq!((report.files_unchanged, report.events_added), (1, 0));
 }
 
+/// The Stop hook can fire before the last records of a turn are written, and a
+/// finished session never fires it again: the next session start catches up.
+#[test]
+fn session_start_catches_up_a_transcript_tail_that_capture_missed() {
+    let env = Env::new();
+    let path = transcript(&env);
+    assert_silent_ok(&hook(&env, "capture", &capture_payload(&path)));
+    let mut f = fs::OpenOptions::new().append(true).open(&path).unwrap();
+    let late = json!({"type": "user", "uuid": "u-late", "sessionId": "eval-hook", "cwd": PROJECT,
+        "timestamp": "2026-11-01T11:00:00.000Z", "message": {"role": "user", "content": "Never edit generated files."}});
+    writeln!(f, "{late}").unwrap();
+    let out = hook(&env, "session-start", &start_payload());
+    assert!(out.status.success(), "{:?}", out.status);
+    assert!(log(&env).is_empty(), "{}", log(&env));
+    let report = env.ingest();
+    assert_eq!((report.files_unchanged, report.events_added), (1, 0));
+}
+
+/// The session that is starting is not re-read: it is still being written.
+#[test]
+fn session_start_skips_its_own_transcript() {
+    let env = Env::new();
+    let path = transcript(&env);
+    assert_silent_ok(&hook(&env, "capture", &capture_payload(&path)));
+    let mut f = fs::OpenOptions::new().append(true).open(&path).unwrap();
+    writeln!(f, "{}", json!({"type": "user", "uuid": "u2", "sessionId": "eval-hook", "cwd": PROJECT,
+        "timestamp": "2026-11-01T11:00:00.000Z", "message": {"role": "user", "content": "Never edit generated files."}})).unwrap();
+    let payload =
+        json!({"session_id": "eval-hook", "cwd": PROJECT, "source": "resume"}).to_string();
+    hook(&env, "session-start", &payload);
+    assert_eq!(env.ingest().events_added, 1);
+}
+
 #[test]
 fn capture_refuses_paths_outside_the_claude_root() {
     let env = Env::new();

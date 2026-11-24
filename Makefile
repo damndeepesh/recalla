@@ -1,4 +1,4 @@
-.PHONY: setup dev fmt check build perf secrets e2e bench bench-check
+.PHONY: setup dev fmt check build perf secrets e2e bench bench-check live
 
 setup:
 	rustup show active-toolchain
@@ -32,6 +32,10 @@ secrets:
 # End-to-end functional checklist against the release binary (planted secrets, hooks, MCP, anchors, mirror).
 e2e: build
 	bash scripts/e2e.sh target/release/recalla
+
+# Live round trip with the real claude/codex CLIs and installed hooks (scratch data dir; not in CI).
+live:
+	bash scripts/live.sh
 
 # Benchmark crate checks (separate cargo workspace in bench/).
 bench-check:
