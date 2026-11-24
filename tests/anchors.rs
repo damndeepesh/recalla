@@ -1,6 +1,6 @@
 //! Code anchors end to end: extraction anchors a memory to a symbol, edits
 //! flag it stale, `confirm` re-anchors, packs show why.
-
+#![cfg(unix)] // fixtures assume /tmp and unix paths; the anchor logic itself is unit-tested on every OS
 #![allow(clippy::unwrap_used)]
 
 mod common;
@@ -39,7 +39,7 @@ const DECISION: &str = "We decided to keep `Store::insert` cheap in src/store.rs
 /// paths are redacted without the entropy layer, so it survives into the
 /// session's cwd and project key. Unix only, like CI.
 fn tmp() -> tempfile::TempDir {
-    tempfile::tempdir_in(std::env::temp_dir()).unwrap()
+    tempfile::tempdir_in("/tmp").unwrap()
 }
 
 /// A temp dir with a fixed, readable name. Needed where an absolute path
@@ -49,7 +49,7 @@ fn named_tmp(name: &str) -> tempfile::TempDir {
     tempfile::Builder::new()
         .prefix(&format!("recalla-{name}"))
         .rand_bytes(0)
-        .tempdir_in(std::env::temp_dir())
+        .tempdir_in("/tmp")
         .unwrap()
 }
 

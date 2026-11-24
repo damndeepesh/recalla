@@ -227,6 +227,7 @@ fn dry_run_with_a_selection_writes_nothing() {
     assert!(!env.data.exists());
 }
 
+#[cfg(unix)] // creating symlinks needs a privilege on Windows
 #[test]
 fn dir_works_through_a_symlinked_path() {
     let env = Env::new();
@@ -242,7 +243,6 @@ fn dir_works_through_a_symlinked_path() {
         "sym",
     );
     let link = env.base.join("link-proj");
-    #[cfg(unix)]
     std::os::unix::fs::symlink(&real, &link).unwrap();
     assert_eq!(env.seen(&["--dir", link.to_str().unwrap()]), (1, 1));
 }

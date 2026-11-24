@@ -389,7 +389,13 @@ fn overview_shape_and_numbers() {
     assert!(v["db_bytes"].as_u64().unwrap() > 4096);
     assert_eq!(v["archive_bytes"], 0);
     assert!(v["data_dir"].as_str().unwrap().ends_with("data"));
-    assert!(v["mirror_dir"].as_str().unwrap().ends_with("data/mirror"));
+    assert!(
+        v["mirror_dir"]
+            .as_str()
+            .unwrap()
+            .replace('\\', "/")
+            .ends_with("data/mirror")
+    );
     assert_eq!(v["version"], recalla::VERSION);
     assert_eq!(v["schema_version"], recalla::store::schema_version());
     assert!(v["generated_at"].as_i64().unwrap() > 1_700_000_000_000);
@@ -1180,7 +1186,13 @@ fn connect_reports_state_and_exact_commands() {
     assert!(c["db"]["bytes"].as_u64().unwrap() > 0);
     assert_eq!(c["db"]["schema_version"], recalla::store::schema_version());
     assert!(c["data_dir"].as_str().unwrap().ends_with("data"));
-    assert!(c["mirror_dir"].as_str().unwrap().ends_with("data/mirror"));
+    assert!(
+        c["mirror_dir"]
+            .as_str()
+            .unwrap()
+            .replace('\\', "/")
+            .ends_with("data/mirror")
+    );
     assert!(c["last_capture_at"].is_i64());
     assert_eq!(c["last_injection"]["via"], "cli");
     assert!(c["last_injection"]["at"].is_i64());
@@ -1603,7 +1615,12 @@ fn db_snapshot(store: &Store, key: &str) -> String {
 
 #[test]
 fn test_recall_does_not_write_even_when_anchored_code_changed() {
-    let tmp = tempfile::tempdir_in("/tmp").unwrap();
+    let tmp = tempfile::tempdir_in(if cfg!(windows) {
+        std::env::temp_dir()
+    } else {
+        "/tmp".into()
+    })
+    .unwrap();
     let project = fs::canonicalize(tmp.path()).unwrap().join("proj");
     fs::create_dir_all(project.join("src")).unwrap();
     let file = project.join("src/store.rs");
