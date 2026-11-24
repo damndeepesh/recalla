@@ -38,3 +38,4 @@
 - [x] fix/windows-exe-path: hook/MCP exe path without the verbatim prefix (reported by a Windows user on 0.3.1)
 - [x] feature/harness-opencode: opencode backfill via read-only SQLite export (D-032); verified on a real database
 - [ ] harnesses next: Copilot CLI, Gemini CLI / agy, Cursor transcripts (plan: .agent/plans/harnesses.md)
+- [x] chore/release-0.3.2: version, changelog, web version (not published; owner go needed)

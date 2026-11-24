@@ -1,10 +1,11 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: feature/harness-opencode
+branch: chore/release-0.3.2
 task: "Windows completeness (USERPROFILE, opener, .exe hooks, CI tests) + grouped backfill --pick/--list; PR into dev"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "0.3.2 prepped on chore/release-0.3.2 (exe-path fix, Windows zip, opencode); NOT published, needs owner go"
   - "opencode harness: store::foreign read-only reader, harness::opencode export+parser, --opencode-root, UI sync; tests/opencode.rs; real DB smoke ok (2 sessions)"
   - "fix/windows-exe-path: paths::current_exe strips \\\\?\\ and uses / on Windows; reported by a 0.3.1 Windows user; needs a 0.3.2 release (owner go)"
   - "feature/windows-release: release.yml builds x86_64-pc-windows-msvc zip; lands in next release; web page links not added yet"

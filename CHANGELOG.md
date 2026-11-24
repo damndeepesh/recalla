@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-25
+
 - opencode support: `recalla backfill --harness opencode` (or `--harness all`, the default) imports opencode history. The SQLite database is read-only and exported to private JSONL under `<data>/import/opencode/` (D-032). Backfill and MCP only; no capture hook yet.
 
 - Fix (Windows): `hooks install` and the MCP registration recorded the binary as `\\?\C:\…` (Windows `canonicalize`), so the MCP server and the SessionStart hook failed to start. The path is now plain `C:/…` (no verbatim prefix, forward slashes, which bash and Windows both accept). Re-run `recalla hooks install` and re-add the MCP server to repair an existing install.
