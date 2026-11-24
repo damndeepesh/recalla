@@ -1,10 +1,12 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: feature/promote-global
-task: "v0.4.0 step 6 promote-global (PR into dev); step 7 triage-ui next"
+branch: feature/triage-ui
+task: "v0.4.0 step 7 triage-ui: backend done (ops::edit, /edit route, relations in detail); #/review view built (views/review.js); make check + e2e 88/88 green; PR open"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "step 6 merged (#59)"
+  - "step 7 backend: ops::edit + POST /api/memories/{uid}/edit + relations in detail API; ui_api edit test"
   - "step 6: ops::promote + `recalla promote` + UI route; tests/promote.rs, ui_api"
   - "steps 4,5 merged (#56,#57); Windows build fixed + CI job (#58)"
   - "step 5: extract::conflict detector (opposed groups + polarity), pipeline supersede/flag, why shows relations, D-028; tests: unit, pipeline, tests/conflict.rs"
@@ -15,7 +17,8 @@ done:
   - "step 2: recalla doctor (10 checks, read-only, --json); merged #54"
   - "step 1 done: make live 7/7, e2e 85/85, SessionStart tail catch-up; merged #53"
 next:
-  - step 7 feature/triage-ui (designer agent), then 8-9 (see plan)
+  - step 7: finish #/review view (designer agent running), make check + e2e, review, PR into dev; then tell owner dev is LinkedIn-ready
+  - then steps 8-9 (see plan)
   - owner decision: memorybench needs paid judge keys
 blockers: []
 notes:

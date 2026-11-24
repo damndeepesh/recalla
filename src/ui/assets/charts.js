@@ -5,8 +5,7 @@ import { h, num } from "./dom.js";
 const NS = "http://www.w3.org/2000/svg";
 function svg(tag, attrs = {}, ...kids) {
   const el = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(attrs))
-    if (v != null) el.setAttribute(k, String(v));
+  for (const [k, v] of Object.entries(attrs)) if (v != null) el.setAttribute(k, String(v));
   for (const c of kids.flat()) if (c) el.append(c);
   return el;
 }
@@ -116,10 +115,7 @@ export function columns(series, { value, line, label }) {
       );
   });
   if (line) {
-    const pts = series.map(
-      (d, i) =>
-        `${(i + 0.5) * step},${hgt - 6 - (line(d) / lmax) * (hgt - 20)}`,
-    );
+    const pts = series.map((d, i) => `${(i + 0.5) * step},${hgt - 6 - (line(d) / lmax) * (hgt - 20)}`);
     root.append(
       svg("polyline", {
         points: pts.join(" "),
@@ -137,9 +133,7 @@ export function sparkline(values, label) {
   const hgt = 32;
   const max = Math.max(1, ...values);
   const step = values.length > 1 ? w / (values.length - 1) : w;
-  const pts = values.map(
-    (v, i) => `${i * step},${hgt - 3 - (v / max) * (hgt - 6)}`,
-  );
+  const pts = values.map((v, i) => `${i * step},${hgt - 3 - (v / max) * (hgt - 6)}`);
   const root = frame(w, hgt, "spark", label);
   root.append(
     svg("polygon", {
@@ -160,10 +154,7 @@ export function pairedBars(items, label) {
   const w = 600;
   const hgt = 120;
   const n = Math.max(items.length, 1);
-  const max = Math.max(
-    1,
-    ...items.map((p) => Math.max(p.candidate_tokens ?? 0, p.est_tokens)),
-  );
+  const max = Math.max(1, ...items.map((p) => Math.max(p.candidate_tokens ?? 0, p.est_tokens)));
   const step = w / n;
   const bw = Math.max(3, step * 0.56);
   const root = frame(w, hgt, "pairs-chart", label);
@@ -234,8 +225,7 @@ export function illustration(kind = "empty") {
     "aria-hidden": "true",
     focusable: "false",
   });
-  const card = (x, y, cls) =>
-    svg("rect", { x, y, width: 96, height: 58, rx: 10, class: cls });
+  const card = (x, y, cls) => svg("rect", { x, y, width: 96, height: 58, rx: 10, class: cls });
   const lines = (x, y) => [
     svg("rect", {
       x: x + 14,
@@ -262,12 +252,7 @@ export function illustration(kind = "empty") {
       class: "il-dim",
     }),
   ];
-  root.append(
-    card(44, 14, "il-back"),
-    card(30, 28, "il-mid"),
-    card(16, 42, "il-front"),
-    ...lines(16, 42),
-  );
+  root.append(card(44, 14, "il-back"), card(30, 28, "il-mid"), card(16, 42, "il-front"), ...lines(16, 42));
   if (kind === "search")
     root.append(
       svg("circle", { cx: 122, cy: 70, r: 14, class: "il-lens" }),
@@ -278,7 +263,11 @@ export function illustration(kind = "empty") {
       svg("circle", { cx: 128, cy: 40, r: 16, class: "il-accent" }),
       svg("path", { d: "M122 40h12M128 34v12", class: "il-on-accent" }),
     );
-  else
-    root.append(svg("circle", { cx: 128, cy: 40, r: 9, class: "il-accent" }));
+  else if (kind === "done")
+    root.append(
+      svg("circle", { cx: 128, cy: 40, r: 16, class: "il-accent" }),
+      svg("path", { d: "M121 40.5l5 5 9-10", class: "il-on-accent" }),
+    );
+  else root.append(svg("circle", { cx: 128, cy: 40, r: 9, class: "il-accent" }));
   return root;
 }

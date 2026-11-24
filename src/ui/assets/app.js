@@ -43,6 +43,7 @@ async function render(first = false) {
     onCleanup: (fn) => cleanups.push(fn),
     title: (t) => (document.title = t ? `${t} · Recalla` : "Recalla"),
     refreshSetupFlag,
+    setReviewCount,
   };
   if (!route.load) {
     ctx.title("Not found");
@@ -56,6 +57,7 @@ async function render(first = false) {
     );
     return;
   }
+  if (!first) refreshReviewCount();
   try {
     const mod = await route.load();
     if (my !== token) return;
@@ -93,6 +95,30 @@ async function refreshSetupFlag() {
   }
 }
 
+// ---- Review queue size: a count badge on the nav item. ----
+function setReviewCount(n) {
+  for (const a of document.querySelectorAll('[data-nav="review"]')) {
+    a.querySelector(".count-badge")?.remove();
+    if (n > 0)
+      a.append(
+        h(
+          "span",
+          { class: "count-badge num" },
+          h("span", { "aria-hidden": "true" }, n > 99 ? "99+" : String(n)),
+          h("span", { class: "sr" }, ` (${n} to review)`),
+        ),
+      );
+  }
+}
+async function refreshReviewCount() {
+  try {
+    const o = await get("/api/overview");
+    setReviewCount(o.memories.by_status?.needs_reverify ?? 0);
+  } catch {
+    // The badge is a hint; the Review view reports errors.
+  }
+}
+
 // ---- theme ----
 const themeBtn = document.getElementById("theme-btn");
 const prefersDark = matchMedia("(prefers-color-scheme: dark)");
@@ -119,7 +145,7 @@ prefersDark.addEventListener("change", paintThemeButton);
 paintThemeButton();
 
 // ---- nav icons, skip link, search ----
-const NAV_KEY = { home: "h", memories: "m", sessions: "s", packs: "p", setup: "c" };
+const NAV_KEY = { home: "h", memories: "m", review: "r", sessions: "s", packs: "p", setup: "c" };
 for (const a of document.querySelectorAll("[data-nav]")) {
   a.prepend(icon(a.dataset.nav, 17));
   a.append(h("span", { class: "nav-key", "aria-hidden": "true" }, h("kbd", null, "g"), h("kbd", null, NAV_KEY[a.dataset.nav])));
@@ -146,6 +172,7 @@ const SHORTCUTS = [
     [
       ["g h", "Home"],
       ["g m", "Memories"],
+      ["g r", "Review"],
       ["g s", "Sessions"],
       ["g p", "Context packs"],
       ["g c", "Setup"],
@@ -160,11 +187,22 @@ const SHORTCUTS = [
       ["Esc", "Close the detail pane"],
     ],
   ],
+  [
+    "Review",
+    [
+      ["Enter", "Show why it's here"],
+      ["c", "Keep: it's still true"],
+      ["e", "Edit the text"],
+      ["p", "Promote to another scope"],
+      ["f", "Forget"],
+    ],
+  ],
 ];
 const GO = {
   h: [],
   o: [],
   m: ["memories"],
+  r: ["review"],
   s: ["sessions"],
   p: ["packs"],
   i: ["packs"],
@@ -283,6 +321,7 @@ try {
   await session();
   document.getElementById("version").textContent = `v${appVersion()}`;
   refreshSetupFlag();
+  refreshReviewCount();
   await render(true);
 } catch (e) {
   if (e.status !== 401) {

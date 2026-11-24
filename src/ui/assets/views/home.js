@@ -535,7 +535,7 @@ function needsReview(o, signal) {
       span: 7,
       aside: h(
         "a",
-        { href: href(["memories"], q({ status: "needs_reverify" })) },
+        { href: href(["review"]) },
         `Review all ${num(o.memories.stale)}`,
       ),
     },

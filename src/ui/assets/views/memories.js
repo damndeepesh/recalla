@@ -3,7 +3,7 @@
 // (full page below 72rem). All state lives in the hash.
 import { h, inline, icon, num, time, absTime, short, baseName } from "../dom.js";
 import { get, post, enc } from "../api.js";
-import { go, href, memoryHref, sessionHref, packHref } from "../router.js";
+import { go, href, memoryHref, packHref } from "../router.js";
 import {
   pagedList,
   memoryRow,
@@ -24,6 +24,7 @@ import {
   searchInput,
   projects,
   copyIcon,
+  provItem,
   KINDS,
   KIND_LABEL,
   STATUS_LABEL,
@@ -235,32 +236,6 @@ const available = (s) => [
   ...(s !== "archived" ? ["forget"] : []),
   ...(s === "archived" || s === "superseded" ? ["restore"] : []),
 ];
-const ORIGIN = {
-  remember: "Saved by the agent",
-  extract: "Learned from a session",
-  extractor: "Learned from a session",
-  backfill: "Learned from imported history",
-  mirror: "Restored from the markdown mirror",
-};
-
-function provItem(p) {
-  const where = [p.file, p.line != null ? `line ${p.line}` : null].filter(Boolean).join(", ");
-  return h(
-    "li",
-    null,
-    h(
-      "div",
-      { class: "cluster small" },
-      h("strong", null, ORIGIN[p.origin] ?? p.origin),
-      p.harness ? h("span", { class: "muted" }, AGENT_LABEL[p.harness] ?? p.harness) : null,
-      p.session_id ? h("a", { href: sessionHref(p.harness ?? "any", p.session_id) }, "Open session") : null,
-      where ? h("code", { class: "muted" }, where) : null,
-      p.git_commit ? h("code", { class: "muted", title: p.git_commit }, `commit ${short(p.git_commit)}`) : null,
-    ),
-    p.excerpt ? h("blockquote", null, p.excerpt) : null,
-  );
-}
-
 function detail(d, { onChange, closeHref, wide }) {
   const status = statusLine();
   const bar = h("div", { class: "mem-actions" });

@@ -93,6 +93,13 @@ pub const TABLE: &[(&str, Asset)] = &[
         },
     ),
     (
+        "/assets/views/review.js",
+        Asset {
+            content_type: JS,
+            body: include_bytes!("assets/views/review.js"),
+        },
+    ),
+    (
         "/assets/views/sessions.js",
         Asset {
             content_type: JS,

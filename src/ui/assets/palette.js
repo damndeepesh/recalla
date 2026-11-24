@@ -11,7 +11,7 @@ const PAGES = [
   ["Sessions", "sessions", ["sessions"], ""],
   ["Context packs", "packs", ["packs"], "What each agent was given"],
   ["Setup", "setup", ["setup"], ""],
-  ["Memories that need review", "alert", ["memories"], "", { status: "needs_reverify" }],
+  ["Review", "review", ["review"], "Memories that need a look"],
   ["Install Claude Code hooks", "plug", ["setup"], "Setup", { step: "hooks" }],
   ["Import history", "download", ["setup"], "Setup", { step: "import" }],
   ["Test recall", "play", ["setup"], "Setup", { step: "test" }],

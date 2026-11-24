@@ -1378,6 +1378,41 @@ fn promote_moves_a_memory_and_rejects_bad_requests() {
 }
 
 #[test]
+fn edit_supersedes_redacts_and_stores_markup_as_inert_text() {
+    let (api, uid, _) = Api::start();
+    let url = format!("/api/memories/{uid}/edit");
+    assert_eq!(api.post(&url, &json!({})).status, 400, "text required");
+    assert_eq!(api.post(&url, &json!({"text": "   "})).status, 400);
+    let long = "x".repeat(1200);
+    assert_eq!(api.post(&url, &json!({"text": long})).status, 400);
+
+    let key = format!("sk-ant-api03-{}", "A1b2C3d4E5".repeat(6));
+    let payload = format!("<img src=x onerror=alert(1)> use tabs {key}");
+    let r = api.post_ok(&url, &json!({"text": payload}));
+    let new_uid = r["uid"].as_str().unwrap().to_owned();
+    assert_ne!(new_uid, uid);
+    let text = r["text"].as_str().unwrap_or_default();
+    assert!(!text.contains(&key), "secret must be redacted: {text}");
+    assert!(text.contains("[REDACTED"), "{text}");
+    // Stored verbatim as text (escaping is the renderer's job); never as HTML in JSON.
+    assert!(text.contains("<img src=x onerror=alert(1)>"));
+    let s = api.env.store();
+    assert_eq!(s.get(&uid).unwrap().unwrap().status, Status::Superseded);
+    assert!(s.get(&new_uid).unwrap().unwrap().confidence >= 0.9);
+    drop(s);
+
+    // The detail shows the link; the superseded original cannot be edited again.
+    let d = api.ok(&format!("/api/memories/{new_uid}"));
+    assert_eq!(d["relations"][0]["relation"], "supersedes");
+    assert_eq!(api.post(&url, &json!({"text": "other"})).status, 400);
+    assert_eq!(
+        api.post("/api/memories/deadbeefdeadbeef/edit", &json!({"text": "x"}))
+            .status,
+        404
+    );
+}
+
+#[test]
 fn forget_restore_confirm_round_trip_on_a_global_memory() {
     let (api, uid, total) = Api::start();
     let before = mirror_file(&api, &uid);

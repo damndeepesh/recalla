@@ -41,6 +41,7 @@ export function fill(el, ...children) {
 
 const ICONS = {
   home: "M4 11.5 12 5l8 6.5V20h-5v-5h-6v5H4z",
+  review: "M4 13h4.5l1.5 3h4l1.5-3H20M6.5 5h11L20 13v6H4v-6z",
   sessions: "M5 6h14M5 12h14M5 18h9",
   memories: "M12 3 3 8l9 5 9-5-9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5",
   packs: "M4 7h16v13H4zM8 7V4h8v3M8 12h8M8 16h5",
@@ -48,6 +49,7 @@ const ICONS = {
   sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
   moon: "M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z",
   copy: "M9 9h11v11H9zM5 15V4h11",
+  pencil: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
   check: "M5 12.5 10 17.5 19 7",
   help: "M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17.5v.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z",
   alert: "M12 9v4m0 4v.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z",

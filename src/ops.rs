@@ -15,6 +15,7 @@ use crate::extract::conflict::{Analyzed, detect};
 use crate::model::{Kind, Memory, NewMemory, Origin, Provenance, Scope, Status};
 use crate::pack;
 use crate::paths;
+use crate::redact::redact;
 use crate::store::{DEFAULT_BUSY, Filter, NewInjection, Store, StoreError, Via};
 
 #[derive(Clone)]
@@ -360,10 +361,66 @@ pub fn promote(store: &mut Store, uid: &str, target: &Scope) -> Result<String, S
     Ok(moved.uid().to_owned())
 }
 
+/// Longest memory text an edit may carry (same cap as `remember`).
+pub const MAX_EDIT_CHARS: usize = 1000;
+
+/// Replaces a memory's text: the redacted new text is stored as a confirmed
+/// memory in the same kind and scope, and supersedes the original. Returns
+/// the new uid. Anchors are re-resolved from the new text when it has a
+/// project; the original stays in history.
+///
+/// # Errors
+/// A message when the memory is missing or not live, the text is empty,
+/// too long or unchanged, or the store fails.
+pub fn edit(store: &mut Store, uid: &str, text: &str) -> Result<String, String> {
+    let m = store
+        .get(uid)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("No memory matches {uid}"))?;
+    if !matches!(m.status, Status::Active | Status::NeedsReverify) {
+        return Err(format!(
+            "memory is {}; only live memories can be edited",
+            m.status
+        ));
+    }
+    let clean = redact(text.trim()).text.into_owned();
+    let clean = clean.split_whitespace().collect::<Vec<_>>().join(" ");
+    if clean.is_empty() {
+        return Err("text is empty".to_owned());
+    }
+    if clean.chars().count() > MAX_EDIT_CHARS {
+        return Err(format!(
+            "text is over {MAX_EDIT_CHARS} characters; keep one short, atomic memory"
+        ));
+    }
+    if clean == m.text {
+        return Err("text is unchanged".to_owned());
+    }
+    let new = NewMemory {
+        kind: m.kind,
+        text: clean,
+        scope: m.scope.clone(),
+        confidence: m.confidence.max(CONFIRMED_CONFIDENCE),
+        importance: m.importance,
+    };
+    let moved = store
+        .insert(&new, &Provenance::new(Origin::Remember))
+        .map_err(|e| e.to_string())?;
+    let new_uid = moved.uid().to_owned();
+    store
+        .supersede(&m.uid, &new_uid)
+        .map_err(|e| e.to_string())?;
+    confirm(store, &new_uid)?;
+    Ok(new_uid)
+}
+
 /// `(relation, other uid, reason)` for the memory's supersede/conflict links,
 /// phrased from this memory's side. The reason is recomputed from the two
 /// texts, so nothing but the link is stored.
-fn relation_lines(store: &Store, m: &Memory) -> Result<Vec<(String, String, String)>, String> {
+///
+/// # Errors
+/// A message when the store cannot be read.
+pub fn relation_lines(store: &Store, m: &Memory) -> Result<Vec<(String, String, String)>, String> {
     let mine = Analyzed::new(&m.text);
     let mut out = Vec::new();
     for (src, dst, kind) in store.relations_of(&m.uid).map_err(|e| e.to_string())? {
