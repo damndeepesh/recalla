@@ -1,10 +1,11 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: feature/triage-ui
-task: "v0.4.0 step 7 triage-ui: backend done (ops::edit, /edit route, relations in detail); #/review view built (views/review.js); make check + e2e 88/88 green; PR open"
+branch: feature/ttl-decay
+task: "v0.4.0 step 9 ttl-decay done on branch (stacked on #60); step 8 pretooluse-recall next"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "step 9: pack decay factor for unconfirmed memories (D-029), explain shows it; bench noise/staleness not re-measured"
   - "step 6 merged (#59)"
   - "step 7 backend: ops::edit + POST /api/memories/{uid}/edit + relations in detail API; ui_api edit test"
   - "step 6: ops::promote + `recalla promote` + UI route; tests/promote.rs, ui_api"
