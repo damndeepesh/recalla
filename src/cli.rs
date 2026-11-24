@@ -14,6 +14,7 @@ use clap::{Parser, Subcommand, ValueEnum};
 use serde_json::{Value, json};
 
 use crate::anchor;
+use crate::doctor;
 use crate::extract;
 use crate::extract::scope::project_key;
 use crate::harness::{claude, codex};
@@ -198,6 +199,17 @@ enum Command {
         no_log: bool,
         #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
         data_dir: Option<PathBuf>,
+    },
+    /// Check that Recalla is wired up and has fired (hooks, MCP, database, last capture/injection).
+    Doctor {
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+        /// Claude Code settings file [default: `$CLAUDE_CONFIG_DIR/settings.json` or `~/.claude/settings.json`].
+        #[arg(long, value_name = "PATH")]
+        settings: Option<PathBuf>,
+        /// Print as JSON.
+        #[arg(long)]
+        json: bool,
     },
     /// Show what memory has been injected and what it cost.
     Stats {
@@ -531,6 +543,30 @@ where
             dry_run,
             data_dir,
         } => run_hooks(action, settings, dry_run, data_dir, out, err),
+        Command::Doctor {
+            data_dir,
+            settings,
+            json,
+        } => match resolve_data_dir(data_dir) {
+            Ok(dir) => {
+                let checks = doctor::run(&doctor::Inputs::from_env(dir, settings));
+                let text = if json {
+                    format!("{}\n", doctor::render_json(&checks))
+                } else {
+                    doctor::render_text(&checks)
+                };
+                emit(
+                    out,
+                    &text,
+                    if doctor::failed(&checks) {
+                        SOME_FAILED
+                    } else {
+                        OK
+                    },
+                )
+            }
+            Err(msg) => emit(err, &msg, USAGE),
+        },
         Command::Stats { data_dir, json } => {
             read_only(data_dir, out, err, |s| stats_text(s, json).map(Why::Found))
         }
