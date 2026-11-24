@@ -1,10 +1,11 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: fix/windows-full
+branch: fix/windows-anchors
 task: "Windows completeness (USERPROFILE, opener, .exe hooks, CI tests) + grouped backfill --pick/--list; PR into dev"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "fix/windows-full merged (#63); anchors integration tests now run on Windows CI (#64); e2e.sh/make live/perf stay unix-only"
   - "backfill --pick/--list grouped by project; Windows home/opener/.exe hook fixes; windows CI runs cargo test (check result)"
   - "step 8 merged (#62); steps 1-9 all in dev"
   - "step 8: hook pre-tool-use + hooks install --file-recall (opt-in, D-030); tests hook/hooks/perf; p95 1.4ms. Per-file bench not run (needs REPOS clones)"

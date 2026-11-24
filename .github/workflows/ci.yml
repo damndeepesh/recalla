@@ -24,7 +24,7 @@ jobs:
 
   windows:
     # Recalla must build and pass its Rust tests on Windows (the Makefile and
-    # scripts/e2e.sh assume a Unix shell, so they stay Linux/macOS only).
+    # scripts/e2e.sh are bash with unix paths and modes, so they stay Linux/macOS only).
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
