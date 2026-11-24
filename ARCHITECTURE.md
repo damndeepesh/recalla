@@ -159,6 +159,11 @@ flowchart LR
   - backups are `create_new` (never overwritten), 0600
   - prints the MCP registration commands for Claude Code and Codex without running them
 
+## Doctor (`doctor`, `recalla doctor`)
+- Read-only health check, `Inputs` (paths, `PATH`, clock) injected so tests are hermetic. Checks, in order: binary on `PATH` (same file as the running exe), Claude hooks, Claude MCP (`.claude.json`, user or project scope), Codex MCP (`config.toml`, including the per-tool `recall` approval), database schema, data-dir mode, last capture, last injection, mirror dirty count, hook log tail.
+- Levels: ok, warn, fail, skip (tool not installed / no database). Exit 1 only on fail; `--json` for scripts. Each non-ok check carries a `fix`.
+- It never creates files (a read-only open of the WAL database may create `-shm`/`-wal` sidecars). The hook log only records errors, so "did it fire?" is answered from timestamps in the database.
+
 ## Code anchors (`anchor`, `recalla check|confirm`)
 - **Anchoring at extraction**, for Project/Module memories whose key is an existing dir:
   - Candidate identifiers come from the memory text (backticked spans, CamelCase, snake_case).

@@ -124,6 +124,7 @@ recalla pack --budget 1500    # see the context pack for the current project
 recalla search "rate limit"   # inspect memories
 recalla why <id>              # where a memory came from
 recalla stats                 # what was injected, and its token cost
+recalla doctor                # is it wired up, and did it fire? (hooks, MCP, db, last capture/injection)
 recalla check                 # flag memories whose anchored code changed
 recalla confirm <id>          # re-verify a flagged memory (also undoes forget)
 recalla forget <id>           # drop a wrong memory (archived, never deleted)
