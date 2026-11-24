@@ -181,7 +181,7 @@ pub fn resolve_with(
         let Ok(rel) = file.strip_prefix(&root) else {
             continue;
         };
-        let rel = rel.to_string_lossy().into_owned();
+        let rel = rel.to_string_lossy().replace('\\', "/");
         if !persistable(&rel) || !seen.insert(rel.clone()) {
             continue;
         }

@@ -215,3 +215,9 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Decision: `recalla hook pre-tool-use` (matcher `Read|Edit|Write|MultiEdit`) injects up to 5 anchored, non-stale, active memories (<= 300 tokens) once per memory per session, deduped through the injection ledger (so anything the session-start pack already showed is skipped). It never decides permissions and exits 0 on every error. It is installed only with `hooks install --file-recall`; uninstall removes it by the same exact-command rule; other PreToolUse entries are never touched.
 - Why opt-in: the plan says to ship by default only if a per-file bench beats session-start-only on tokens and right-fact recall. That bench is not run yet (it needs full-history clones), so the default stays off. p95 is 1.4 ms in-process on 100k memories (`make perf`).
 - Rejected: injecting on every tool (noise); a separate dedupe table (the ledger already has the data); blocking with `permissionDecision` to force a re-read (changes agent behaviour).
+
+## D-031 `getrandom` for login and session secrets (2026-11-24)
+
+- Context: `random_hex` read `/dev/urandom`, which does not exist on Windows, so the dashboard could not start there.
+- Decision: use the `getrandom` crate (OS CSPRNG on every platform). It was already in the lockfile through other dependencies, so it adds no new code to the build.
+- Rejected: hand-written Windows FFI (`unsafe` is forbidden in this crate); `rand` (far larger for one call).
