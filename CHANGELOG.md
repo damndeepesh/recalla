@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+- Release workflow also builds a Windows x86_64 binary (`recalla-vX.Y.Z-x86_64-pc-windows-msvc.zip`, with checksum and provenance). Takes effect at the next release tag.
+
 ## [0.3.1] - 2026-11-24
 
 ### Added

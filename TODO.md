@@ -34,3 +34,4 @@
 - [x] fix/windows-full: USERPROFILE, `cmd /C start`, `.exe` hook matching, `cargo test` on Windows CI; grouped `backfill --pick`/`--list`
 - [x] fix/windows-anchors: anchors integration tests run on Windows (test helper joined an absolute cwd onto the Claude root)
 - [x] chore/release-0.3.1: version, changelog; dev -> main, tag v0.3.1, cargo publish
+- [x] feature/windows-release: Windows zip in the release workflow (next release)

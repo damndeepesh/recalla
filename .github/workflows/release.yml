@@ -50,6 +50,7 @@ jobs:
           # 22.04 keeps the glibc requirement low (2.35) for older distros.
           - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu }
           - { os: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -65,8 +66,26 @@ jobs:
       - name: Smoke test
         # An x86_64 macOS binary built on an arm64 runner can't be assumed to run there.
         if: matrix.target != 'x86_64-apple-darwin'
-        run: target/${{ matrix.target }}/release/recalla --version
+        shell: bash
+        run: |
+          exe=target/${{ matrix.target }}/release/recalla
+          [ -f "$exe.exe" ] && exe="$exe.exe"
+          "$exe" --version
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          $name = "recalla-v$env:VERSION-$env:TARGET"
+          New-Item -ItemType Directory -Force "dist/$name" | Out-Null
+          Copy-Item "target/$env:TARGET/release/recalla.exe", LICENSE, README.md "dist/$name/"
+          Compress-Archive -Path "dist/$name" -DestinationPath "dist/$name.zip"
+          $h = (Get-FileHash "dist/$name.zip" -Algorithm SHA256).Hash.ToLower()
+          "$h  $name.zip" | Out-File -Encoding ascii "dist/$name.zip.sha256"
       - name: Package
+        if: runner.os != 'Windows'
         env:
           VERSION: ${{ needs.verify.outputs.version }}
           TARGET: ${{ matrix.target }}
@@ -81,6 +100,7 @@ jobs:
           name: dist-${{ matrix.target }}
           path: |
             dist/*.tar.gz
+            dist/*.zip
             dist/*.sha256
           if-no-files-found: error
 
@@ -103,7 +123,9 @@ jobs:
         run: cd dist && cat ./*.sha256 > SHA256SUMS && rm -- ./*.sha256 && cat SHA256SUMS
       - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
-          subject-path: dist/*.tar.gz
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
       - name: Release notes from CHANGELOG
         env:
           VERSION: ${{ needs.verify.outputs.version }}
@@ -127,7 +149,7 @@ jobs:
         run: |
           flags=""
           case "$TAG" in *-*) flags="--prerelease" ;; esac
-          gh release create "$TAG" dist/*.tar.gz dist/SHA256SUMS \
+          gh release create "$TAG" dist/*.tar.gz dist/*.zip dist/SHA256SUMS \
             --verify-tag --title "recalla $TAG" --notes-file notes.md $flags
 
   publish-crate:
