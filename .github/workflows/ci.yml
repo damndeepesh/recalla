@@ -34,6 +34,10 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
       - run: cargo build --locked --release
       - run: cargo test --locked --no-fail-fast
+      - name: End-to-end checklist (Git Bash) - probe
+        shell: bash
+        continue-on-error: true
+        run: bash scripts/e2e.sh target/release/recalla.exe
 
   bench:
     runs-on: ubuntu-latest
