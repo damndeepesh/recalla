@@ -1,10 +1,11 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: chore/release-0.3.1
+branch: feature/harness-opencode
 task: "Windows completeness (USERPROFILE, opener, .exe hooks, CI tests) + grouped backfill --pick/--list; PR into dev"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "opencode harness: store::foreign read-only reader, harness::opencode export+parser, --opencode-root, UI sync; tests/opencode.rs; real DB smoke ok (2 sessions)"
   - "fix/windows-exe-path: paths::current_exe strips \\\\?\\ and uses / on Windows; reported by a 0.3.1 Windows user; needs a 0.3.2 release (owner go)"
   - "feature/windows-release: release.yml builds x86_64-pc-windows-msvc zip; lands in next release; web page links not added yet"
   - "release 0.3.1 (owner go 2026-11-24): everything on dev ships as 0.3.1; web/ page version bump after binaries exist"
@@ -26,6 +27,7 @@ done:
   - "step 2: recalla doctor (10 checks, read-only, --json); merged #54"
   - "step 1 done: make live 7/7, e2e 85/85, SessionStart tail catch-up; merged #53"
 next:
+  - harnesses: Copilot CLI (no local data to verify), Gemini CLI vs agy (~/.gemini/antigravity-cli is a different product), Cursor JSONL transcripts
   - per-file bench probe set (bench/, needs REPOS) to decide default-on for --file-recall
   - owner: release go (0.3.1 Windows hotfix and/or v0.4.0), memorybench judge keys
   - owner decision: memorybench needs paid judge keys

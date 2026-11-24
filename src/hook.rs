@@ -384,6 +384,7 @@ fn catch_up(
     let opts = Options {
         claude_root: Some(root.to_owned()),
         codex_root: None,
+        opencode_root: None,
         data_dir: ctx.data_dir.clone(),
         archive: true,
         dry_run: false,
@@ -425,6 +426,7 @@ fn capture(payload: &Value, ctx: &Ctx) -> Result<(), HookError> {
     let opts = Options {
         claude_root: Some(root.to_owned()),
         codex_root: None,
+        opencode_root: None,
         data_dir: ctx.data_dir.clone(),
         archive: true,
         dry_run: false,

@@ -49,6 +49,7 @@ impl Env {
         Options {
             claude_root: Some(self.root.clone()),
             codex_root: None,
+            opencode_root: None,
             data_dir: self.data.clone(),
             archive: true,
             dry_run: false,
@@ -206,6 +207,7 @@ fn root_spellings_share_one_source_per_file() {
         let r = run(&Options {
             claude_root: Some(root.clone()),
             codex_root: None,
+            opencode_root: None,
             ..env.opts()
         })
         .unwrap();
@@ -627,6 +629,7 @@ fn long_last_line_resumes_without_restart() {
     let opts = recalla::ingest::Options {
         claude_root: Some(root.clone()),
         codex_root: None,
+        opencode_root: None,
         data_dir: data.clone(),
         archive: true,
         dry_run: false,

@@ -379,6 +379,7 @@ fn sync_start(ctx: &Ctx, _: &Request, _: &Params) -> ApiResult {
                     data_dir: ctx.data_dir.clone(),
                     claude_root: ctx.claude_root.clone(),
                     codex_root: ctx.codex_root.clone(),
+                    opencode_root: ctx.opencode_root.clone(),
                 },
             );
             Ok(Response::json(202, &json!({ "job": job })))

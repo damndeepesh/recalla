@@ -15,7 +15,7 @@ It turns your existing session history into compact, source-linked memories, fla
 </div>
 
 > [!WARNING]
-> **Alpha (v0.3.1).** Imports Claude Code and Codex history and works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Extraction is rule-based, precise but not exhaustive, and still being tuned on real histories. See [ROADMAP.md](ROADMAP.md) for what's next, and please [open an issue](https://github.com/damndeepesh/recalla/issues) if it misses or invents something on your logs.
+> **Alpha (v0.3.1).** Imports Claude Code, Codex and opencode history and works end to end with Claude Code: backfill your history, install the hooks, and every new session starts with relevant memory. Extraction is rule-based, precise but not exhaustive, and still being tuned on real histories. See [ROADMAP.md](ROADMAP.md) for what's next, and please [open an issue](https://github.com/damndeepesh/recalla/issues) if it misses or invents something on your logs.
 
 ---
 
@@ -58,7 +58,7 @@ Alpha (v0.3.1). Everything in the MVP is built and covered by tests and an end-t
 | --- | --- |
 | Memory model + SQLite store (dedup, supersede/restore, BM25 search) | ✅ |
 | Layered secret redaction (known formats, keyword values, entropy) | ✅ |
-| Claude Code and Codex session parsers, resumable backfill, raw archive | ✅ |
+| Claude Code, Codex and opencode session parsers, resumable backfill, raw archive | ✅ |
 | Rule-based extraction (preferences, decisions, gotchas, procedures, facts, tasks) | ✅ |
 | Code anchors + staleness (Rust, Python, Go, TypeScript, JavaScript) | ✅ |
 | Token-budgeted context packs + injection ledger | ✅ |
@@ -106,14 +106,15 @@ Measured on an Apple M2, reproducible from a checkout:
 
 - **Extraction is rule-based.** It is precise but misses implicit rules, and it can still pick up a stray sentence. Check what it found with `recalla search`. To drop a wrong memory, run `recalla forget <id>` (reversible with `recalla confirm <id>`). Please [open an issue](https://github.com/damndeepesh/recalla/issues) for anything it gets wrong.
 - **Anchors need code to anchor to.** A memory is anchored when it names a symbol that exists in a file from the same session (or a file path in its text). Prose-only histories produce few anchors.
-- **Claude Code gets the hooks.** Codex is covered by `backfill` and by MCP; native Codex hooks are on the roadmap.
+- **Claude Code gets the hooks.** Codex and opencode are covered by `backfill` and by MCP; native hooks for them are on the roadmap. For opencode, add `"mcp": {"recalla": {"type": "local", "command": ["recalla", "mcp"], "enabled": true}}` to `opencode.json` (format from opencode's docs; not auto-written).
 - **English only** for extraction phrases.
 
 ## Commands
 
 ```bash
 recalla backfill              # import Claude Code + Codex history and extract memories
-recalla backfill --pick       # choose Claude Code or Codex, then which sessions
+recalla backfill --pick       # choose an agent (Claude Code, Codex, opencode), then which sessions
+recalla backfill --harness opencode   # opencode history only (backfill + MCP; no capture hooks)
 recalla backfill --dir ~/code/app   # only that project (and sub-directories)
 recalla backfill --session 0a1b2c3d # only one session (8+ characters of its id, or a .jsonl path)
 recalla hooks install         # inject memory at session start, capture new turns (backs up settings.json)

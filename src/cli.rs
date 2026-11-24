@@ -17,7 +17,7 @@ use crate::anchor;
 use crate::doctor;
 use crate::extract;
 use crate::extract::scope::project_key;
-use crate::harness::{claude, codex};
+use crate::harness::{claude, codex, opencode};
 use crate::hook::{self, Ctx};
 use crate::hooks_cfg;
 use crate::ingest::{self, Options, Report};
@@ -44,22 +44,27 @@ struct Cli {
 enum HarnessSel {
     Claude,
     Codex,
+    Opencode,
     All,
 }
 
 impl HarnessSel {
     fn claude(self) -> bool {
-        self != Self::Codex
+        matches!(self, Self::Claude | Self::All)
     }
 
     fn codex(self) -> bool {
-        self != Self::Claude
+        matches!(self, Self::Codex | Self::All)
+    }
+
+    fn opencode(self) -> bool {
+        matches!(self, Self::Opencode | Self::All)
     }
 }
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Import Claude Code and Codex session history into the store (resumable).
+    /// Import Claude Code, Codex and opencode session history into the store (resumable).
     Backfill {
         #[arg(
             long,
@@ -73,6 +78,12 @@ enum Command {
             help = "Codex home [default: $CODEX_HOME or ~/.codex]"
         )]
         codex_root: Option<PathBuf>,
+        #[arg(
+            long,
+            value_name = "PATH",
+            help = "opencode data dir [default: $XDG_DATA_HOME/opencode or ~/.local/share/opencode]"
+        )]
+        opencode_root: Option<PathBuf>,
         /// Which agent's sessions to import.
         #[arg(long, value_enum, default_value_t = HarnessSel::All)]
         harness: HarnessSel,
@@ -378,6 +389,7 @@ where
         Command::Backfill {
             root,
             codex_root,
+            opencode_root,
             harness,
             data_dir,
             no_archive,
@@ -395,8 +407,15 @@ where
             let codex_root = harness
                 .codex()
                 .then(|| codex_root.or_else(codex::default_root));
-            let (claude_root, codex_root) = (claude_root.flatten(), codex_root.flatten());
-            if claude_root.is_none() && codex_root.is_none() {
+            let opencode_root = harness
+                .opencode()
+                .then(|| opencode_root.or_else(opencode::default_root));
+            let (claude_root, codex_root, opencode_root) = (
+                claude_root.flatten(),
+                codex_root.flatten(),
+                opencode_root.flatten(),
+            );
+            if claude_root.is_none() && codex_root.is_none() && opencode_root.is_none() {
                 return emit(err, "error: no root given and HOME is unset\n", USAGE);
             }
             let data_dir = match resolve_data_dir(data_dir) {
@@ -406,6 +425,7 @@ where
             let opts = Options {
                 claude_root,
                 codex_root,
+                opencode_root,
                 data_dir,
                 archive: !no_archive,
                 dry_run,

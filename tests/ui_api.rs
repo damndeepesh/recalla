@@ -166,6 +166,7 @@ impl Api {
                 c.exe = PathBuf::from(FAKE_EXE);
                 c.claude_root = roots.then(|| env.root.clone());
                 c.codex_root = roots.then(|| env.codex_root.clone());
+                c.opencode_root = None; // never the developer's real opencode data
                 sync = Some(Arc::clone(&c.sync));
             });
         let thread = std::thread::spawn(move || server.run(handler).unwrap());
@@ -1721,6 +1722,8 @@ fn sync_job_runs_the_backfill_path_and_reports_counts() {
             "--root",
             root.to_str().unwrap(),
             "--codex-root",
+            codex.to_str().unwrap(),
+            "--opencode-root",
             codex.to_str().unwrap(),
             "--data-dir",
             other.path().to_str().unwrap(),
