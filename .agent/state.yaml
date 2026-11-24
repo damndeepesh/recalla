@@ -1,17 +1,19 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: feature/pack-explain
-task: "v0.4.0 step 4 pack --explain (PR into dev); step 5 supersede-contradiction next"
+branch: feature/supersede-contradiction
+task: "v0.4.0 step 5 supersede-contradiction (PR into dev); step 6 promote-global next"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "step 5: extract::conflict detector (opposed groups + polarity), pipeline supersede/flag, why shows relations, D-028; tests: unit, pipeline, tests/conflict.rs"
+  - "step 4 merged (#56)"
   - "step 4: pack --explain (score parts + included/dropped reason per candidate; also in UI preview API as explain[])"
   - "steps 2+3 merged into dev (#54, #55)"
   - "step 3: extractor handles imperative prompts (Decision for this project:, Rule:/Convention:, We always, Going forward); eval 52/0/0 + imperative 7/0/0. Bench recall not re-measured (needs REPOS clones)"
   - "step 2: recalla doctor (10 checks, read-only, --json); merged #54"
   - "step 1 done: make live 7/7, e2e 85/85, SessionStart tail catch-up; merged #53"
 next:
-  - step 5 feature/supersede-contradiction (ADR first, Opus), then 6-9 (see plan)
+  - step 6 feature/promote-global, then 7-9 (see plan)
   - owner decision: memorybench needs paid judge keys
 blockers: []
 notes:

@@ -26,7 +26,7 @@
 - [x] 2 feature/doctor
 - [x] 3 feature/extract-imperative
 - [x] 4 feature/pack-explain
-- [ ] 5 feature/supersede-contradiction
+- [x] 5 feature/supersede-contradiction
 - [ ] 6 feature/promote-global
 - [ ] 7 feature/triage-ui
 - [ ] 8 feature/pretooluse-recall
