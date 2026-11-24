@@ -1,20 +1,19 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: feature/doctor
-task: "v0.4.0 step 2: recalla doctor (PR into dev); step 3 next"
+branch: feature/extract-imperative
+task: "v0.4.0 steps 2+3 merged into dev; step 4 pack --explain next"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
-  - "step 2: recalla doctor (10 checks, read-only, --json, 15 tests + 3 e2e); step 1 merged (#53)"
-  - "dev has everything through #52 (codex snippet approves only recall/why)"
-  - "step 1 done: `make live` 7/7 (Claude + Codex); e2e template strips our own hooks (85/85); SessionStart catches up the project's newest transcripts (Stop hook can run before the last reply is written); scripts/live.sh + make live written"
+  - "step 3: extractor handles imperative prompts (Decision for this project:, Rule:/Convention:, We always, Going forward); eval 52/0/0 + imperative 7/0/0. Bench recall not re-measured (needs REPOS clones)"
+  - "step 2: recalla doctor (10 checks, read-only, --json); merged #54"
+  - "step 1 done: make live 7/7, e2e 85/85, SessionStart tail catch-up; merged #53"
 next:
-  - step 2: merge doctor PR when CI is green
-  - step 2 feature/doctor, step 3 feature/extract-imperative (see plan), then 4-9
+  - step 4 feature/pack-explain, then 5-9 (see plan)
   - owner decision: memorybench needs paid judge keys
 blockers: []
 notes:
   - plan .agent/plans/v0.4.0.md: all work on dev; no publish/tag/push to main without the owner's go
-  - `make live` needs claude (and optionally codex) + installed hooks; uses the installed ~/.cargo/bin/recalla (cargo install --path . to test new code); not in CI
+  - make live needs claude (and optionally codex) + installed hooks; uses installed ~/.cargo/bin/recalla; not in CI
   - bench numbers are first results; probe relevance filter is lexical
   - bench needs full-history clones (bench/suites/build.sh); Playwright MCP Chrome missing, use playwright-core + Brave
