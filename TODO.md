@@ -27,7 +27,7 @@
 - [x] 3 feature/extract-imperative
 - [x] 4 feature/pack-explain
 - [x] 5 feature/supersede-contradiction
-- [ ] 6 feature/promote-global
+- [x] 6 feature/promote-global
 - [ ] 7 feature/triage-ui
 - [ ] 8 feature/pretooluse-recall
 - [ ] 9 feature/ttl-decay

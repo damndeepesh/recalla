@@ -296,6 +296,19 @@ enum Command {
         #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
         data_dir: Option<PathBuf>,
     },
+    /// Move a memory to another scope: global (all projects) or one project.
+    Promote {
+        /// Memory id or a prefix of at least 4 hex characters.
+        id: String,
+        /// Make it apply to every project (the default).
+        #[arg(long, conflicts_with = "project")]
+        global: bool,
+        /// Pin it to this project key instead.
+        #[arg(long, value_name = "PROJECT")]
+        project: Option<String>,
+        #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
+        data_dir: Option<PathBuf>,
+    },
     /// Explain a memory: its provenance and the source text it came from.
     Why {
         /// Memory id or a prefix of at least 4 hex characters.
@@ -582,6 +595,12 @@ where
         } => run_check(project, data_dir, json, out, err),
         Command::Confirm { id, data_dir } => run_confirm(&id, data_dir, out, err),
         Command::Forget { id, data_dir } => run_forget(&id, data_dir, out, err),
+        Command::Promote {
+            id,
+            global: _,
+            project,
+            data_dir,
+        } => run_promote(&id, project.as_deref(), data_dir, out, err),
         Command::Why { id, data_dir, json } => {
             read_only(data_dir, out, err, |s| why(s, &id, json, true))
         }
@@ -850,6 +869,66 @@ fn run_forget(
         &format!(
             "Archived {short}: {}\nUndo with: recalla confirm {short}\n",
             truncate_chars(&clean(&m.text), 80)
+        ),
+        OK,
+    )
+}
+
+/// `recalla promote`.
+fn run_promote(
+    id: &str,
+    project: Option<&str>,
+    data_dir: Option<PathBuf>,
+    out: &mut impl Write,
+    err: &mut impl Write,
+) -> u8 {
+    let data_dir = match resolve_data_dir(data_dir) {
+        Ok(d) => d,
+        Err(msg) => return emit(err, &msg, USAGE),
+    };
+    let mut store = match open_existing(&data_dir) {
+        Ok(s) => s,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    let found = match store.memories_by_uid_prefix(id) {
+        Ok(f) => f,
+        Err(e) => return emit(err, &format!("error: {e}\n"), USAGE),
+    };
+    let [m] = found.as_slice() else {
+        let msg = if found.is_empty() {
+            format!("error: no memory matches {id}\n")
+        } else {
+            format!(
+                "error: {id} matches {} memories; use a longer prefix\n",
+                found.len()
+            )
+        };
+        return emit(
+            err,
+            &msg,
+            if found.is_empty() { SOME_FAILED } else { USAGE },
+        );
+    };
+    let target = match project.map(str::trim) {
+        None => Scope::Global,
+        Some("") => return emit(err, "error: --project needs a project key\n", USAGE),
+        Some(key) => Scope::Project(key.to_owned()),
+    };
+    let new_uid = match ops::promote(&mut store, &m.uid, &target) {
+        Ok(u) => u,
+        Err(e) => return emit(err, &format!("error: {e}\n"), SOME_FAILED),
+    };
+    warn_mirror(&mut store, &data_dir, err);
+    emit(
+        out,
+        &format!(
+            "Moved {} to {}: {}\nNew id {}. Undo with: recalla forget {} && recalla confirm {}\n",
+            prefix(&m.uid, 8),
+            clean(&target.to_string()),
+            truncate_chars(&clean(&m.text), 80),
+            prefix(&new_uid, 8),
+            prefix(&new_uid, 8),
+            prefix(&m.uid, 8),
         ),
         OK,
     )

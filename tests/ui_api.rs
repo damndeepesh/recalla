@@ -1353,6 +1353,31 @@ fn mirror_file(api: &Api, uid: &str) -> String {
 }
 
 #[test]
+fn promote_moves_a_memory_and_rejects_bad_requests() {
+    let (api, uid, _) = Api::start();
+    let url = format!("/api/memories/{uid}/promote");
+    // The seeded memory is already global.
+    assert_eq!(api.post(&url, &json!({})).status, 400);
+    assert_eq!(api.post(&url, &json!({"scope": "galaxy"})).status, 400);
+    assert_eq!(api.post(&url, &json!({"scope": "project"})).status, 400);
+    let r = api.post_ok(&url, &json!({"scope": "project", "project": "/p/one"}));
+    assert_eq!(r["scope_project"], "/p/one");
+    assert_ne!(r["uid"].as_str(), Some(uid.as_str()));
+    assert_eq!(
+        api.env.store().get(&uid).unwrap().unwrap().status,
+        Status::Superseded
+    );
+    // Back to global: the original uid is the same memory again, so it is
+    // superseded (not live) and refuses to move.
+    assert_eq!(api.post(&url, &json!({})).status, 400);
+    assert_eq!(
+        api.post("/api/memories/deadbeefdeadbeef/promote", &json!({}))
+            .status,
+        404
+    );
+}
+
+#[test]
 fn forget_restore_confirm_round_trip_on_a_global_memory() {
     let (api, uid, total) = Api::start();
     let before = mirror_file(&api, &uid);
