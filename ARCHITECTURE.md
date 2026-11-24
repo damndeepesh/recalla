@@ -150,6 +150,7 @@ flowchart LR
   - `hook session-start`: first catches up the project's recent transcripts (D-027), then emits the pack for `project_key(cwd)` as `hookSpecificOutput.additionalContext`.
   - `hook capture` (Stop, PreCompact): ingests ONLY `transcript_path`, and only if it sits under `<claude root>/projects`, then extracts. The source key matches backfill's, so there are no duplicates.
   - Hook connections use a 2 s busy timeout.
+  - `hook pre-tool-use` (opt-in via `hooks install --file-recall`): for Read/Edit/Write/MultiEdit it looks up active memories with a non-stale anchor on the file (project-relative path), skips uids already injected in that session (the `injections` ledger is the dedupe), injects at most 5 items / 300 tokens as `additionalContext` (no `permissionDecision`), and records an injection.
   - Measured: session-start ≈1 ms; capture 0.13 s for a 7.4 MB first run, 0.02 s incrementally.
 - **`hooks install|uninstall|status`** edits `~/.claude/settings.json`:
   - refuses malformed JSON
@@ -251,6 +252,7 @@ Use WAL.
 | `backfill_300mb` | 319.5 MB, 601 files (~80% Claude / ~20% Codex), 158k events, archive on | ingest 14.5 s + extract 7.0 s = 21.5 s (14.9 MB/s), 9.7k memories, 2.4k redactions | <300 s |
 | no-op rerun | same corpus | 0.03 s | <5 s |
 | `hook_session_start_p95`, in-process | 100k memories, 50 projects, ~3k visible, ~200 anchors | p50 11.4 ms, p95 11.7 ms, p99 12.0 ms | p95 <100 ms |
+| `hook_pre_tool_use_p95`, in-process | same, 400 calls over 40 anchored files, new session each | p50 1.2 ms, p95 1.4 ms, p99 1.6 ms | p95 <100 ms |
 | session-start, spawned binary | same | p50 15.6 ms, p95 18.0 ms, p99 21.0 ms (first exec ~210 ms, one-off OS cost) | |
 | `mcp_recall_p95`, no query | same | p50 11.3 ms, p95 11.7 ms | |
 | `mcp_recall_p95`, FTS query | same | p50 32.8 ms, p95 40.2 ms | |

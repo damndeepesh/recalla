@@ -568,6 +568,32 @@ fn hook_session_start_p95() {
 
 #[test]
 #[ignore = "perf: run via `make perf`"]
+fn hook_pre_tool_use_p95() {
+    let fx = build_store();
+    let ctx = Ctx {
+        data_dir: fx.data.clone(),
+        root: None,
+    };
+    let payload = |i: usize| {
+        json!({"cwd": fx.project, "session_id": format!("perf-{i}"), "tool_name": "Edit",
+               "tool_input": {"file_path": format!("{}/src/mod{}.rs", fx.project, i % 40)}})
+        .to_string()
+    };
+    let (mut hits, mut samples) = (0, Vec::new());
+    for i in 0..400 {
+        let mut out = Vec::new();
+        let t = Instant::now();
+        hook::run(Event::PreToolUse, Cursor::new(payload(i)), &mut out, &ctx);
+        samples.push(t.elapsed());
+        hits += usize::from(!out.is_empty());
+    }
+    assert!(hits > 0, "no file had anchored memories; fixture drifted");
+    let p95 = report("pre-tool-use in-process (400)", samples);
+    assert!(p95 < Duration::from_millis(100), "p95 {p95:?}");
+}
+
+#[test]
+#[ignore = "perf: run via `make perf`"]
 fn mcp_recall_p95() {
     let fx = build_store();
     let ctx = McpCtx {

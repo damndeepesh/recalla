@@ -25,7 +25,7 @@ Local-first memory engine for coding agents. It backfills session history into a
 - `recalla promote <id> [--global | --project KEY]`: move a preference/decision/etc. to global or one project (supersedes the original; CLI + UI only, never MCP)
 - `recalla mirror [--full] [--json]` / `recalla rebuild --from-mirror [DIR] [--yes] [--allow-drop]`: sync the markdown mirror (also automatic; `--no-mirror` on backfill/extract) / restore the memory layer from it (dry run without `--yes`; safe while mcp/hooks run; `VACUUM INTO` backup `recalla.db.bak-<ts>`; `--allow-drop` to remove memories absent from the mirror)
 - `recalla mcp [--data-dir D] [--project P]`: MCP stdio server (tools: recall, remember, review, why)
-- `recalla hooks <install|uninstall|status> [--settings P] [--dry-run]` / `recalla hook <session-start|capture>`: Claude Code hooks (never block, log to `<data>/log/hook.log`)
+- `recalla hooks <install|uninstall|status> [--settings P] [--dry-run] [--file-recall]` / `recalla hook <session-start|capture|pre-tool-use>` (`--file-recall` adds the opt-in PreToolUse recall for Read/Edit/Write/MultiEdit): Claude Code hooks (never block, log to `<data>/log/hook.log`)
 - `recalla ui [--port N] [--no-open] [--data-dir D]`: local dashboard server on 127.0.0.1 (prints a one-time, 60 s login link; Ctrl-C to stop)
 - `make bench` / `make bench-check`: benchmark crate in `bench/` (`REPOS=<clones>` for real worktrees, `RECALLA=1` to include Recalla); see `bench/README.md`, `bench/SCORING.md`
 - `cargo test --test extract_eval -- --nocapture`: extractor precision/recall table

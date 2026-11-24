@@ -363,3 +363,44 @@ fn backups_never_overwrite_each_other() {
         .any(|e| std::fs::read_to_string(e.path()).unwrap() == "{\"model\": \"x\"}\n");
     assert!(pristine, "original bytes must survive in a backup");
 }
+
+#[test]
+fn file_recall_is_opt_in_idempotent_and_leaves_other_pretooluse_entries_alone() {
+    let dir = tempfile::tempdir().unwrap();
+    let p = settings(dir.path(), BUSY_FILE);
+    let before = read(&p);
+    let exe = std::path::Path::new(EXE);
+
+    // Default install does not touch PreToolUse.
+    install(&p);
+    assert_eq!(
+        read(&p)["hooks"]["PreToolUse"],
+        before["hooks"]["PreToolUse"]
+    );
+
+    let o = hooks_cfg::install_with(&p, exe, false, true).unwrap();
+    assert!(o.changed);
+    let groups = read(&p)["hooks"]["PreToolUse"].as_array().unwrap().clone();
+    assert_eq!(groups.len(), 2);
+    assert_eq!(
+        groups[0], before["hooks"]["PreToolUse"][0],
+        "guard.sh untouched"
+    );
+    assert_eq!(groups[1]["matcher"], "Read|Edit|Write|MultiEdit");
+    assert_eq!(
+        groups[1]["hooks"][0]["command"],
+        format!("{EXE} hook pre-tool-use")
+    );
+    assert!(
+        !hooks_cfg::install_with(&p, exe, false, true)
+            .unwrap()
+            .changed,
+        "idempotent"
+    );
+
+    // Uninstall removes it and only it.
+    hooks_cfg::uninstall(&p, false).unwrap();
+    let after = read(&p);
+    assert_eq!(after["hooks"]["PreToolUse"], before["hooks"]["PreToolUse"]);
+    assert!(!after.to_string().contains("pre-tool-use"));
+}
