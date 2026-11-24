@@ -12,7 +12,7 @@ use thiserror::Error;
 
 use crate::anchor;
 use crate::extract::conflict::{Analyzed, detect};
-use crate::model::{Memory, Scope, Status};
+use crate::model::{Kind, Memory, NewMemory, Origin, Provenance, Scope, Status};
 use crate::pack;
 use crate::paths;
 use crate::store::{DEFAULT_BUSY, Filter, NewInjection, Store, StoreError, Via};
@@ -313,6 +313,51 @@ pub fn why(store: &Store, id: &str, json: bool, sources: bool) -> Result<Why, St
         }));
     }
     Ok(Why::Found(lines.join("\n") + "\n"))
+}
+
+/// Moves a memory to another scope (promote to global, or pin to a project):
+/// stores it in `target`, supersedes the original with it, and returns the
+/// new uid. The uid is a function of scope, so this is a new memory (D-004).
+/// Anchors are not carried over: they are relative to the old project.
+/// Undo by archiving the new memory and `confirm`ing the original.
+///
+/// # Errors
+/// A message when the memory is missing, is not live, is a task, or is
+/// already in `target`.
+pub fn promote(store: &mut Store, uid: &str, target: &Scope) -> Result<String, String> {
+    let m = store
+        .get(uid)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("No memory matches {uid}"))?;
+    if !matches!(m.status, Status::Active | Status::NeedsReverify) {
+        return Err(format!(
+            "memory is {}; only live memories can move",
+            m.status
+        ));
+    }
+    if m.kind == Kind::Task {
+        return Err("tasks are tied to one piece of work and cannot be promoted".to_owned());
+    }
+    if &m.scope == target {
+        return Err("memory is already in that scope".to_owned());
+    }
+    let new = NewMemory {
+        kind: m.kind,
+        text: m.text.clone(),
+        scope: target.clone(),
+        confidence: m.confidence,
+        importance: m.importance,
+    };
+    let prov = m
+        .provenance
+        .first()
+        .cloned()
+        .unwrap_or_else(|| Provenance::new(Origin::Remember));
+    let moved = store.insert(&new, &prov).map_err(|e| e.to_string())?;
+    store
+        .supersede(&m.uid, moved.uid())
+        .map_err(|e| e.to_string())?;
+    Ok(moved.uid().to_owned())
 }
 
 /// `(relation, other uid, reason)` for the memory's supersede/conflict links,

@@ -4,6 +4,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Added
+- `recalla promote <id> [--global | --project KEY]` (and `POST /api/memories/{uid}/promote`): move a memory to every project or pin it to one. The original is superseded, not deleted.
+- Contradicting preferences/decisions are resolved at extraction: a newer, at-least-as-confident rule supersedes an unconfirmed older one, otherwise the pair is flagged for re-verification; `why` shows the link. A confirmed rule is never demoted automatically (D-028).
+- `recalla pack --explain`: per-candidate score parts and why each was included or dropped.
+- `recalla doctor`: checks hooks, MCP registration, database and last capture/injection.
+
 ### Fixed
 - `cargo install recalla` failed on Windows: the dashboard login page used Unix-only file permissions unconditionally. Now gated like the rest of the crate; CI builds on Windows.
 
