@@ -22,8 +22,9 @@ use crate::extract::{self, scope::project_key};
 use crate::ingest::{self, Options};
 use crate::mirror;
 use crate::ops::{self, PackArgs};
+use crate::pack;
 use crate::paths;
-use crate::store::{Store, StoreError, Via};
+use crate::store::{NewInjection, Store, StoreError, Via};
 
 /// Longest wait on a locked database before a hook gives up.
 pub const BUSY: Duration = Duration::from_secs(2);
@@ -46,6 +47,8 @@ pub enum Event {
     SessionStart,
     /// Used for both `Stop` and `PreCompact`.
     Capture,
+    /// `PreToolUse` on Read/Edit/Write: memories anchored to that file.
+    PreToolUse,
 }
 
 impl Event {
@@ -53,6 +56,7 @@ impl Event {
         match self {
             Self::SessionStart => "session-start",
             Self::Capture => "capture",
+            Self::PreToolUse => "pre-tool-use",
         }
     }
 }
@@ -145,6 +149,7 @@ fn handle(
     match event {
         Event::SessionStart => session_start(&payload, out, ctx),
         Event::Capture => capture(&payload, ctx),
+        Event::PreToolUse => pre_tool_use(&payload, out, ctx),
     }
 }
 
@@ -229,6 +234,88 @@ fn session_start(payload: &Value, out: &mut impl Write, ctx: &Ctx) -> Result<(),
     let reply = json!({"hookSpecificOutput": {
         "hookEventName": "SessionStart",
         "additionalContext": pack.markdown,
+    }});
+    writeln!(out, "{reply}").map_err(|e| HookError::Io(format!("writing stdout: {:?}", e.kind())))
+}
+
+/// Tools whose target file we look up (`tool_input.file_path`).
+const FILE_TOOLS: [&str; 4] = ["Read", "Edit", "Write", "MultiEdit"];
+/// Most tokens one file lookup may inject.
+const FILE_RECALL_TOKENS: usize = 300;
+/// Most memories per file lookup.
+const FILE_RECALL_ITEMS: usize = 5;
+
+/// Injects the memories anchored to the file a tool is about to touch, once
+/// per memory per session (the injection ledger is the dedupe). Silent when
+/// there is nothing new to say. Never decides permissions: only
+/// `additionalContext` is returned.
+fn pre_tool_use(payload: &Value, out: &mut impl Write, ctx: &Ctx) -> Result<(), HookError> {
+    let tool = str_field(payload, "tool_name")?;
+    if !FILE_TOOLS.contains(&tool) {
+        return Ok(());
+    }
+    let cwd = str_field(payload, "cwd")?;
+    let session = str_field(payload, "session_id")?;
+    let file = payload
+        .pointer("/tool_input/file_path")
+        .and_then(Value::as_str)
+        .ok_or(HookError::Input("missing tool_input.file_path"))?;
+    let project = project_key(cwd);
+    let Some(rel) = Path::new(file)
+        .strip_prefix(&project)
+        .ok()
+        .and_then(|r| r.to_str())
+        .filter(|r| !r.is_empty())
+        .map(|r| r.replace('\\', "/"))
+    else {
+        return Ok(()); // outside the project
+    };
+    let db = paths::db_path(&ctx.data_dir);
+    if !db.is_file() {
+        return Ok(());
+    }
+    let mut store = Store::open_with_busy(&db, BUSY)?;
+    let session: String = session.chars().take(MAX_SESSION_ID).collect();
+    let seen = store.injected_uids(&session)?;
+    let header = format!("Recalla: memories for {}", ops::clean(&rel));
+    let mut lines = vec![header];
+    let mut uids = Vec::new();
+    let mut tokens = pack::est_tokens(&lines[0]);
+    for m in store.memories_anchored_to(&project, &rel)? {
+        if seen.contains(&m.uid) || uids.len() == FILE_RECALL_ITEMS {
+            continue;
+        }
+        let text = ops::clean(&m.text);
+        if text.is_empty() {
+            continue;
+        }
+        let line = format!("- [{}] {text}", m.kind);
+        let cost = pack::est_tokens(&line);
+        if tokens + cost > FILE_RECALL_TOKENS {
+            continue;
+        }
+        tokens += cost;
+        uids.push(m.uid);
+        lines.push(line);
+    }
+    if uids.is_empty() {
+        return Ok(());
+    }
+    let text = lines.join("\n");
+    store.record_injection(&NewInjection {
+        project: Some(&project),
+        budget: FILE_RECALL_TOKENS,
+        est_tokens: tokens,
+        memory_uids: &uids,
+        via: Via::Hook,
+        session_id: Some(&session),
+        pack_text: Some(&text),
+        candidate_count: None,
+        candidate_tokens: None,
+    })?;
+    let reply = json!({"hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "additionalContext": text,
     }});
     writeln!(out, "{reply}").map_err(|e| HookError::Io(format!("writing stdout: {:?}", e.kind())))
 }

@@ -268,6 +268,9 @@ enum Command {
         /// Show what would change; write nothing.
         #[arg(long)]
         dry_run: bool,
+        /// With `install`: also recall memories anchored to a file before Read/Edit/Write.
+        #[arg(long)]
+        file_recall: bool,
         #[arg(long, value_name = "PATH", help = DATA_DIR_HELP)]
         data_dir: Option<PathBuf>,
     },
@@ -327,6 +330,8 @@ enum HookEvent {
     SessionStart,
     /// For `Stop` and `PreCompact`.
     Capture,
+    /// For `PreToolUse` on Read/Edit/Write (opt-in): memories anchored to the file.
+    PreToolUse,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -550,6 +555,7 @@ where
                 let event = match event {
                     HookEvent::SessionStart => hook::Event::SessionStart,
                     HookEvent::Capture => hook::Event::Capture,
+                    HookEvent::PreToolUse => hook::Event::PreToolUse,
                 };
                 hook::run(event, std::io::stdin().lock(), out, &ctx);
             }
@@ -559,8 +565,9 @@ where
             action,
             settings,
             dry_run,
+            file_recall,
             data_dir,
-        } => run_hooks(action, settings, dry_run, data_dir, out, err),
+        } => run_hooks(action, settings, dry_run, file_recall, data_dir, out, err),
         Command::Doctor {
             data_dir,
             settings,
@@ -612,6 +619,7 @@ fn run_hooks(
     action: HooksAction,
     settings: Option<PathBuf>,
     dry_run: bool,
+    file_recall: bool,
     data_dir: Option<PathBuf>,
     out: &mut impl Write,
     err: &mut impl Write,
@@ -632,7 +640,7 @@ fn run_hooks(
         }
     };
     let result = match action {
-        HooksAction::Install => hooks_cfg::install(&settings, &exe, dry_run),
+        HooksAction::Install => hooks_cfg::install_with(&settings, &exe, dry_run, file_recall),
         HooksAction::Uninstall => hooks_cfg::uninstall(&settings, dry_run),
         HooksAction::Status => return hooks_status(&settings, data_dir, out, err),
     };

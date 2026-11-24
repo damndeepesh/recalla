@@ -5,6 +5,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 ## [Unreleased]
 
 ### Added
+- `recalla hooks install --file-recall`: opt-in `PreToolUse` hook that, before Read/Edit/Write, injects the memories anchored to that file (<= 300 tokens, once per memory per session, never blocks). p95 1.4 ms on 100k memories (D-030).
 - Unconfirmed, low-confidence memories fade in pack ranking after 30 days (down to half weight); `confirm` resets it and `pack --explain` shows the `decay` factor. Nothing is archived or deleted (D-029).
 - Dashboard **Review** queue: memories that need re-verification (stale anchors, contradictions) with keep, forget, edit and promote actions, plus `POST /api/memories/{uid}/edit` (redacted new text supersedes the old) and `relations` on the memory detail API.
 - `recalla promote <id> [--global | --project KEY]` (and `POST /api/memories/{uid}/promote`): move a memory to every project or pin it to one. The original is superseded, not deleted.

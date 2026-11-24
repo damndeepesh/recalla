@@ -1,10 +1,12 @@
 updated: 2026-11-24
 milestone: v0.4 (dev)
-branch: feature/ttl-decay
-task: "v0.4.0 step 9 ttl-decay done on branch (stacked on #60); step 8 pretooluse-recall next"
+branch: feature/pretooluse-recall
+task: "v0.4.0 step 8 pretooluse-recall built opt-in (PR into dev); steps 1-9 all done after merge"
 plan: .agent/plans/v0.4.0.md
 status: review
 done:
+  - "step 8: hook pre-tool-use + hooks install --file-recall (opt-in, D-030); tests hook/hooks/perf; p95 1.4ms. Per-file bench not run (needs REPOS clones)"
+  - "steps 7, 9 merged (#60, #61)"
   - "step 9: pack decay factor for unconfirmed memories (D-029), explain shows it; bench noise/staleness not re-measured"
   - "step 6 merged (#59)"
   - "step 7 backend: ops::edit + POST /api/memories/{uid}/edit + relations in detail API; ui_api edit test"
@@ -18,8 +20,8 @@ done:
   - "step 2: recalla doctor (10 checks, read-only, --json); merged #54"
   - "step 1 done: make live 7/7, e2e 85/85, SessionStart tail catch-up; merged #53"
 next:
-  - step 7: finish #/review view (designer agent running), make check + e2e, review, PR into dev; then tell owner dev is LinkedIn-ready
-  - then steps 8-9 (see plan)
+  - per-file bench probe set (bench/, needs REPOS) to decide default-on for --file-recall
+  - owner: release go (0.3.1 Windows hotfix and/or v0.4.0), memorybench judge keys
   - owner decision: memorybench needs paid judge keys
 blockers: []
 notes:

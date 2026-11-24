@@ -246,6 +246,54 @@ impl Store {
         Ok(stats)
     }
 
+    /// Uids already injected into harness session `session_id` (any route).
+    ///
+    /// # Errors
+    /// `Sqlite` on failure.
+    pub fn injected_uids(
+        &self,
+        session_id: &str,
+    ) -> Result<std::collections::HashSet<String>, StoreError> {
+        let mut out = std::collections::HashSet::new();
+        let mut stmt = self
+            .conn
+            .prepare_cached("SELECT memory_uids FROM injections WHERE session_id = ?1")?;
+        for row in stmt.query_map([session_id], |r| r.get::<_, String>(0))? {
+            if let Ok(Value::Array(a)) = serde_json::from_str(&row?) {
+                out.extend(a.iter().filter_map(Value::as_str).map(str::to_owned));
+            }
+        }
+        Ok(out)
+    }
+
+    /// Live memories of `project` with a non-stale anchor on project-relative
+    /// `rel_path`, best first (confidence, then recency).
+    ///
+    /// # Errors
+    /// `Sqlite` on failure.
+    pub fn memories_anchored_to(
+        &self,
+        project: &str,
+        rel_path: &str,
+    ) -> Result<Vec<Memory>, StoreError> {
+        let sql = format!(
+            "SELECT {MEMORY_COLS} FROM memories m
+             WHERE m.scope_project = ?1 AND m.status = 'active'
+               AND EXISTS (SELECT 1 FROM anchors a WHERE a.memory_id = m.id
+                           AND a.path = ?2 AND a.stale_reason IS NULL)
+             ORDER BY m.confidence DESC, m.updated_at DESC, m.uid"
+        );
+        let mut found = self
+            .conn
+            .prepare_cached(&sql)?
+            .query_map(params![project, rel_path], memory_from_row)?
+            .collect::<Result<Vec<_>, _>>()?;
+        for memory in &mut found {
+            self.load_children(memory)?;
+        }
+        Ok(found)
+    }
+
     /// Memories (any status, with provenance and anchors) whose uid starts
     /// with `prefix`, ordered by uid.
     ///

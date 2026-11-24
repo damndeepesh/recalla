@@ -20,6 +20,10 @@ pub const EVENTS: [(&str, &str); 3] = [
     ("Stop", "capture"),
     ("PreCompact", "capture"),
 ];
+/// Opt-in event: recall memories anchored to the file a tool is about to touch.
+const FILE_RECALL: (&str, &str) = ("PreToolUse", "pre-tool-use");
+/// Tools that trigger it (exact-name list matcher).
+const FILE_RECALL_MATCHER: &str = "Read|Edit|Write|MultiEdit";
 /// Seconds Claude Code waits for a hook.
 const TIMEOUT_SECS: u64 = 10;
 
@@ -77,7 +81,7 @@ pub fn command_for(exe: &Path, sub: &str) -> String {
 fn is_ours(cmd: &str, sub: Option<&str>) -> bool {
     let subs: &[&str] = match sub {
         Some(s) => &[s][..],
-        None => &["session-start", "capture"],
+        None => &["session-start", "capture", "pre-tool-use"],
     };
     subs.iter().any(|s| {
         cmd.strip_suffix(&format!(" hook {s}"))
@@ -127,7 +131,12 @@ fn shape(path: &Path, msg: &str) -> CfgError {
 }
 
 /// Adds or updates our entries in `settings`; returns one line per event.
-fn install_into(path: &Path, settings: &mut Value, exe: &Path) -> Result<Vec<String>, CfgError> {
+fn install_into(
+    path: &Path,
+    settings: &mut Value,
+    exe: &Path,
+    file_recall: bool,
+) -> Result<Vec<String>, CfgError> {
     let root = settings
         .as_object_mut()
         .ok_or_else(|| shape(path, "root is not an object"))?;
@@ -137,7 +146,8 @@ fn install_into(path: &Path, settings: &mut Value, exe: &Path) -> Result<Vec<Str
         .as_object_mut()
         .ok_or_else(|| shape(path, "`hooks` is not an object"))?;
     let mut lines = Vec::new();
-    for (event, sub) in EVENTS {
+    let wanted = EVENTS.into_iter().chain(file_recall.then_some(FILE_RECALL));
+    for (event, sub) in wanted {
         let want = command_for(exe, sub);
         let groups = hooks
             .entry(event)
@@ -154,9 +164,12 @@ fn install_into(path: &Path, settings: &mut Value, exe: &Path) -> Result<Vec<Str
             }
         }
         if !found {
-            groups.push(
-                json!({"hooks": [{"type": "command", "command": want, "timeout": TIMEOUT_SECS}]}),
-            );
+            let mut group =
+                json!({"hooks": [{"type": "command", "command": want, "timeout": TIMEOUT_SECS}]});
+            if sub == FILE_RECALL.1 {
+                group["matcher"] = json!(FILE_RECALL_MATCHER);
+            }
+            groups.push(group);
         }
         let what = if !found {
             "added"
@@ -182,7 +195,7 @@ fn uninstall_from(path: &Path, settings: &mut Value) -> Result<Vec<String>, CfgE
         .as_object_mut()
         .ok_or_else(|| shape(path, "`hooks` is not an object"))?;
     let mut lines = Vec::new();
-    for (event, _) in EVENTS {
+    for (event, _) in EVENTS.into_iter().chain([FILE_RECALL]) {
         let Some(groups) = hooks.get_mut(event).and_then(Value::as_array_mut) else {
             continue;
         };
@@ -265,7 +278,23 @@ fn load(path: &Path) -> Result<Option<(Value, String)>, CfgError> {
 /// # Errors
 /// Malformed or oddly shaped settings (nothing is written), or I/O errors.
 pub fn install(path: &Path, exe: &Path, dry_run: bool) -> Result<Outcome, CfgError> {
-    edit(path, dry_run, true, |p, v| install_into(p, v, exe))
+    install_with(path, exe, dry_run, false)
+}
+
+/// As [`install`], and with `file_recall` also adds the opt-in `PreToolUse`
+/// hook that recalls memories anchored to the file being read or edited.
+///
+/// # Errors
+/// Malformed or oddly shaped settings (nothing is written), or I/O errors.
+pub fn install_with(
+    path: &Path,
+    exe: &Path,
+    dry_run: bool,
+    file_recall: bool,
+) -> Result<Outcome, CfgError> {
+    edit(path, dry_run, true, |p, v| {
+        install_into(p, v, exe, file_recall)
+    })
 }
 
 /// Removes only Recalla's hooks from the settings file.

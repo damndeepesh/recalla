@@ -29,5 +29,5 @@
 - [x] 5 feature/supersede-contradiction
 - [x] 6 feature/promote-global
 - [x] 7 feature/triage-ui
-- [ ] 8 feature/pretooluse-recall
+- [x] 8 feature/pretooluse-recall (opt-in; per-file bench pending)
 - [x] 9 feature/ttl-decay
