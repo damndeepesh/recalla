@@ -201,3 +201,10 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Reversible: `confirm` (-> `set_status(Active)`) clears both relation kinds and restores the memory. `extract --rebuild` re-runs detection through the restore path.
 - Consequences: no LLM, deterministic, O(rules in scope) per new rule. Misses paraphrased conflicts by design. The group list is code, so extending it is a reviewed change.
 - Rejected: embedding similarity (network/model, nondeterministic); superseding on any textual overlap (false positives); storing the reason in a new column (migration for derivable data).
+
+## D-029 Decay of unconfirmed memories is ranking-only (2026-11-24)
+
+- Context: low-confidence memories nobody re-confirmed keep crowding packs long after they stopped being true.
+- Decision: `pack::decay` multiplies the score by `0.5..=1` for memories below `CONFIRMED_CONFIDENCE`: full weight for 30 days since `updated_at`, then an exponential fade (120-day constant) to half. Confirmed memories and re-extracted ones (`updated_at` bumps) are unaffected. Shown as the `decay` factor in `pack --explain`.
+- Why: pack-only keeps D-004 intact (nothing is archived or deleted), is deterministic, and `confirm` resets it by construction.
+- Rejected: auto-archiving by age (loses memories silently, breaks the never-hard-delete promise in spirit); a per-memory TTL column (schema change for no extra signal).

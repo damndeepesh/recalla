@@ -30,4 +30,4 @@
 - [x] 6 feature/promote-global
 - [x] 7 feature/triage-ui
 - [ ] 8 feature/pretooluse-recall
-- [ ] 9 feature/ttl-decay
+- [x] 9 feature/ttl-decay

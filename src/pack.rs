@@ -16,6 +16,9 @@ const MAX_LINE_CHARS: usize = 300;
 const MAX_REASON_CHARS: usize = 80;
 /// Recency half-life-ish constant, in days.
 const RECENCY_DAYS: f64 = 90.0;
+/// An unconfirmed memory keeps full weight this long, then fades.
+const DECAY_GRACE_DAYS: f64 = 30.0;
+const DECAY_DAYS: f64 = 120.0;
 const MS_PER_DAY: f64 = 86_400_000.0;
 /// Section titles in output order; the last one holds `needs_reverify`.
 const TITLES: [&str; 7] = [
@@ -64,7 +67,10 @@ const fn kind_weight(kind: Kind) -> f64 {
 /// `kind_weight x confidence x (1 + ln seen_count) x recency`, where recency
 /// is `0.5 + 0.5 exp(-age_days / 90)` from `updated_at`. `query_boost` is the
 /// memory's normalized search relevance in `0..=1` (`None`: not a hit),
-/// which multiplies the score by `1.5 + boost`.
+/// which multiplies the score by `1.5 + boost`. `decay` fades memories below
+/// [`crate::ops::CONFIRMED_CONFIDENCE`] after a grace period, down to half
+/// weight; `confirm` (or a newer sighting) resets it. Ranking only: nothing is
+/// ever deleted or archived by it.
 #[must_use]
 pub fn score(m: &Memory, now_ms: i64, query_boost: Option<f64>) -> f64 {
     ScoreParts::of(m, now_ms, query_boost).total()
@@ -78,6 +84,8 @@ pub struct ScoreParts {
     /// `1 + ln(seen_count)`.
     pub seen: f64,
     pub recency: f64,
+    /// `1` for confirmed memories, else `0.5..=1` by time since last update.
+    pub decay: f64,
     /// `1.5 + boost` for a query hit, 1 otherwise.
     pub query: f64,
 }
@@ -91,13 +99,21 @@ impl ScoreParts {
             confidence: f64::from(m.confidence),
             seen: f64::from(m.seen_count.max(1)).ln() + 1.0,
             recency: 0.5 + 0.5 * (-age_days / RECENCY_DAYS).exp(),
+            decay: decay(f64::from(m.confidence), age_days),
             query: query_boost.map_or(1.0, |q| 1.5 + q.clamp(0.0, 1.0)),
         }
     }
 
     fn total(self) -> f64 {
-        self.kind_weight * self.confidence * self.seen * self.recency * self.query
+        self.kind_weight * self.confidence * self.seen * self.recency * self.decay * self.query
     }
+}
+
+fn decay(confidence: f64, age_days: f64) -> f64 {
+    if confidence >= f64::from(crate::ops::CONFIRMED_CONFIDENCE) {
+        return 1.0;
+    }
+    0.5 + 0.5 * (-(age_days - DECAY_GRACE_DAYS).max(0.0) / DECAY_DAYS).exp()
 }
 
 /// Why a candidate is not in the pack.
@@ -143,7 +159,7 @@ impl Decision {
             "status": self.status.to_string(), "score": r(self.score),
             "parts": {
                 "kind_weight": r(self.parts.kind_weight), "confidence": r(self.parts.confidence),
-                "seen": r(self.parts.seen), "recency": r(self.parts.recency), "query": r(self.parts.query),
+                "seen": r(self.parts.seen), "recency": r(self.parts.recency), "decay": r(self.parts.decay), "query": r(self.parts.query),
             },
             "included": self.dropped.is_none(),
             "dropped": self.dropped.map(Dropped::label),
@@ -155,14 +171,14 @@ impl Decision {
 #[must_use]
 pub fn explain_text(decisions: &[Decision]) -> String {
     let mut out = String::from(
-        "uid       kind        status          score  kind×conf×seen×recency×query  outcome\n",
+        "uid       kind        status          score  kind×conf×seen×recency×decay×query  outcome\n",
     );
     for d in decisions {
         let uid8: String = d.uid.chars().take(8).collect();
         let p = d.parts;
         let _ = writeln!(
             out,
-            "{uid8:<9} {:<11} {:<14} {:>6.3}  {:.2}×{:.2}×{:.2}×{:.2}×{:.2}  {}",
+            "{uid8:<9} {:<11} {:<14} {:>6.3}  {:.2}×{:.2}×{:.2}×{:.2}×{:.2}×{:.2}  {}",
             d.kind.to_string(),
             d.status.to_string(),
             d.score,
@@ -170,6 +186,7 @@ pub fn explain_text(decisions: &[Decision]) -> String {
             p.confidence,
             p.seen,
             p.recency,
+            p.decay,
             p.query,
             d.dropped.map_or("included", Dropped::label),
         );
@@ -587,6 +604,24 @@ mod tests {
     const NOW: i64 = 1_000_000_000_000;
     const DAY: i64 = 86_400_000;
 
+    #[test]
+    fn unconfirmed_memories_fade_after_a_grace_period_and_confirm_resets_it() {
+        let day = 86_400_000_i64;
+        let mut m = mem("a", Kind::Decision, "use sqlite");
+        m.updated_at = NOW - 20 * day;
+        assert!(
+            (ScoreParts::of(&m, NOW, None).decay - 1.0).abs() < 1e-9,
+            "inside grace"
+        );
+        m.updated_at = NOW - 400 * day;
+        let faded = ScoreParts::of(&m, NOW, None).decay;
+        assert!((0.5..0.56).contains(&faded), "{faded}");
+        let mut confirmed = m.clone();
+        confirmed.confidence = 0.9;
+        assert!((ScoreParts::of(&confirmed, NOW, None).decay - 1.0).abs() < 1e-9);
+        assert!(score(&confirmed, NOW, None) > score(&m, NOW, None));
+    }
+
     fn mem(uid: &str, kind: Kind, text: &str) -> Memory {
         Memory {
             uid: format!("{uid:0<32}"),
@@ -649,11 +684,15 @@ mod tests {
         };
         assert!(score(&seen, NOW, None) > score(&fact, NOW, None));
 
-        let old = Memory {
-            updated_at: NOW - 900 * DAY,
+        let confirmed = Memory {
+            confidence: 0.9,
             ..fact.clone()
         };
-        let (new, aged) = (score(&fact, NOW, None), score(&old, NOW, None));
+        let old = Memory {
+            updated_at: NOW - 900 * DAY,
+            ..confirmed.clone()
+        };
+        let (new, aged) = (score(&confirmed, NOW, None), score(&old, NOW, None));
         assert!(aged < new && aged > new * 0.49);
 
         assert!(score(&fact, NOW, Some(0.0)) > score(&fact, NOW, None));
@@ -661,7 +700,7 @@ mod tests {
         // A future updated_at doesn't boost beyond "fresh".
         let future = Memory {
             updated_at: NOW + DAY,
-            ..fact.clone()
+            ..confirmed.clone()
         };
         assert!((score(&future, NOW, None) - new).abs() < 1e-12);
     }

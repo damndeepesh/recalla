@@ -5,6 +5,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 ## [Unreleased]
 
 ### Added
+- Unconfirmed, low-confidence memories fade in pack ranking after 30 days (down to half weight); `confirm` resets it and `pack --explain` shows the `decay` factor. Nothing is archived or deleted (D-029).
 - Dashboard **Review** queue: memories that need re-verification (stale anchors, contradictions) with keep, forget, edit and promote actions, plus `POST /api/memories/{uid}/edit` (redacted new text supersedes the old) and `relations` on the memory detail API.
 - `recalla promote <id> [--global | --project KEY]` (and `POST /api/memories/{uid}/promote`): move a memory to every project or pin it to one. The original is superseded, not deleted.
 - Contradicting preferences/decisions are resolved at extraction: a newer, at-least-as-confident rule supersedes an unconfirmed older one, otherwise the pair is flagged for re-verification; `why` shows the link. A confirmed rule is never demoted automatically (D-028).
