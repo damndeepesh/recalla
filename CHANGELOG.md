@@ -4,6 +4,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Fixed
+- `cargo install recalla` failed on Windows: the dashboard login page used Unix-only file permissions unconditionally. Now gated like the rest of the crate; CI builds on Windows.
+
 ### Added
 - `recalla forget <id>`: archive a wrong memory from the CLI (undo with `recalla confirm`). Closes #27.
 
