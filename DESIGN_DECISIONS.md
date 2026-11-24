@@ -221,3 +221,11 @@ Append-only. To change one, add a new entry that says "Supersedes D-NNN".
 - Context: `random_hex` read `/dev/urandom`, which does not exist on Windows, so the dashboard could not start there.
 - Decision: use the `getrandom` crate (OS CSPRNG on every platform). It was already in the lockfile through other dependencies, so it adds no new code to the build.
 - Rejected: hand-written Windows FFI (`unsafe` is forbidden in this crate); `rand` (far larger for one call).
+
+## D-032 opencode via a read-only SQLite export (2026-11-24)
+
+- Context: opencode stores history in one SQLite database (`opencode.db`: `session`, `message`, `part`; checked against a real install, structure only). Ingest resumes by byte offset in an append-only file, which a database does not have.
+- Decision: `harness::opencode::export` opens the database read-only (`SQLITE_OPEN_READ_ONLY`, the SQL lives in `store::foreign`), and writes one deterministic JSONL per session to `<data>/import/opencode/` (dir 0700, files 0600). A file whose old content is a prefix of the new one is appended to, so the existing checkpoint, tail-hash identity, raw archive and redaction run unchanged. Tool names/inputs are mapped to the Claude-style names the extractor keys on (`bash` -> `Bash`, `filePath` -> `file_path`). Reasoning and step markers are dropped. Subagent sessions (those with a parent) are flagged sidechain.
+- Cost: the export holds raw (unredacted) text on disk, like the raw archive does; it never reaches the mirror or the memory tables without `redact`. It is regenerable, so deleting `<data>/import/` is always safe.
+- Backfill only for now: no capture hook (opencode's plugin API is unverified). `--dry-run` writes nothing, so it only sees an earlier export.
+- Rejected: reworking ingest to take events directly (touches every harness and the checkpoint model for one adapter); reading the live WAL database without a copy while opencode writes (a read-only connection with a busy timeout is enough, and it never writes).

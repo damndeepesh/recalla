@@ -355,6 +355,7 @@ fn backfill_300mb() {
     let opts = Options {
         claude_root: Some(env.root.clone()),
         codex_root: Some(env.codex_root.clone()),
+        opencode_root: None,
         data_dir: env.data.clone(),
         archive: true,
         dry_run: false,

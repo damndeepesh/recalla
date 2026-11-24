@@ -2,6 +2,7 @@
 
 mod anchor;
 mod extract;
+mod foreign;
 mod ingest;
 mod mirror;
 mod pack;
@@ -24,6 +25,11 @@ use thiserror::Error;
 use crate::model::{self, Anchor, Memory, NewMemory, Origin, Provenance, Scope, Status};
 
 pub use extract::EventRow;
+pub use foreign::{OpencodePart, OpencodeSession, read_opencode};
+#[cfg(test)]
+pub(crate) mod tests_support {
+    pub(crate) use super::foreign::tests::fixture_db as opencode_fixture;
+}
 pub use ingest::{Checkpoint, SegmentRow, SourceRow, StoredEvent, StoredKind};
 pub use mirror::FullMemory;
 pub use pack::{InjectionStats, NewInjection, ProjectInjections, Via};

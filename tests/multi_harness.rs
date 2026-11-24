@@ -50,6 +50,7 @@ impl Env {
         run(&Options {
             claude_root: Some(self.claude.clone()),
             codex_root: Some(self.codex.clone()),
+            opencode_root: None,
             data_dir: self.data.clone(),
             archive: true,
             dry_run: false,
@@ -67,6 +68,7 @@ impl Env {
         let mut args = vec!["recalla", "backfill", "--no-extract", "--json"];
         args.extend(["--root", self.claude.to_str().unwrap()]);
         args.extend(["--codex-root", self.codex.to_str().unwrap()]);
+        args.extend(["--opencode-root", self.codex.to_str().unwrap()]); // no opencode.db there
         args.extend(["--data-dir", self.data.to_str().unwrap()]);
         args.extend(extra);
         let (mut out, mut err) = (Vec::new(), Vec::new());
@@ -155,6 +157,8 @@ fn human_report_breaks_files_down_by_harness() {
         "--root",
         env.claude.to_str().unwrap(),
         "--codex-root",
+        env.codex.to_str().unwrap(),
+        "--opencode-root",
         env.codex.to_str().unwrap(),
         "--data-dir",
         env.data.to_str().unwrap(),

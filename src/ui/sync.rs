@@ -155,6 +155,7 @@ pub struct JobSpec {
     pub data_dir: PathBuf,
     pub claude_root: Option<PathBuf>,
     pub codex_root: Option<PathBuf>,
+    pub opencode_root: Option<PathBuf>,
 }
 
 /// Runs the job on a new thread. The caller already holds the slot (`try_start`).
@@ -180,12 +181,13 @@ fn run(job: &JobSpec) -> Outcome {
         eprintln!("recalla ui: sync {what} failed: {e}");
         format!("sync failed during {what}; see the terminal running recalla ui")
     };
-    if job.claude_root.is_none() && job.codex_root.is_none() {
+    if job.claude_root.is_none() && job.codex_root.is_none() && job.opencode_root.is_none() {
         return Err("no session folders to import (HOME is unset)".to_owned());
     }
     let opts = Options {
         claude_root: job.claude_root.clone(),
         codex_root: job.codex_root.clone(),
+        opencode_root: job.opencode_root.clone(),
         data_dir: job.data_dir.clone(),
         archive: true,
         dry_run: false,
