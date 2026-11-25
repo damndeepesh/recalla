@@ -26,6 +26,7 @@ pub struct Ctx {
     /// Where the sync job looks for sessions.
     pub claude_root: Option<PathBuf>,
     pub codex_root: Option<PathBuf>,
+    pub opencode_root: Option<PathBuf>,
     pub sync: Arc<SyncState>,
 }
 
@@ -38,11 +39,10 @@ impl Ctx {
             data_dir,
             csrf,
             settings_path: claude_root.as_ref().map(|r| r.join("settings.json")),
-            exe: std::env::current_exe()
-                .and_then(std::fs::canonicalize)
-                .unwrap_or_default(),
+            exe: crate::paths::current_exe().unwrap_or_default(),
             claude_root,
             codex_root: codex::default_root(),
+            opencode_root: crate::harness::opencode::default_root(),
             sync: Arc::new(SyncState::default()),
         }
     }

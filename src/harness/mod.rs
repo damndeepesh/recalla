@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 
 pub mod claude;
 pub mod codex;
+pub mod opencode;
 
 /// Largest text a stored event may carry. Ingest applies [`truncate_middle`]
 /// AFTER redaction; the harness emits full text so a cut can't split a secret.

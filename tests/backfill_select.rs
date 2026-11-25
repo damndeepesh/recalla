@@ -84,6 +84,7 @@ impl Env {
         ];
         args.extend(["--root", self.claude.to_str().unwrap()]);
         args.extend(["--codex-root", self.codex.to_str().unwrap()]);
+        args.extend(["--opencode-root", self.codex.to_str().unwrap()]);
         args.extend(["--data-dir", self.data.to_str().unwrap()]);
         args.extend(extra);
         let (mut out, mut err) = (Vec::new(), Vec::new());
@@ -261,6 +262,7 @@ fn the_selected_sessions_can_be_extracted_and_searched() {
     ];
     args.extend(["--root", env.claude.to_str().unwrap()]);
     args.extend(["--codex-root", env.codex.to_str().unwrap()]);
+    args.extend(["--opencode-root", env.codex.to_str().unwrap()]);
     args.extend(["--data-dir", env.data.to_str().unwrap()]);
     let (mut out, mut err) = (Vec::new(), Vec::new());
     assert_eq!(
@@ -280,6 +282,7 @@ fn pick(env: &Env, extra: &[&str], answers: &str) -> (i32, String, String) {
         .args(["backfill", "--pick", "--no-extract", "--no-mirror"])
         .args(["--root", env.claude.to_str().unwrap()])
         .args(["--codex-root", env.codex.to_str().unwrap()])
+        .args(["--opencode-root", env.codex.to_str().unwrap()])
         .args(["--data-dir", env.data.to_str().unwrap()])
         .args(extra)
         .stdin(Stdio::piped())

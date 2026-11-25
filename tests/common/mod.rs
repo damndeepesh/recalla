@@ -232,6 +232,7 @@ impl Env {
         let opts = Options {
             claude_root: Some(self.root.clone()),
             codex_root: Some(self.codex_root.clone()),
+            opencode_root: None,
             data_dir: self.data.clone(),
             archive: false,
             dry_run: false,
@@ -265,6 +266,7 @@ impl Env {
         if args[0] == "backfill" {
             let codex = self.codex_root.to_str().unwrap();
             full.extend(["--root", root, "--codex-root", codex, "--no-archive"]);
+            full.extend(["--opencode-root", codex]); // no opencode.db there
         }
         let (mut out, mut err) = (Vec::new(), Vec::new());
         let code = cli::run(full, &mut out, &mut err);

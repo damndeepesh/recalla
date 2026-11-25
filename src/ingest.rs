@@ -19,6 +19,7 @@ use thiserror::Error;
 use crate::archive;
 use crate::harness::claude::ClaudeCode;
 use crate::harness::codex::Codex;
+use crate::harness::opencode::{self, Opencode};
 use crate::harness::{Event, EventKind, Harness, MAX_EVENT_BYTES, count_newlines, truncate_middle};
 use crate::ops::{self, OpenError};
 use crate::paths;
@@ -36,6 +37,8 @@ pub struct Options {
     pub claude_root: Option<PathBuf>,
     /// Codex home (e.g. `~/.codex`); `None` skips Codex.
     pub codex_root: Option<PathBuf>,
+    /// opencode data dir (holds `opencode.db`); `None` skips opencode.
+    pub opencode_root: Option<PathBuf>,
     pub data_dir: PathBuf,
     /// Keep a raw zstd copy of ingested bytes.
     pub archive: bool,
@@ -155,6 +158,7 @@ enum Plan {
 enum Agent {
     Claude,
     Codex,
+    Opencode,
 }
 
 impl Agent {
@@ -162,6 +166,7 @@ impl Agent {
         match self {
             Self::Claude => &ClaudeCode,
             Self::Codex => &Codex,
+            Self::Opencode => &Opencode,
         }
     }
 }
@@ -209,8 +214,21 @@ fn discover_selected(
     for (agent, root) in [
         (Agent::Claude, &opts.claude_root),
         (Agent::Codex, &opts.codex_root),
+        (Agent::Opencode, &opts.opencode_root),
     ] {
         let Some(root) = root else { continue };
+        let exported;
+        let root = if agent == Agent::Opencode {
+            match export_opencode(root, opts)? {
+                Some(dir) => {
+                    exported = dir;
+                    &exported
+                }
+                None => continue,
+            }
+        } else {
+            root
+        };
         let discover_err = |source| IngestError::Discover {
             path: root.clone(),
             source,
@@ -249,6 +267,22 @@ fn discover_selected(
         .filter(|(i, _)| keep.next_if_eq(i).is_some())
         .map(|(_, x)| x)
         .collect())
+}
+
+/// Exports opencode's database to the append-only JSONL the adapter reads
+/// (D-032). `None` when there is no database, or on a dry run (which writes
+/// nothing, so it reads whatever an earlier export left).
+fn export_opencode(root: &Path, opts: &Options) -> Result<Option<PathBuf>, IngestError> {
+    let db = root.join(opencode::DB_FILE);
+    let out = opencode::export_dir(&opts.data_dir);
+    if opts.dry_run {
+        return Ok(out.is_dir().then_some(out));
+    }
+    if !db.is_file() {
+        return Ok(None);
+    }
+    opencode::export(&db, &out).map_err(|source| IngestError::Discover { path: db, source })?;
+    Ok(Some(out))
 }
 
 /// Imports just the Claude Code `files` into an already-open `store`, through

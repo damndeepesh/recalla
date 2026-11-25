@@ -34,3 +34,8 @@
 - [x] fix/windows-full: USERPROFILE, `cmd /C start`, `.exe` hook matching, `cargo test` on Windows CI; grouped `backfill --pick`/`--list`
 - [x] fix/windows-anchors: anchors integration tests run on Windows (test helper joined an absolute cwd onto the Claude root)
 - [x] chore/release-0.3.1: version, changelog; dev -> main, tag v0.3.1, cargo publish
+- [x] feature/windows-release: Windows zip in the release workflow (next release)
+- [x] fix/windows-exe-path: hook/MCP exe path without the verbatim prefix (reported by a Windows user on 0.3.1)
+- [x] feature/harness-opencode: opencode backfill via read-only SQLite export (D-032); verified on a real database
+- [ ] harnesses next: Copilot CLI, Gemini CLI / agy, Cursor transcripts (plan: .agent/plans/harnesses.md)
+- [x] chore/release-0.3.2: version, changelog, web version (not published; owner go needed)
